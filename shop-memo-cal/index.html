@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#121212">
+<title>A♥️J 스마트 메모 계산기</title>
+
+<style>
+:root {
+  --bg:#121212; --panel:#1e1e1e; --display-bg:#000;
+  --text:#fff; --accent:#ff9500; --number:#2a2a2a;
+  --display-text:#0f0; --history-text: #fff;
+}
+body {
+  margin:0; background:var(--bg); font-family:system-ui,sans-serif;
+  display:flex; justify-content:center; align-items:center; height:100dvh; /* 주소창 높이를 감안한 동적 높이 */
+  overflow: hidden; touch-action: manipulation;
+}
+.calculator {
+  width: 95%; /* 좌우 여백 확보 */
+  max-width: 380px;
+  background: var(--panel);
+  border-radius: 16px;
+  padding: 12px; /* 패딩을 살짝 줄임 */
+  box-sizing: border-box;
+  
+  /* 주소창이 있어도 안전하도록 높이를 더 보수적으로 잡음 */
+  max-height: 90dvh; 
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+/* 버튼들 크기를 화면 높이에 따라 유연하게 조정 */
+.buttons button {
+  padding: 15px 0; /* 버튼 높이를 살짝 줄여 여유 공간 확보 */
+  font-size: 1.3rem;
+}
+.display-wrap { background:var(--display-bg); border-radius:12px; padding:12px; position: relative; }
+.display {
+  color:var(--display-text);
+  text-align:right;
+  white-space: pre-wrap;
+  line-height:1.6;
+  font-size:1.7rem;
+  min-height:6.5em;
+  max-height:6.5em;
+  overflow-y:auto;
+  outline: none;
+  scrollbar-gutter: stable;
+  caret-color: #fff;
+  word-break: normal;
+}
+.display span {
+  display: inline-block;
+  white-space: nowrap;
+}
+.preview {
+  color:#888; text-align:right; margin-top:6px; font-size:1.1rem; height: 1.2em;
+}
+.buttons { margin-top:14px; display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
+button {
+  font-size:1.4rem; padding:18px 0; border:none; border-radius:12px;
+  background:var(--number); color:var(--text); cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+button:active { opacity: 0.7; }
+.operator { background:var(--accent); }
+.top-row { grid-column:span 4; display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
+
+/* 기록 팝업 스타일 수정 */
+.history-popup {
+  color: var(--history-text); /* 테마에 따라 변경되는 텍스트 색상 */
+  position:fixed; bottom:0; left:0; width:100%; height:66%;
+  background:var(--panel); border-radius:16px 16px 0 0; z-index:1000;
+  display:flex; flex-direction:column;
+  box-shadow: 0 -5px 15px rgba(0,0,0,0.3);
+}
+.hidden { display:none; }
+.history-header { padding:15px; display:flex; justify-content:space-between; border-bottom:1px solid rgba(128,128,128,0.3); font-weight: bold; }
+.history-list { flex:1; overflow-y:auto; }
+.history-item { padding:15px; border-bottom:1px solid rgba(128,128,128,0.2); display:flex; justify-content:space-between; align-items:center; }
+.history-item small { color: #888; display: block; margin-bottom: 4px; }
+</style>
+</head>
+
+<body>
+
+<div class="calculator">
+  <div class="display-wrap">
+    <div id="display" class="display" contenteditable="true" inputmode="none" spellcheck="false">0</div>
+    <div id="preview" class="preview"></div>
+  </div>
+
+  <div class="buttons">
+    <div class="top-row">
+      <button onclick="undo()">↩️</button>
+      <button onclick="redo()">↪️</button>
+      <button onclick="changetheme()">🎨</button>
+      <button onclick="showhistory()">🧾</button>
+    </div>
+    <button onclick="clearAll()">C</button>
+    <button onclick="append('%')">%</button>
+    <button onclick="backspace()">⌫</button>
+    <button onclick="append('/')" class="operator">÷</button>
+    <button onclick="append('7')">7</button>
+    <button onclick="append('8')">8</button>
+    <button onclick="append('9')">9</button>
+    <button onclick="append('-')" class="operator">−</button>
+    <button onclick="append('4')">4</button>
+    <button onclick="append('5')">5</button>
+    <button onclick="append('6')">6</button>
+    <button onclick="append('*')" class="operator">×</button>
+    <button onclick="append('1')">1</button>
+    <button onclick="append('2')">2</button>
+    <button onclick="append('3')">3</button>
+    <button onclick="append('+')" class="operator">+</button>
+    <button onclick="append('.')">.</button>
+    <button onclick="append('0')">0</button>
+    <button onclick="append('00')">00</button>
+    <button onclick="calculate()" class="operator">=</button>
+  </div>
+</div>
+
+<div id="historyPopup" class="history-popup hidden">
+  <div class="history-header"><span>계산 기록</span><button onclick="closeHistory()" style="background:none; border:none; color:inherit; font-size:1.2rem;">✖</button></div>
+  <div id="historyList" class="history-list"></div>
+</div>
+
+<script>
+const display = document.getElementById("display");
+const preview = document.getElementById("preview");
+const historyList = document.getElementById("historyList");
+
+let timeline = JSON.parse(localStorage.getItem("calcTimeline")) || [];
+let historyStack = [], redoStack = [];
+let longPressTimer;
+
+/* 1. 커서 및 렌더링 로직 (유지 및 강화) */
+function getCaretPosition(element) {
+    const selection = window.getSelection();
+    if (selection.rangeCount === 0) return 0;
+    const range = selection.getRangeAt(0);
+    const preCaretRange = range.cloneRange();
+    preCaretRange.selectNodeContents(element);
+    preCaretRange.setEnd(range.endContainer, range.endOffset);
+    return preCaretRange.toString().length;
+}
+
+function setCaretPosition(element, offset) {
+    const selection = window.getSelection();
+    const range = document.createRange();
+    let currentPos = 0;
+    let nodeStack = [element];
+    while (nodeStack.length > 0) {
+        let node = nodeStack.pop();
+        if (node.nodeType === 3) {
+            if (currentPos + node.length >= offset) {
+                range.setStart(node, offset - currentPos);
+                range.collapse(true);
+                selection.removeAllRanges();
+                selection.addRange(range);
+                return;
+            }
+            currentPos += node.length;
+        } else {
+            for (let i = node.childNodes.length - 1; i >= 0; i--) nodeStack.push(node.childNodes[i]);
+        }
+    }
+    range.selectNodeContents(element);
+    range.collapse(false);
+    selection.removeAllRanges();
+    selection.addRange(range);
+}
+
+function renderDisplay(forceCaretPos = null) {
+    const rawText = display.innerText.replace(/,/g, "");
+    const tokens = rawText.match(/(\d+|\+|-|\*|\/|%|\.|\s|[가-힣a-zA-Z]+)/g) || [];
+    let html = "";
+    tokens.forEach(token => {
+        if (/^\d+$/.test(token)) html += `<span>${parseInt(token).toLocaleString()}</span>`;
+        else html += `<span>${token}</span>`;
+    });
+    display.innerHTML = html || "<span>0</span>";
+    if (forceCaretPos !== null) setCaretPosition(display, forceCaretPos);
+}
+
+function formatString(str) {
+    return str.replace(/\d+/g, m => parseInt(m).toLocaleString());
+}
+
+function append(v) {
+    saveState();
+    let currentText = display.innerText;
+    let currentOffset = getCaretPosition(display);
+    if (currentText.replace(/,/g, "").trim() === "0" && !isNaN(v)) { currentText = ""; currentOffset = 0; }
+    const left = currentText.slice(0, currentOffset);
+    const right = currentText.slice(currentOffset);
+    const cleanLeft = (left + v).replace(/,/g, "");
+    const formattedLeft = formatString(cleanLeft);
+    display.innerText = left + v + right;
+    renderDisplay(formattedLeft.length);
+    previewCalc();
+    persist();
+}
+
+function backspace() {
+    saveState();
+    const currentOffset = getCaretPosition(display);
+    if (currentOffset === 0) return;
+    const fullText = display.innerText;
+    const left = fullText.slice(0, currentOffset - 1);
+    const right = fullText.slice(currentOffset);
+    const cleanLeft = left.replace(/,/g, "");
+    const formattedLeft = formatString(cleanLeft);
+    const newFullRaw = (cleanLeft + right.replace(/,/g, ""));
+    if (newFullRaw === "") { display.innerText = "0"; renderDisplay(1); }
+    else { display.innerText = newFullRaw; renderDisplay(formattedLeft.length); }
+    previewCalc();
+    persist();
+}
+
+/* 2. 기록 저장 (날짜 포맷 변경) */
+function calculate() {
+    try {
+        const raw = display.innerText;
+        const clean = raw.replace(/,/g, "").replace(/[^0-9+\-*/().%]/g, "");
+        if(!clean) return;
+        const result = eval(clean.replace(/(\d+)%/g, "($1/100)"));
+        
+        // 년월일 시분초 포함 포맷
+        const now = new Date();
+        const dateStr = `${now.getFullYear()}.${now.getMonth()+1}.${now.getDate()} ${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}:${now.getSeconds().toString().padStart(2,'0')}`;
+
+        timeline.unshift({ expr: raw, result: result, time: dateStr });
+        display.innerHTML = `<span>${result.toLocaleString()}</span>`;
+        preview.innerText = "";
+        persist();
+    } catch { preview.innerText = "에러"; }
+}
+
+/* 3. 테마 및 UI 관리 */
+const themes = [
+    {bg:"#121212",panel:"#1e1e1e",display:"#000",text:"#fff",accent:"#ff9500",num:"#2a2a2a",dtext:"#0f0", htext: "#fff"},
+    {bg:"#f2f2f2",panel:"#fff",display:"#eaeaea",text:"#000",accent:"#ff9500",num:"#ddd",dtext:"#000", htext: "#000"}
+];
+let themeIndex = +localStorage.getItem("themeIndex") || 0;
+
+function applyTheme(i){
+    const t=themes[i], r=document.documentElement.style;
+    r.setProperty("--bg",t.bg); r.setProperty("--panel",t.panel);
+    r.setProperty("--display-bg",t.display); r.setProperty("--text",t.text);
+    r.setProperty("--accent",t.accent); r.setProperty("--number",t.num);
+    r.setProperty("--display-text",t.dtext);
+    r.setProperty("--history-text",t.htext);
+}
+applyTheme(themeIndex);
+
+function changetheme(){ 
+    themeIndex=(themeIndex+1)%themes.length; 
+    applyTheme(themeIndex); 
+    localStorage.setItem("themeIndex",themeIndex); 
+}
+
+/* 4. 기록 팝업 렌더링 */
+function renderHistory(){
+    historyList.innerHTML="";
+    timeline.forEach((h,i)=>{
+        const d=document.createElement("div"); d.className="history-item";
+        d.innerHTML = `
+            <div style="cursor:pointer; flex:1; padding-right:10px;" onclick="useHistory(\`${h.expr}\`)">
+                <small>${h.time}</small>
+                <div style="font-size:1.1rem;">${h.expr} = <b>${h.result.toLocaleString()}</b></div>
+            </div>
+            <button onclick="deleteHistory(${i})" style="padding:8px 12px; font-size:0.8rem; background:#666; color:white; border-radius:8px;">삭제</button>`;
+        historyList.appendChild(d);
+    });
+}
+
+function showhistory(){ renderHistory(); document.getElementById("historyPopup").classList.remove("hidden"); }
+function closeHistory(){ document.getElementById("historyPopup").classList.add("hidden"); }
+function useHistory(expr) { display.innerText = expr; renderDisplay(); previewCalc(); closeHistory(); }
+function deleteHistory(i) { timeline.splice(i, 1); persist(); renderHistory(); }
+
+/* 5. 기타 기본 기능 */
+function saveState() { historyStack.push(display.innerText); if(historyStack.length > 50) historyStack.shift(); redoStack = []; }
+function undo() { if (historyStack.length > 0) { redoStack.push(display.innerText); display.innerText = historyStack.pop(); renderDisplay(); previewCalc(); } }
+function redo() { if (redoStack.length > 0) { historyStack.push(display.innerText); display.innerText = redoStack.pop(); renderDisplay(); previewCalc(); } }
+function clearAll() { saveState(); display.innerHTML = "<span>0</span>"; preview.innerText = ""; persist(); }
+function previewCalc() {
+    try {
+        const clean = display.innerText.replace(/,/g, "").replace(/[^0-9+\-*/().%]/g, "");
+        if (!clean || /^[\d.]+$/.test(clean)) { preview.innerText = ""; return; }
+        const res = eval(clean.replace(/(\d+)%/g, "($1/100)"));
+        preview.innerText = "= " + res.toLocaleString();
+    } catch { preview.innerText = ""; }
+}
+function persist(){ localStorage.setItem("calcValue", display.innerHTML); localStorage.setItem("calcTimeline", JSON.stringify(timeline)); }
+
+display.addEventListener('touchstart', (e) => {
+    longPressTimer = setTimeout(() => { display.setAttribute("inputmode", "text"); display.focus(); if (navigator.vibrate) navigator.vibrate(50); }, 600);
+});
+display.addEventListener('touchend', () => clearTimeout(longPressTimer));
+display.addEventListener('blur', () => display.setAttribute("inputmode", "none"));
+display.addEventListener('input', () => { previewCalc(); persist(); });
+
+const saved = localStorage.getItem("calcValue");
+if(saved) display.innerHTML = saved; else renderDisplay();
+previewCalc();
+</script>
+</body>
+</html>
