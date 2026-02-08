@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#007bff">
-    <title>AJ 스마트메모장</title>
+    <title>AJ 스마트 메모장 Pro v3.8</title>
     <link rel="manifest" href='data:application/manifest+json,{"name":"AJSmartMemopad","short_name":"AJMemopad","start_url":".","display":"standalone","background_color":"#ffffff","theme_color":"#007bff","icons":[{"src":"https://cdn-icons-png.flaticon.com/512/564/564445.png","sizes":"512x512","type":"image/png"}]}'>
     
     <style>
@@ -69,6 +69,7 @@
             background-color: var(--textarea-bg); color: var(--text-color);
             resize: none; outline: none;
             box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            font-family: inherit;
         }
 
         #infoModal, #modalOverlay { display: none; }
@@ -83,7 +84,7 @@
 <body onload="initApp()">
 
 <header>
-    <div class="logo">✨ Smart Memo v3.5</div>
+    <div class="logo">✨ Smart Memo v3.8</div>
     <div class="menu-icons">
         <button class="icon-btn" onclick="downloadMemo()" title="파일로 저장">📥</button>
         <button class="icon-btn" onclick="changeTheme()" title="테마 변경">🎨</button>
@@ -92,16 +93,16 @@
 </header>
 
 <main>
-    <textarea id="memoEditor" placeholder="[새로운 기능 예시]&#10;3(4인실) + 10 = 13&#10;5,000 * 10% = 500"></textarea>
+    <textarea id="memoEditor" placeholder="[업데이트 내용]&#10;3*4=12+2=14 (연속 계산 지원)&#10;문자 포함 괄호 무시 및 % 계산 기능 유지"></textarea>
 </main>
 
 <div id="modalOverlay" onclick="toggleInfo()"></div>
 <div id="infoModal">
-    <h2 style="margin-bottom: 10px;">AJ Smart Memopad Pro</h2>
-    <p>버전: 3.5 (PWA 지원)</p>
+    <h2 style="margin-bottom: 10px;">Smart Memo Pro</h2>
+    <p>버전: 3.8 (PWA 지원)</p>
     <p>개발: 양승민 (Gemini AI)</p>
     <hr style="margin: 15px 0; border: 0; border-top: 1px solid var(--border-color);">
-    <p style="font-size: 0.9rem; opacity: 0.8;">문자가 포함된 괄호는 계산에서 제외됩니다.</p>
+    <p style="font-size: 0.9rem; opacity: 0.8;">연속 계산(=) 시 마지막 구간만 계산합니다.</p>
     <button onclick="toggleInfo()" style="margin-top: 20px; padding: 10px 20px; cursor: pointer; border-radius: 8px; border: none; background: var(--accent-color); color: white;">확인</button>
 </div>
 
@@ -127,26 +128,42 @@
         if (e.data === '=') {
             const value = memo.value;
             const pos = memo.selectionStart;
+            
+            // 현재 줄 가져오기
             const lines = value.substring(0, pos).split('\n');
-            let currentLine = lines[lines.length - 1];
+            let currentLine = lines[lines.length - 1]; // 예: "3*4=12+2="
 
-            const hasComma = currentLine.includes(',');
+            // 연속 계산 처리: 마지막 '=' 기호를 제외하고 그 이전의 '='가 있는지 확인
+            // 마지막 '=' 바로 앞까지의 텍스트에서 가장 마지막 '='의 위치를 찾음
+            const contentBeforeLastEqual = currentLine.slice(0, -1);
+            const lastEqualIndex = contentBeforeLastEqual.lastIndexOf('=');
+            
+            // 계산 대상 구간 추출 (가장 마지막 '=' 이후부터 현재 '=' 직전까지)
+            let targetSegment = (lastEqualIndex === -1) 
+                ? contentBeforeLastEqual 
+                : contentBeforeLastEqual.substring(lastEqualIndex + 1);
 
-            // 1. 문자가 포함된 괄호 영역 제거 (예: (4인실) -> 공백처리)
-            // 한글([가-힣]) 또는 영문([a-zA-Z])이 들어있는 괄호만 삭제
-            let processedLine = currentLine.replace(/\([^)]*[가-힣a-zA-Z][^)]*\)/g, '');
+            // 1. 콤마 여부 확인 (대상 구간 내에 콤마가 있는지)
+            const hasComma = targetSegment.includes(',');
 
-            // 2. % 연산 처리: 숫자% 형태를 (숫자/100)으로 변환
-            processedLine = processedLine.replace(/([0-9.,]+)%/g, '($1/100)');
+            // 2. 문자가 포함된 괄호 영역 제거
+            let processedSegment = targetSegment.replace(/\([^)]*[가-힣a-zA-Z][^)]*\)/g, '');
 
-            // 3. 계산을 위한 순수 수식 추출 (숫자, 연산자, 소수점, 괄호만 남김)
-            let cleanExpr = processedLine.replace(/[^-0-9+*/().,]/g, '').replace(/,/g, '').replace(/=/g, '');
+            // 3. % 연산 처리
+            processedSegment = processedSegment.replace(/([0-9.,]+)%/g, '($1/100)');
+
+            // 4. 순수 수식 추출
+            let cleanExpr = processedSegment.replace(/[^-0-9+*/().,]/g, '').replace(/,/g, '');
 
             try {
                 if (cleanExpr.trim() !== '') {
+                    // eval은 문자열 수식을 계산함
                     let result = eval(cleanExpr);
-                    // 결과가 실수인 경우 소수점 2자리까지 표시 (필요시 수정 가능)
-                    if (!Number.isInteger(result)) result = Math.round(result * 100) / 100;
+                    
+                    // 소수점 처리 (최대 10자리까지만, 불필요한 0 제거)
+                    if (!Number.isInteger(result)) {
+                        result = Number(result.toFixed(10));
+                    }
                     
                     let formattedResult = hasComma ? result.toLocaleString() : result;
                     
@@ -158,28 +175,23 @@
                     memo.setSelectionRange(newPos, newPos);
                     localStorage.setItem('smartMemoContent', memo.value);
                 }
-            } catch (err) { console.log("계산 오류"); }
+            } catch (err) {
+                console.log("계산 오류: ", err);
+            }
         }
     });
 
-    // 파일 다운로드 (포맷: memo_YYYYMMDD_HHMMSS.txt)
     function downloadMemo() {
         const text = memo.value;
         const now = new Date();
-        const year = now.getFullYear();
-        const month = String(now.getMonth() + 1).padStart(2, '0');
-        const day = String(now.getDate()).padStart(2, '0');
-        const hh = String(now.getHours()).padStart(2, '0');
-        const mm = String(now.getMinutes()).padStart(2, '0');
-        const ss = String(now.getSeconds()).padStart(2, '0');
-        
-        const filename = `memo_${year}${month}${day}_${hh}${mm}${ss}.txt`;
+        const f = (n) => String(n).padStart(2, '0');
+        const timestamp = `${now.getFullYear()}${f(now.getMonth()+1)}${f(now.getDate())}_${f(now.getHours())}${f(now.getMinutes())}${f(now.getSeconds())}`;
         
         const blob = new Blob([text], { type: 'text/plain' });
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = filename;
+        a.download = `memo_${timestamp}.txt`;
         a.click();
         window.URL.revokeObjectURL(url);
     }
