@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>스마트 연산 메모장</title>
+    <style>
+        /* 기본 변수 설정 (기본 테마: 라이트) */
+        :root {
+            --bg-color: #f8f9fa;
+            --header-bg: #ffffff;
+            --text-color: #333;
+            --accent-color: #007bff;
+            --textarea-bg: #ffffff;
+            --border-color: #ddd;
+        }
+
+        /* 테마 정의 */
+        body.dark {
+            --bg-color: #1e1e1e;
+            --header-bg: #2d2d2d;
+            --text-color: #e0e0e0;
+            --accent-color: #bb86fc;
+            --textarea-bg: #252525;
+            --border-color: #444;
+        }
+
+        body.green {
+            --bg-color: #e8f5e9;
+            --header-bg: #c8e6c9;
+            --text-color: #2e7d32;
+            --accent-color: #4caf50;
+            --textarea-bg: #f1f8e9;
+            --border-color: #a5d6a7;
+        }
+
+        body.pink {
+            --bg-color: #fce4ec;
+            --header-bg: #f8bbd0;
+            --text-color: #880e4f;
+            --accent-color: #e91e63;
+            --textarea-bg: #fff1f8;
+            --border-color: #f48fb1;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Pretendard', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            transition: all 0.3s ease;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 상단 메뉴바 */
+        header {
+            background-color: var(--header-bg);
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            z-index: 10;
+        }
+
+        .logo { font-weight: bold; font-size: 1.2rem; }
+
+        .menu-icons { display: flex; gap: 15px; }
+        .icon-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1.2rem;
+            color: var(--text-color);
+            padding: 5px;
+            border-radius: 5px;
+            transition: background 0.2s;
+        }
+        .icon-btn:hover { background-color: rgba(0,0,0,0.1); }
+
+        /* 메모 영역 */
+        main {
+            flex: 1;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        #memoEditor {
+            width: 100%;
+            max-width: 800px;
+            height: 100%;
+            padding: 20px;
+            font-size: 1.1rem;
+            line-height: 1.6;
+            border: 2px solid var(--border-color);
+            border-radius: 10px;
+            background-color: var(--textarea-bg);
+            color: var(--text-color);
+            resize: none;
+            outline: none;
+            font-family: 'Consolas', 'Monaco', monospace;
+        }
+
+        /* 정보 모달 */
+        #infoModal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--header-bg);
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            z-index: 100;
+            text-align: center;
+            min-width: 300px;
+        }
+
+        #modalOverlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 99;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="logo">Smart Memo</div>
+    <div class="menu-icons">
+        <button class="icon-btn" onclick="changeTheme()" title="테마 변경">🎨</button>
+        <button class="icon-btn" onclick="toggleInfo()" title="정보">ℹ️</button>
+    </div>
+</header>
+
+<main>
+    <textarea id="memoEditor" placeholder="여기에 내용을 입력하세요. 줄 끝에 '='를 쓰면 자동 계산됩니다.&#10;예: 1200 + 300 ="></textarea>
+</main>
+
+<div id="modalOverlay" onclick="toggleInfo()"></div>
+<div id="infoModal">
+    <h3>프로그램 정보</h3>
+    <p style="margin: 15px 0;"><strong>스마트 연산 메모장 v1.0</strong></p>
+    <p>개발자: Gemini AI</p>
+    <p>기능: 자동 수식 계산 및 테마 지원</p>
+    <button onclick="toggleInfo()" style="margin-top: 20px; padding: 8px 15px; cursor: pointer;">닫기</button>
+</div>
+
+<script>
+    const memo = document.getElementById('memoEditor');
+    const themes = ['', 'dark', 'green', 'pink'];
+    let currentThemeIdx = 0;
+
+    // 계산 로직
+    memo.addEventListener('input', (e) => {
+        const value = memo.value;
+        const cursorPosition = memo.selectionStart;
+        
+        // 마지막으로 입력된 글자가 '=' 인지 확인
+        const lastChar = value[cursorPosition - 1];
+        
+        if (lastChar === '=') {
+            const lines = value.substring(0, cursorPosition).split('\n');
+            const currentLine = lines[lines.length - 1];
+            
+            // 콤마 포맷 여부 확인 (,= 인지 그냥 = 인지)
+            const isCommaMode = currentLine.endsWith(',=');
+            const expressionPart = isCommaMode ? currentLine.slice(0, -2) : currentLine.slice(0, -1);
+            
+            // 숫자와 연산자만 추출 (한글, 영문 등 제거)
+            // +, -, *, /, ., 숫자가 아닌 것들을 제거
+            const sanitizedExpr = expressionPart.replace(/[^0-9+\-*/().]/g, '');
+            
+            try {
+                if (sanitizedExpr.trim() === '') return;
+                
+                // 수식 계산
+                let result = eval(sanitizedExpr);
+                
+                // 결과 포맷팅
+                let finalResult = isCommaMode ? result.toLocaleString() : result;
+                
+                // 텍스트 업데이트
+                const before = value.substring(0, cursorPosition);
+                const after = value.substring(cursorPosition);
+                
+                memo.value = before + finalResult + after;
+                
+                // 커서 위치 조정 (계산 결과 뒤로)
+                const newPos = cursorPosition + String(finalResult).length;
+                memo.setSelectionRange(newPos, newPos);
+                
+            } catch (err) {
+                console.error("계산 오류:", err);
+            }
+        }
+    });
+
+    // 테마 변경 로직
+    function changeTheme() {
+        currentThemeIdx = (currentThemeIdx + 1) % themes.length;
+        document.body.className = themes[currentThemeIdx];
+    }
+
+    // 정보창 토글
+    function toggleInfo() {
+        const modal = document.getElementById('infoModal');
+        const overlay = document.getElementById('modalOverlay');
+        const isVisible = modal.style.display === 'block';
+        
+        modal.style.display = isVisible ? 'none' : 'block';
+        overlay.style.display = isVisible ? 'none' : 'block';
+    }
+
+    // 탭 키 입력 시 들여쓰기 지원 (선택사항)
+    memo.addEventListener('keydown', (e) => {
+        if (e.key === 'Tab') {
+            e.preventDefault();
+            const start = memo.selectionStart;
+            const end = memo.selectionEnd;
+            memo.value = memo.value.substring(0, start) + "\t" + memo.value.substring(end);
+            memo.selectionStart = memo.selectionEnd = start + 1;
+        }
+    });
+</script>
+
+</body>
+</html>
