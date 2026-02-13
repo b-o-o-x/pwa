@@ -133,7 +133,10 @@
                 div.className = 'post-it';
                 div.innerHTML = `
                     <div class="preview">${data.content || '내용 없음'}</div>
-                    <div class="date">${data.updatedAt?.toDate().toLocaleDateString('ko-KR', {month:'short', day:'numeric'}) || '방금'}</div>
+                    <div class="date">
+                        ${data.updatedAt?.toDate().toLocaleDateString('ko-KR', {month:'short', day:'numeric'}) || ''} 
+                        ${data.updatedAt?.toDate().toLocaleTimeString('ko-KR', {hour: '2-digit', minute: '2-digit', hour12: false}) || '방금'}
+                    </div>
                 `;
                 div.onclick = () => openMemo(doc.id, data.content);
                 listView.appendChild(div);
