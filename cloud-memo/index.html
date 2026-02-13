@@ -180,14 +180,25 @@
         detailUnsubscribe = onSnapshot(doc(db, "users", currentUserId, "memos", id), (snap) => {
             if (snap.exists()) {
                 const data = snap.data();
+                const memoInput = document.getElementById('memoInput');
                 
-                // 핵심: 사용자가 실제로 타이핑 중(isTyping == true)이 아닐 때만 업데이트!
+                // 사용자가 타이핑 중이 아닐 때만 업데이트
                 if (!isTyping) {
-                    const memoInput = document.getElementById('memoInput');
-                    // 서버 데이터가 현재 입력창 내용과 다를 때만 갱신 (무한 루프 방지)
                     if (memoInput.value !== data.content) {
+                        // 1. 현재 커서의 시작/끝 위치를 기억해둡니다.
+                        const start = memoInput.selectionStart;
+                        const end = memoInput.selectionEnd;
+        
+                        // 2. 내용을 업데이트합니다.
                         memoInput.value = data.content;
                         updateUIWithColor(data.color || "#fff9c4");
+        
+                        // 3. 기억해둔 위치로 커서를 다시 복구합니다.
+                        // (단, 포커스 상태일 때만 의미가 있으므로 체크해줍니다.)
+                        if (document.activeElement === memoInput) {
+                            memoInput.setSelectionRange(start, end);
+                        }
+        
                         document.getElementById('status').innerText = "☁️ 실시간 동기화 완료";
                     }
                 }
