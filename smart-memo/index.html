@@ -9,16 +9,22 @@
     <meta name="theme-color" content="#007bff">
     <title>A❤️J 스마트 메모장 Pro v3.8</title>
     <link rel="manifest" href='data:application/manifest+json,{
-        "display":"standalone", "start_url":"./index.html",
-        "name":"A❤️J 스마트 메모장", "short_name":"A❤️J스마트메모장",
-        "background_color":"#ffffff", "theme_color":"#007bff",
-        "icons":[
+        "name": "A❤️J 스마트 메모장",
+        "short_name": "A❤️J스마트메모장",
+        "start_url": "index.html",
+        "display": "standalone",
+        "background_color": "#ffffff",
+        "theme_color": "#007bff",
+        "icons": [
             {
-                "src":"https://b-o-o-x.github.io/pwa/smart-memo/smart-memo-512.png",
-                "sizes":"512x512", "type":"image/png", "purpose":"any maskable"
+                "src": "https://b-o-o-x.github.io/pwa/smart-memo/smart-memo-512.png",
+                "sizes": "512x512",
+                "type": "image/png",
+                "purpose": "any"
             }
         ]
     }'>
+    <link rel="apple-touch-icon" href="https://b-o-o-x.github.io/pwa/smart-memo/smart-memo-512.png">
     
     <style>
         :root {
@@ -132,7 +138,7 @@
             currentThemeIdx = parseInt(savedTheme);
             document.body.className = themes[currentThemeIdx];
         }
-        registerServiceWorker();
+        //registerServiceWorker();
     }
 
     memo.addEventListener('input', (e) => {
@@ -221,6 +227,7 @@
         document.getElementById('modalOverlay').style.display = isVisible ? 'none' : 'block';
     }
 
+    // Blob으로 가짜 sw.js를 만드는 코드
     function registerServiceWorker() {
         if ('serviceWorker' in navigator) {
             const swCode = `self.addEventListener('install', (e) => self.skipWaiting()); self.addEventListener('fetch', (e) => e.respondWith(fetch(e.request).catch(() => {})));`;
@@ -240,10 +247,15 @@
 </script>
     
 <script>
+// 스크립트 맨 하단에 이것만 사용
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('./sw.js').then(() => {
-    console.log("서비스 워커 등록 완료!");
-  });
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').then(reg => {
+            console.log("서비스 워커 등록 성공!");
+        }).catch(err => {
+            console.log("등록 실패:", err);
+        });
+    });
 }
 </script>
 </body>
