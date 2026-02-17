@@ -238,6 +238,13 @@
         }
     });
 </script>
-
+    
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js').then(() => {
+    console.log("서비스 워커 등록 완료!");
+  });
+}
+</script>
 </body>
 </html>
