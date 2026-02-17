@@ -3,9 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#007bff">
     <title>A❤️J 스마트 메모장 Pro v3.8</title>
-    <link rel="manifest" href='data:application/manifest+json,{"name":"A❤️J 스마트 메모장","short_name":"A❤️J스마트메모장","start_url":".","display":"standalone","background_color":"#ffffff","theme_color":"#007bff","icons":[{"src":"https://b-o-o-x.github.io/pwa/smart-memo/smart-memo-512.png","sizes":"512x512","type":"image/png"}]}'>
+    <link rel="manifest" href='data:application/manifest+json,{
+        "display":"standalone", "start_url":"./index.html",
+        "name":"A❤️J 스마트 메모장", "short_name":"A❤️J스마트메모장",
+        "background_color":"#ffffff", "theme_color":"#007bff",
+        "icons":[
+            {
+                "src":"https://b-o-o-x.github.io/pwa/smart-memo/smart-memo-512.png",
+                "sizes":"512x512", "type":"image/png", "purpose":"any maskable"
+            }
+        ]
+    }'>
     
     <style>
         :root {
