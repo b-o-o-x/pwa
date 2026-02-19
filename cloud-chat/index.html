@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minimal Chat App</title>
+    <style>
+        :root { --bg: #ffffff; --text: #000; --primary: #007bff; }
+        body.dark-mode { --bg: #1a1a1a; --text: #eee; }
+        body { background: var(--bg); color: var(--text); font-family: sans-serif; transition: 0.3s; }
+        .hidden { display: none; }
+        .card { border: 1px solid #ccc; padding: 15px; margin: 10px 0; border-radius: 8px; }
+    </style>
+</head>
+<body>
+
+    <div id="auth-section">
+        <h2>채팅 프로그램</h2>
+        <button id="login-btn">구글 로그인</button>
+    </div>
+
+    <div id="main-section" class="hidden">
+        <header>
+            <span id="user-info"></span>
+            <button id="logout-btn">로그아웃</button>
+            <button id="theme-btn">테마 변경</button>
+        </header>
+
+        <section id="room-list-section">
+            <h3>채팅방 목록</h3>
+            <div id="room-list"></div>
+            <hr>
+            <input type="text" id="new-room-name" placeholder="방 이름 입력">
+            <button id="create-room-btn">방 만들기</button>
+        </section>
+
+        <section id="chat-section" class="hidden">
+            <button id="back-btn">← 목록으로</button>
+            <h3 id="current-room-title"></h3>
+            <div id="messages" style="height: 300px; overflow-y: scroll; border: 1px solid #ddd; padding: 10px;"></div>
+            <input type="text" id="msg-input" placeholder="메시지 입력">
+            <button id="send-btn">전송</button>
+        </section>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, query, onSnapshot, orderBy, limit, serverTimestamp, doc, updateDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        // ⚠️ 본인의 Firebase 설정값으로 교체하세요!
+        const firebaseConfig = {
+          apiKey: "AIzaSyDIp1Hb0FT5vgK7QZWY89RmEmWbnj5KRM4",
+          authDomain: "pwa-cloud-chat.firebaseapp.com",
+          projectId: "pwa-cloud-chat",
+          storageBucket: "pwa-cloud-chat.firebasestorage.app",
+          messagingSenderId: "174298469835",
+          appId: "1:174298469835:web:4424f226ba696ecec3924e",
+          measurementId: "G-2Q59G6F9DH"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const provider = new GoogleAuthProvider();
+
+        let currentUser = null;
+        let currentRoomId = null;
+
+        // --- 인증 로직 ---
+        const loginBtn = document.getElementById('login-btn');
+        const logoutBtn = document.getElementById('logout-btn');
+        
+        loginBtn.onclick = () => signInWithPopup(auth, provider);
+        logoutBtn.onclick = () => signOut(auth);
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                currentUser = user;
+                document.getElementById('auth-section').classList.add('hidden');
+                document.getElementById('main-section').classList.remove('hidden');
+                document.getElementById('user-info').innerText = `${user.displayName}님 환영합니다!`;
+                loadRooms();
+            } else {
+                document.getElementById('auth-section').classList.remove('hidden');
+                document.getElementById('main-section').classList.add('hidden');
+            }
+        });
+
+        // --- 채팅방 관리 ---
+        const createRoomBtn = document.getElementById('create-room-btn');
+        createRoomBtn.onclick = async () => {
+            const name = document.getElementById('new-room-name').value;
+            if (!name) return;
+            await addDoc(collection(db, "rooms"), {
+                name: name,
+                owner: currentUser.uid,
+                members: [currentUser.uid],
+                createdAt: serverTimestamp()
+            });
+            document.getElementById('new-room-name').value = '';
+        };
+
+        function loadRooms() {
+            const q = query(collection(db, "rooms"), orderBy("createdAt", "desc"));
+            onSnapshot(q, (snapshot) => {
+                const list = document.getElementById('room-list');
+                list.innerHTML = '';
+                snapshot.forEach(docSnap => {
+                    const room = docSnap.data();
+                    const div = document.createElement('div');
+                    div.className = 'card';
+                    div.innerHTML = `<strong>${room.name}</strong> <button onclick="enterRoom('${docSnap.id}', '${room.name}')">입장</button>`;
+                    list.appendChild(div);
+                });
+            });
+        }
+
+        // --- 채팅방 입장 및 메시지 ---
+        window.enterRoom = (id, name) => {
+            currentRoomId = id;
+            document.getElementById('room-list-section').classList.add('hidden');
+            document.getElementById('chat-section').classList.remove('hidden');
+            document.getElementById('current-room-title').innerText = name;
+            loadMessages(id);
+        };
+
+        document.getElementById('back-btn').onclick = () => {
+            document.getElementById('room-list-section').classList.remove('hidden');
+            document.getElementById('chat-section').classList.add('hidden');
+        };
+
+        async function loadMessages(roomId) {
+            const q = query(collection(db, `rooms/${roomId}/messages`), orderBy("createdAt", "asc"), limit(20));
+            onSnapshot(q, (snapshot) => {
+                const msgDiv = document.getElementById('messages');
+                msgDiv.innerHTML = '';
+                snapshot.forEach(docSnap => {
+                    const msg = docSnap.data();
+                    msgDiv.innerHTML += `<div><b>${msg.userName}:</b> ${msg.text}</div>`;
+                });
+                msgDiv.scrollTop = msgDiv.scrollHeight;
+            });
+        }
+
+        document.getElementById('send-btn').onclick = async () => {
+            const input = document.getElementById('msg-input');
+            if (!input.value || !currentRoomId) return;
+            await addDoc(collection(db, `rooms/${currentRoomId}/messages`), {
+                text: input.value,
+                uid: currentUser.uid,
+                userName: currentUser.displayName,
+                createdAt: serverTimestamp()
+            });
+            input.value = '';
+        };
+
+        // --- 테마 스위치 ---
+        document.getElementById('theme-btn').onclick = () => {
+            document.body.classList.toggle('dark-mode');
+        };
+    </script>
+</body>
+</html>
