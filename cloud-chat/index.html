@@ -3,60 +3,107 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Minimal Chat App</title>
+    <title>PWA Cloud Chat - Local Cache</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        :root { --bg: #ffffff; --text: #000; --primary: #007bff; }
-        body.dark-mode { --bg: #1a1a1a; --text: #eee; }
-        body { background: var(--bg); color: var(--text); font-family: sans-serif; transition: 0.3s; }
-        .hidden { display: none; }
-        .card { border: 1px solid #ccc; padding: 15px; margin: 10px 0; border-radius: 8px; }
+        @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;700&display=swap');
+        body { font-family: 'Pretendard', sans-serif; transition: background 0.3s, color 0.3s; }
+        .dark-mode { background-color: #121212; color: #e5e7eb; }
+        .dark-mode .bg-white { background-color: #1e1e1e; border-color: #333; color: #eee; }
+        .dark-mode .bg-gray-50 { background-color: #252525; }
+        .chat-bubble { max-width: 75%; }
+        .custom-scrollbar::-webkit-scrollbar { width: 5px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        /* 시스템 메시지 스타일 */
+        .system-msg { text-align: center; margin: 20px 0; font-size: 12px; color: #888; clear: both; }
     </style>
 </head>
-<body>
+<body class="bg-gray-100 h-screen flex flex-col">
 
-    <div id="auth-section">
-        <h2>채팅 프로그램</h2>
-        <button id="login-btn">구글 로그인</button>
+    <div id="auth-section" class="flex-1 flex flex-col justify-center items-center">
+        <div class="bg-white p-10 rounded-3xl shadow-2xl text-center border">
+            <div class="w-20 h-20 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
+                <i class="fas fa-comments text-white text-4xl"></i>
+            </div>
+            <h1 class="text-3xl font-bold mb-2 text-gray-800">Cloud Chat</h1>
+            <p class="text-gray-500 mb-8">로컬 저장 기능이 포함된 대화</p>
+            <button id="login-btn" class="flex items-center justify-center w-full bg-white border border-gray-300 px-6 py-3 rounded-xl shadow-sm hover:bg-gray-50 transition-all font-semibold">
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" class="w-6 h-6 mr-3">
+                Google 계정으로 로그인
+            </button>
+        </div>
     </div>
 
-    <div id="main-section" class="hidden">
-        <header>
-            <span id="user-info"></span>
-            <button id="logout-btn">로그아웃</button>
-            <button id="theme-btn">테마 변경</button>
-        </header>
+    <div id="main-section" class="hidden flex h-screen overflow-hidden">
+        <aside class="w-80 bg-white border-r flex flex-col shadow-lg z-10">
+            <div class="p-5 border-b flex justify-between items-center bg-blue-600 text-white">
+                <div class="flex items-center gap-3">
+                    <img id="user-photo" class="w-10 h-10 rounded-full border-2 border-white/30 shadow-sm">
+                    <span id="user-name" class="font-bold tracking-tight">사용자</span>
+                </div>
+                <div class="flex gap-1">
+                    <button id="theme-btn" class="p-2 hover:bg-white/20 rounded-full transition"><i class="fas fa-moon"></i></button>
+                    <button id="logout-btn" class="p-2 hover:bg-white/20 rounded-full transition"><i class="fas fa-sign-out-alt"></i></button>
+                </div>
+            </div>
+            
+            <div class="p-4 space-y-3">
+                <input type="text" id="new-room-name" placeholder="방 이름" class="w-full p-3 border rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                <input type="password" id="new-room-pw" placeholder="비밀번호 (선택)" class="w-full p-3 border rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                <button id="create-room-btn" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold hover:bg-blue-700 transition shadow-md">
+                    <i class="fas fa-plus mr-2"></i>새 채팅방 개설
+                </button>
+            </div>
 
-        <section id="room-list-section">
-            <h3>채팅방 목록</h3>
-            <div id="room-list"></div>
-            <hr>
-            <input type="text" id="new-room-name" placeholder="방 이름 입력">
-            <button id="create-room-btn">방 만들기</button>
-        </section>
+            <div id="room-list" class="flex-1 overflow-y-auto custom-scrollbar p-2 space-y-1"></div>
+        </aside>
 
-        <section id="chat-section" class="hidden">
-            <button id="back-btn">← 목록으로</button>
-            <h3 id="current-room-title"></h3>
-            <div id="messages" style="height: 300px; overflow-y: scroll; border: 1px solid #ddd; padding: 10px;"></div>
-            <input type="text" id="msg-input" placeholder="메시지 입력">
-            <button id="send-btn">전송</button>
-        </section>
+        <main class="flex-1 flex flex-col relative bg-gray-50">
+            <div id="chat-welcome" class="flex-1 flex flex-col items-center justify-center text-gray-400">
+                <i class="far fa-paper-plane text-6xl mb-4 opacity-20"></i>
+                <p>대화에 참여해보세요. 이전 대화는 로컬에 저장됩니다.</p>
+            </div>
+
+            <div id="chat-section" class="hidden flex-1 flex flex-col h-full overflow-hidden">
+                <header class="p-4 bg-white border-b flex justify-between items-center shadow-sm">
+                    <div>
+                        <h2 id="current-room-title" class="font-bold text-xl text-gray-800">채팅방</h2>
+                        <p id="room-info" class="text-xs text-gray-400">대화 자동 저장 중</p>
+                    </div>
+                    <div class="flex gap-2">
+                        <button id="download-btn" title="대화 저장" class="p-2 text-gray-500 hover:bg-gray-100 rounded-lg"><i class="fas fa-download"></i></button>
+                        <button id="delete-room-btn" class="hidden p-2 text-red-500 hover:bg-red-50 rounded-lg"><i class="fas fa-trash-alt"></i></button>
+                    </div>
+                </header>
+
+                <div id="messages" class="flex-1 p-6 overflow-y-auto custom-scrollbar space-y-6 bg-[#f0f2f5] dark:bg-[#121212]"></div>
+
+                <div class="p-4 bg-white border-t">
+                    <div class="flex items-end gap-3 bg-gray-100 dark:bg-gray-800 rounded-2xl p-2 px-4">
+                        <textarea id="msg-input" rows="1" placeholder="메시지를 입력하세요..." class="flex-1 bg-transparent border-none focus:ring-0 resize-none py-3 text-sm min-h-[44px] max-h-40"></textarea>
+                        <button id="send-btn" class="bg-blue-600 text-white w-10 h-10 rounded-xl flex items-center justify-center hover:bg-blue-700 transition shadow-md mb-1">
+                            <i class="fas fa-arrow-up"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </main>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, query, onSnapshot, orderBy, limit, serverTimestamp, doc, updateDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, query, onSnapshot, orderBy, limit, serverTimestamp, doc, deleteDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        // ⚠️ 본인의 Firebase 설정값으로 교체하세요!
         const firebaseConfig = {
-          apiKey: "AIzaSyDIp1Hb0FT5vgK7QZWY89RmEmWbnj5KRM4",
-          authDomain: "pwa-cloud-chat.firebaseapp.com",
-          projectId: "pwa-cloud-chat",
-          storageBucket: "pwa-cloud-chat.firebasestorage.app",
-          messagingSenderId: "174298469835",
-          appId: "1:174298469835:web:4424f226ba696ecec3924e",
-          measurementId: "G-2Q59G6F9DH"
+            apiKey: "AIzaSyDIp1Hb0FT5vgK7QZWY89RmEmWbnj5KRM4",
+            authDomain: "pwa-cloud-chat.firebaseapp.com",
+            projectId: "pwa-cloud-chat",
+            storageBucket: "pwa-cloud-chat.firebasestorage.app",
+            messagingSenderId: "174298469835",
+            appId: "1:174298469835:web:4424f226ba696ecec3924e",
+            measurementId: "G-2Q59G6F9DH"
         };
 
         const app = initializeApp(firebaseConfig);
@@ -66,20 +113,16 @@
 
         let currentUser = null;
         let currentRoomId = null;
+        let unsubscribeMessages = null;
 
-        // --- 인증 로직 ---
-        const loginBtn = document.getElementById('login-btn');
-        const logoutBtn = document.getElementById('logout-btn');
-        
-        loginBtn.onclick = () => signInWithPopup(auth, provider);
-        logoutBtn.onclick = () => signOut(auth);
-
+        // --- 인증 ---
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 currentUser = user;
                 document.getElementById('auth-section').classList.add('hidden');
                 document.getElementById('main-section').classList.remove('hidden');
-                document.getElementById('user-info').innerText = `${user.displayName}님 환영합니다!`;
+                document.getElementById('user-name').innerText = user.displayName;
+                document.getElementById('user-photo').src = user.photoURL;
                 loadRooms();
             } else {
                 document.getElementById('auth-section').classList.remove('hidden');
@@ -87,78 +130,159 @@
             }
         });
 
-        // --- 채팅방 관리 ---
-        const createRoomBtn = document.getElementById('create-room-btn');
-        createRoomBtn.onclick = async () => {
-            const name = document.getElementById('new-room-name').value;
-            if (!name) return;
+        document.getElementById('login-btn').onclick = () => signInWithPopup(auth, provider);
+        document.getElementById('logout-btn').onclick = () => { if(confirm("로그아웃 하시겠습니까?")) signOut(auth); };
+
+        // --- 방 관리 ---
+        document.getElementById('create-room-btn').onclick = async () => {
+            const name = document.getElementById('new-room-name').value.trim();
+            const password = document.getElementById('new-room-pw').value;
+            if (!name) return alert("방 이름을 입력해주세요.");
             await addDoc(collection(db, "rooms"), {
-                name: name,
-                owner: currentUser.uid,
-                members: [currentUser.uid],
-                createdAt: serverTimestamp()
+                name, password, owner: currentUser.uid, ownerName: currentUser.displayName, createdAt: serverTimestamp()
             });
             document.getElementById('new-room-name').value = '';
+            document.getElementById('new-room-pw').value = '';
         };
 
         function loadRooms() {
-            const q = query(collection(db, "rooms"), orderBy("createdAt", "desc"));
-            onSnapshot(q, (snapshot) => {
+            onSnapshot(query(collection(db, "rooms"), orderBy("createdAt", "desc")), (snapshot) => {
                 const list = document.getElementById('room-list');
                 list.innerHTML = '';
                 snapshot.forEach(docSnap => {
                     const room = docSnap.data();
                     const div = document.createElement('div');
-                    div.className = 'card';
-                    div.innerHTML = `<strong>${room.name}</strong> <button onclick="enterRoom('${docSnap.id}', '${room.name}')">입장</button>`;
+                    div.className = `p-4 rounded-xl cursor-pointer transition flex items-center justify-between ${currentRoomId === docSnap.id ? 'bg-blue-50 text-blue-600 font-bold' : 'hover:bg-gray-100 text-gray-700'}`;
+                    div.innerHTML = `<div><div class="text-sm">${room.name} ${room.password ? '🔒' : ''}</div><div class="text-[10px] opacity-50">${room.ownerName}</div></div>`;
+                    div.onclick = () => enterRoom(docSnap.id, room);
                     list.appendChild(div);
                 });
             });
         }
 
-        // --- 채팅방 입장 및 메시지 ---
-        window.enterRoom = (id, name) => {
+        // --- 입장 및 메시지 로직 ---
+        async function enterRoom(id, room) {
+            if (room.password && room.owner !== currentUser.uid) {
+                const pass = prompt("비밀번호:");
+                if (pass !== room.password) return alert("틀렸습니다.");
+            }
+
             currentRoomId = id;
-            document.getElementById('room-list-section').classList.add('hidden');
+            document.getElementById('chat-welcome').classList.add('hidden');
             document.getElementById('chat-section').classList.remove('hidden');
-            document.getElementById('current-room-title').innerText = name;
+            document.getElementById('current-room-title').innerText = room.name;
+            
+            // 1. 로컬 저장소에서 데이터 먼저 로드 (서버 동기화 전 즉시 표시)
+            renderLocalMessages(id);
+
+            // 2. 입장 시스템 메시지 전송 (Firestore)
+            await addDoc(collection(db, `rooms/${id}/messages`), {
+                type: 'system',
+                text: `${currentUser.displayName}님이 입장하였습니다.`,
+                createdAt: serverTimestamp()
+            });
+
+            // 3. 실시간 리스너 연결
+            if (unsubscribeMessages) unsubscribeMessages();
             loadMessages(id);
-        };
+            
+            // 방장 권한 처리
+            const delBtn = document.getElementById('delete-room-btn');
+            room.owner === currentUser.uid ? delBtn.classList.remove('hidden') : delBtn.classList.add('hidden');
+            delBtn.onclick = async () => { if(confirm("방을 삭제할까요?")) { await deleteDoc(doc(db, "rooms", id)); location.reload(); } };
+        }
 
-        document.getElementById('back-btn').onclick = () => {
-            document.getElementById('room-list-section').classList.remove('hidden');
-            document.getElementById('chat-section').classList.add('hidden');
-        };
+        // 로컬 스토리지에 메시지 저장
+        function saveMessagesToLocal(roomId, messages) {
+            localStorage.setItem(`cache_${roomId}`, JSON.stringify(messages));
+        }
 
-        async function loadMessages(roomId) {
-            const q = query(collection(db, `rooms/${roomId}/messages`), orderBy("createdAt", "asc"), limit(20));
-            onSnapshot(q, (snapshot) => {
-                const msgDiv = document.getElementById('messages');
-                msgDiv.innerHTML = '';
+        // 로컬 스토리지에서 메시지 불러와서 그리기
+        function renderLocalMessages(roomId) {
+            const cached = localStorage.getItem(`cache_${roomId}`);
+            if (cached) {
+                renderUI(JSON.parse(cached));
+            }
+        }
+
+        function loadMessages(roomId) {
+            const q = query(collection(db, `rooms/${roomId}/messages`), orderBy("createdAt", "asc"), limit(50));
+            unsubscribeMessages = onSnapshot(q, (snapshot) => {
+                const msgs = [];
                 snapshot.forEach(docSnap => {
-                    const msg = docSnap.data();
-                    msgDiv.innerHTML += `<div><b>${msg.userName}:</b> ${msg.text}</div>`;
+                    const data = docSnap.data();
+                    // Firestore Timestamp 객체는 JSON 저장이 안되므로 변환 처리
+                    msgs.push({
+                        ...data,
+                        createdAt: data.createdAt ? data.createdAt.toDate().toISOString() : new Date().toISOString()
+                    });
                 });
-                msgDiv.scrollTop = msgDiv.scrollHeight;
+                renderUI(msgs);
+                saveMessagesToLocal(roomId, msgs); // 로컬에 최신 상태 저장
             });
         }
 
-        document.getElementById('send-btn').onclick = async () => {
+        function renderUI(msgs) {
+            const msgDiv = document.getElementById('messages');
+            msgDiv.innerHTML = '';
+            msgs.forEach(msg => {
+                if (msg.type === 'system') {
+                    msgDiv.innerHTML += `<div class="system-msg">${msg.text}</div>`;
+                } else {
+                    const isMe = msg.uid === currentUser.uid;
+                    const time = new Date(msg.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                    const html = `
+                        <div class="flex ${isMe ? 'justify-end' : 'justify-start'}">
+                            <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'} max-w-[80%]">
+                                ${!isMe ? `<span class="text-[11px] text-gray-500 mb-1 ml-1">${msg.userName}</span>` : ''}
+                                <div class="flex items-end gap-2">
+                                    ${!isMe ? `<img src="${msg.userPhoto}" class="w-8 h-8 rounded-full">` : ''}
+                                    <div class="chat-bubble px-4 py-2 rounded-2xl text-[14px] shadow-sm ${isMe ? 'bg-blue-600 text-white rounded-tr-none' : 'bg-white text-gray-800 rounded-tl-none border'}">
+                                        ${msg.text.replace(/\n/g, '<br>')}
+                                    </div>
+                                    <span class="text-[10px] text-gray-400 mb-1">${time}</span>
+                                </div>
+                            </div>
+                        </div>`;
+                    msgDiv.innerHTML += html;
+                }
+            });
+            msgDiv.scrollTop = msgDiv.scrollHeight;
+        }
+
+        const sendMessage = async () => {
             const input = document.getElementById('msg-input');
-            if (!input.value || !currentRoomId) return;
+            const text = input.value.trim();
+            if (!text || !currentRoomId) return;
             await addDoc(collection(db, `rooms/${currentRoomId}/messages`), {
-                text: input.value,
-                uid: currentUser.uid,
-                userName: currentUser.displayName,
-                createdAt: serverTimestamp()
+                text, uid: currentUser.uid, userName: currentUser.displayName, userPhoto: currentUser.photoURL, createdAt: serverTimestamp()
             });
             input.value = '';
+            input.style.height = 'auto';
         };
 
-        // --- 테마 스위치 ---
-        document.getElementById('theme-btn').onclick = () => {
-            document.body.classList.toggle('dark-mode');
+        document.getElementById('msg-input').onkeydown = (e) => { if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } };
+        document.getElementById('send-btn').onclick = sendMessage;
+
+        // 대화 저장 (TXT)
+        document.getElementById('download-btn').onclick = async () => {
+            const q = query(collection(db, `rooms/${currentRoomId}/messages`), orderBy("createdAt", "asc"));
+            const snapshot = await getDocs(q);
+            let content = `[${document.getElementById('current-room-title').innerText}] 대화 기록\n\n`;
+            snapshot.forEach(d => {
+                const m = d.data();
+                const time = m.createdAt ? m.createdAt.toDate().toLocaleString() : "";
+                content += m.type === 'system' ? `--- ${m.text} ---\n` : `[${time}] ${m.userName}: ${m.text}\n`;
+            });
+            const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = `chat_${new Date().getTime()}.txt`;
+            a.click();
         };
+
+        // 테마
+        document.getElementById('theme-btn').onclick = () => document.body.classList.toggle('dark-mode');
     </script>
 </body>
 </html>
