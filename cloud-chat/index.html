@@ -389,37 +389,42 @@
         const loadMessages = (rid) => {
             if (unsubscribeMessages) unsubscribeMessages();
         
-            // 1. 쿼리 최적화: 최신 50개만 가져오기 (성능과 정확도 확보)
+            // 1. 가장 안정적인 쿼리: 시간순 정렬 (데이터가 많아지면 나중에 limit 추가)
             const q = query(
                 collection(db, `rooms/${rid}/messages`), 
-                orderBy("createdAt", "asc"),
-                limitToLast(50) // 너무 많으면 느려지니 최근 50개만!
+                orderBy("createdAt", "asc")
             );
         
             unsubscribeMessages = onSnapshot(q, (snap) => {
                 const box = document.getElementById('messages');
                 
-                // [중요] 일단 화면을 비웁니다. (중복 출력 원천 차단)
+                // 초기 로드 시에만 비우기 혹은 매번 비우기 (중복 방지)
                 box.innerHTML = '';
                 lastDateStr = null;
+        
+                if (snap.empty) {
+                    box.innerHTML = '<div class="text-center text-gray-400 text-xs mt-10">이전 대화 내용이 없습니다.</div>';
+                    return;
+                }
         
                 snap.docs.forEach(docSnap => {
                     const m = docSnap.data();
                     
-                    // [중요] 서버 타임스탬프가 아직 생성되지 않은(전송 중인) 메시지는 
-                    // 서버 확정 전까지 출력을 대기시키거나 임시 처리합니다.
-                    if (!m.createdAt) return; 
+                    // [수정] createdAt이 없으면 '전송 중'인 상태입니다. 
+                    // 아예 return 하지 말고, renderMsg 내부에서 처리하게 둡니다.
+                    let dateObj;
+                    if (m.createdAt) {
+                        dateObj = m.createdAt.toDate();
+                        const dStr = `${dateObj.getFullYear()}-${String(dateObj.getMonth()+1).padStart(2,'0')}-${String(dateObj.getDate()).padStart(2,'0')}`;
         
-                    const dateObj = m.createdAt.toDate();
-                    const dStr = `${dateObj.getFullYear()}-${String(dateObj.getMonth()+1).padStart(2,'0')}-${String(dateObj.getDate()).padStart(2,'0')}`;
-        
-                    // 날짜 구분선
-                    if (lastDateStr !== dStr) {
-                        const divider = document.createElement('div');
-                        divider.className = 'date-divider';
-                        divider.innerText = dStr;
-                        box.appendChild(divider);
-                        lastDateStr = dStr;
+                        // 날짜 구분선
+                        if (lastDateStr !== dStr) {
+                            const divider = document.createElement('div');
+                            divider.className = 'date-divider';
+                            divider.innerText = dStr;
+                            box.appendChild(divider);
+                            lastDateStr = dStr;
+                        }
                     }
         
                     // 메시지 렌더링
@@ -428,23 +433,23 @@
         
                 // 스크롤 하단 이동
                 box.scrollTop = box.scrollHeight;
-        
-                // 알림 로직 분리 (필요 시 호출)
-                if (!isInitialLoad) {
-                    const lastMsg = snap.docs[snap.docs.length - 1]?.data();
-                    if (lastMsg && lastMsg.uid !== currentUser.uid) {
-                        // 여기서 알림 트리거 (중복 알림 방지 로직 포함 권장)
-                    }
-                }
                 isInitialLoad = false;
+            }, (error) => {
+                console.error("Snapshot error:", error);
+                // 만약 여기서 'The query requires an index' 에러가 뜨면 콘솔의 링크를 클릭해 색인을 만들어야 합니다.
             });
         };
 
         const renderMsg = (m, box) => {
             const isMe = m.uid === currentUser.uid;
-            const tStr = m.createdAt ? new Intl.DateTimeFormat('ko-KR', { hour: 'numeric', minute: 'numeric', hour12: true }).format(m.createdAt.toDate()) : "전송 중";
+            
+            // 시간이 없으면(전송 중) "..."으로 표시
+            const tStr = m.createdAt 
+                ? new Intl.DateTimeFormat('ko-KR', { hour: 'numeric', minute: 'numeric', hour12: true }).format(m.createdAt.toDate()) 
+                : "...";
+                
             const isEmoji = /^(\u00a9|\u00ae|[\u2000-\u3300]|\ud83c[\ud000-\udfff]|\ud83d[\ud000-\udfff]|\ud83e[\ud000-\udfff])$/.test(m.text?.trim());
-
+        
             box.insertAdjacentHTML('beforeend', `
                 <div class="flex ${isMe ? 'flex-row-reverse' : 'flex-row'} items-end gap-1 mb-4">
                     <img src="${m.userPhoto}" onclick="openProfile('${m.uid}', '${m.userName}', '${m.userPhoto}')" 
