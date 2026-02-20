@@ -367,52 +367,85 @@
         };
 
         // --- 3. 방 입장 & 암호 체크 (기존 유지) ---
+        // enterRoom 함수 수정
         const enterRoom = async (id, room) => {
             if (currentRoomId === id) return;
+            
+            // 이전 리스너 확실히 제거
+            if (unsubscribeMessages) {
+                unsubscribeMessages();
+                unsubscribeMessages = null;
+            }
+        
             const memberRef = doc(db, `rooms/${id}/members`, currentUser.uid);
             let memberSnap = await getDoc(memberRef);
             const isJoined = memberSnap.exists() || room.owner === currentUser.uid;
-
-            if (!isJoined && room.password) {
-                const pw = prompt("비밀번호를 입력하세요:");
-                if (pw !== room.password) return alert("비밀번호가 틀렸습니다.");
-                await setDoc(memberRef, { joinedAt: serverTimestamp() });
-            } else if (!isJoined) {
+        
+            if (!isJoined) {
+                if (room.password) {
+                    const pw = prompt("비밀번호를 입력하세요:");
+                    if (pw !== room.password) return alert("비밀번호가 틀렸습니다.");
+                }
                 await setDoc(memberRef, { joinedAt: serverTimestamp() });
             }
-
-            isInitialLoad = true; lastDateStr = null;
-            document.getElementById('messages').innerHTML = '';
-            localStorage.setItem(`lastRead_${id}_${currentUser.uid}`, Date.now());
-
+        
+            // 상태 초기화
+            isInitialLoad = true; 
+            lastDateStr = null;
             currentRoomId = id;
+            
+            const box = document.getElementById('messages');
+            box.innerHTML = ''; // 화면 비우기
+        
             document.body.classList.add('chat-open');
             document.getElementById('chat-welcome').classList.add('hidden');
             document.getElementById('chat-section').classList.remove('hidden');
             document.getElementById('current-room-title').innerText = room.name;
-            document.getElementById('leave-room-btn').innerText = room.owner === currentUser.uid ? "방 삭제" : "나가기";
-
-            if (unsubscribeMessages) unsubscribeMessages();
+        
+            localStorage.setItem(`lastRead_${id}_${currentUser.uid}`, Date.now());
             loadMessages(id);
         };
-
+        
+        // loadMessages 내부 수정
         const loadMessages = (rid) => {
             const q = query(collection(db, `rooms/${rid}/messages`), orderBy("createdAt", "asc"));
             unsubscribeMessages = onSnapshot(q, (snap) => {
                 const box = document.getElementById('messages');
+                
+                // 중요: 스냅샷이 비어있는 경우 대응
+                if (snap.empty) {
+                    isInitialLoad = false;
+                    return;
+                }
+        
                 snap.docChanges().forEach(change => {
                     if (change.type === "added") {
                         const m = change.doc.data();
-                        const dateObj = m.createdAt ? m.createdAt.toDate() : new Date();
+                        
+                        // 시간 데이터가 서버에서 확정될 때까지 기다림 (null 방지)
+                        if (!m.createdAt) return; 
+        
+                        const dateObj = m.createdAt.toDate();
                         const dStr = `${dateObj.getFullYear()}-${String(dateObj.getMonth()+1).padStart(2,'0')}-${String(dateObj.getDate()).padStart(2,'0')}`;
                         
                         if (lastDateStr !== dStr) {
-                            box.innerHTML += `<div class="date-divider">${dStr}</div>`;
+                            const divider = document.createElement('div');
+                            divider.className = 'date-divider';
+                            divider.innerText = dStr;
+                            box.appendChild(divider);
                             lastDateStr = dStr;
                         }
+                        
                         renderMsg(m, box);
-                        triggerNoti(m, rid);
-                        if (currentRoomId === rid) localStorage.setItem(`lastRead_${rid}_${currentUser.uid}`, Date.now());
+                        
+                        // 앱이 활성화된 상태(포그라운드)에서만 커스텀 토스트 알림을 띄움
+                        if (!isInitialLoad && !document.hidden) {
+                            triggerNoti(m, rid);
+                        }
+                        
+                        if (currentRoomId === rid) {
+                            localStorage.setItem(`lastRead_${rid}_${currentUser.uid}`, Date.now());
+                        }
                     }
                 });
                 isInitialLoad = false;
