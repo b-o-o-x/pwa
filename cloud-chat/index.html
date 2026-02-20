@@ -306,17 +306,24 @@
                 list.innerHTML = '';
                 snap.docs.forEach(async d => {
                     const room = d.data(), rid = d.id;
+                    
+                    // 참여 여부 확인 (방장이거나 멤버 컬렉션에 존재하거나)
                     const memberRef = doc(db, `rooms/${rid}/members`, currentUser.uid);
                     const memberSnap = await getDoc(memberRef);
                     const isJoined = memberSnap.exists() || room.owner === currentUser.uid;
-
+        
                     const div = document.createElement('div');
                     div.id = `room-${rid}`;
                     div.className = `p-4 m-1 rounded-2xl cursor-pointer flex items-center transition ${currentRoomId === rid ? 'bg-main text-white shadow-md' : 'bg-white border text-gray-700'}`;
                     
-                    let lockIcon = room.password ? `<i class="fas fa-${isJoined ? 'lock-open' : 'lock'} text-[10px] ml-2 opacity-40"></i>` : "";
+                    // 암호가 있고 아직 참여하지 않은 경우만 잠긴 자물쇠, 참여했다면 열린 자물쇠
+                    let lockIcon = "";
+                    if (room.password) {
+                        lockIcon = `<i class="fas fa-${isJoined ? 'lock-open' : 'lock'} text-[10px] ml-2 ${isJoined ? 'text-blue-400' : 'opacity-40'}"></i>`;
+                    }
+        
                     div.innerHTML = `
-                        <div class="flex items-center overflow-hidden">
+                        <div class="flex-1 flex items-center overflow-hidden">
                             <span class="text-sm font-bold truncate">${room.name}</span>
                             ${lockIcon}
                         </div>
@@ -324,35 +331,44 @@
                     
                     div.onclick = () => enterRoom(rid, room);
                     list.appendChild(div);
-
-                    // 참여 중인 방이면 실시간 메시지 감시 (알림용)
+        
+                    // 알림 리스너 등록 (이미 참여 중인 방만)
                     if (isJoined) setupGlobalListener(rid, room.name);
                 });
             });
         };
 
         // --- [신규] 모든 방의 메시지를 밖에서도 감시하는 리스너 ---
-        const setupGlobalListener = (rid, roomName) => {
-            if (activeUnreadListeners[rid]) return; // 이미 리스너가 돌고 있으면 패스
-
+       const setupGlobalListener = (rid, roomName) => {
+            if (activeUnreadListeners[rid]) return; 
+        
             // 최신 메시지 1개만 계속 감시
             const q = query(collection(db, `rooms/${rid}/messages`), orderBy("createdAt", "desc"), limit(1));
             
             activeUnreadListeners[rid] = onSnapshot(q, (snap) => {
+                // 초기 로딩 중이거나 데이터가 없으면 무시
                 if (snap.empty || isInitialLoad) return;
-
+        
                 snap.docChanges().forEach(change => {
                     if (change.type === "added") {
                         const m = change.doc.data();
                         
                         // 내가 보낸 게 아니고, 현재 이 방을 보고 있지 않을 때만 알림
-                        if (m.uid !== currentUser.uid && currentRoomId !== rid) {
+                        if (m.uid && m.uid !== currentUser.uid && currentRoomId !== rid) {
                             triggerNoti(m, rid, roomName);
-                            updateBadge(rid); // 뱃지 숫자 증가
+                            updateBadge(rid); 
                         }
                     }
                 });
             });
+        };
+        
+        const updateBadge = (rid) => {
+            const badge = document.getElementById(`badge-${rid}`);
+            if (!badge) return;
+            let count = parseInt(badge.innerText) || 0;
+            badge.innerText = count + 1;
+            badge.classList.remove('hidden');
         };
 
         const updateBadge = (rid) => {
@@ -366,9 +382,9 @@
         // --- 방 입장 로직 (비밀번호 검증 추가) ---
         const enterRoom = async (id, room) => {
             if (currentRoomId === id) return;
-        
+
             const memberRef = doc(db, `rooms/${id}/members`, currentUser.uid);
-            let memberSnap = await getDoc(memberRef);
+            const memberSnap = await getDoc(memberRef);
             const isOwner = room.owner === currentUser.uid;
         
             // 1. 암호 확인 및 멤버 등록
@@ -376,8 +392,11 @@
                 const inputPw = prompt("비밀번호를 입력하세요:");
                 if (inputPw === null) return;
                 if (inputPw !== room.password) return alert("비밀번호가 틀렸습니다.");
+                
+                // 비밀번호 맞으면 멤버 등록 (이 과정이 있어야 자물쇠가 열림)
+                await setDoc(memberRef, { joinedAt: serverTimestamp() });
             }
-        
+            
             // 2. 처음 입장하는 경우에만 입장 메시지 전송 및 입장 시간 기록
             if (!memberSnap.exists() && !isOwner) {
                 const now = serverTimestamp();
