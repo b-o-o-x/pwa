@@ -247,14 +247,24 @@
         };
 
         document.getElementById('voice-call-btn').onclick = async () => {
-            const targetUser = selectedUser; // 클로저 문제 방지
+            const targetUser = selectedUser; 
             closeProfile();
             
-            // 1. 오버레이를 먼저 띄워 사용자에게 진행 상황 알림
+            // 1. [핵심 추가] 상대방이 홈 화면에 있어도 알림이 뜨도록 메시지 전송
+            // 이 코드가 실행되면 상대방 폰에 "사용자님: 📞 보이스톡 연결 중..." 배너가 뜹니다.
+            await addDoc(collection(db, `rooms/${currentRoomId}/messages`), {
+                text: "📞 보이스톡 연결을 시도 중입니다...",
+                uid: currentUser.uid,
+                userName: currentUser.displayName,
+                userPhoto: currentUser.photoURL,
+                createdAt: serverTimestamp()
+            });
+        
+            // 2. 오버레이 표시
             showCallOverlay(targetUser.name, targetUser.photo, false);
         
             try {
-                // 2. iOS Safari를 위해 명시적으로 오디오 컨텍스트를 깨우거나 스트림을 먼저 요청
+                // 3. iOS Safari 호환성을 위한 마이크 스트림 요청
                 const stream = await navigator.mediaDevices.getUserMedia({ 
                     audio: {
                         echoCancellation: true,
@@ -265,7 +275,7 @@
                 
                 localStream = stream;
                 
-                // 3. PeerJS 통화 시도
+                // 4. PeerJS 통화 시도
                 if (peer && !peer.destroyed) {
                     const call = peer.call(targetUser.uid, localStream);
                     if (call) {
@@ -274,13 +284,12 @@
                         throw new Error("Call 객체 생성 실패");
                     }
                 } else {
-                    alert("통화 서버와 연결이 끊겼습니다. 새로고침 후 다시 시도해주세요.");
+                    alert("통화 서버와 연결이 끊겼습니다.");
                     endCallUI();
                 }
             } catch (err) {
                 console.error("마이크 접근 에러:", err);
-                // iOS에서 '허용'을 눌렀음에도 이쪽으로 온다면, 설정 문제일 수 있음
-                alert("마이크를 사용할 수 없습니다. 아이폰 [설정 > Safari > 마이크]가 '허용'인지 확인해주세요.");
+                alert("마이크를 사용할 수 없습니다. 아이폰 [설정 > Safari > 마이크] 권한을 확인해주세요.");
                 endCallUI();
             }
         };
