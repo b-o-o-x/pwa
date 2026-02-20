@@ -31,10 +31,8 @@
             body.chat-open #chat-container { transform: translateX(0); }
         }
 
-        /* 배지 숫자 스타일 */
-        .unread-badge { background: #ff4757; color: white; font-size: 11px; min-width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; border-radius: 10px; font-weight: bold; padding: 0 5px; margin-left: auto; box-shadow: 0 2px 5px rgba(255,71,87,0.3); }
-
-        /* 알림 토스트 */
+        .unread-badge { background: #ff4757; color: white; font-size: 11px; min-width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; border-radius: 10px; font-weight: bold; padding: 0 5px; margin-left: auto; }
+        
         #notification-toast {
             position: fixed; top: -100px; left: 50%; transform: translateX(-50%);
             width: 90%; max-width: 350px; background: rgba(0,0,0,0.85); color: white;
@@ -43,17 +41,14 @@
         }
         #notification-toast.show { top: 20px; }
 
-        /* 날짜 구분선 */
         .date-divider { display: flex; align-items: center; text-align: center; margin: 25px 0; color: #9ca3af; font-size: 11px; font-weight: 600; }
         .date-divider::before, .date-divider::after { content: ''; flex: 1; border-bottom: 1px solid #e5e7eb; }
         .date-divider:not(:empty)::before { margin-right: 1.5em; }
         .date-divider:not(:empty)::after { margin-left: 1.5em; }
 
-        /* 이모지 픽커 */
         #emoji-picker { display: none; position: absolute; bottom: 85px; left: 15px; background: white; border: 1px solid #ddd; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 280px; z-index: 100; padding: 10px; }
         .emoji-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; max-height: 200px; overflow-y: auto; }
-        .emoji-item { cursor: pointer; font-size: 1.5rem; text-align: center; padding: 5px; }
-
+        
         .input-area-wrapper { display: flex; align-items: flex-end; gap: 8px; width: 100%; background: white; padding: 10px 12px; box-sizing: border-box; }
         .text-input-container { flex: 1; min-width: 0; background: #f3f4f6; border-radius: 20px; display: flex; align-items: flex-end; padding: 0 12px; }
         #send-btn { width: 40px; height: 40px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; border-radius: 50%; background-color: var(--main-color); color: white; }
@@ -73,7 +68,7 @@
             <button id="login-btn" class="flex items-center gap-3 px-8 py-3 border rounded-full hover:bg-gray-50 transition shadow-sm mx-auto mb-4">
                 <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" class="w-6 h-6"> Google 로그인
             </button>
-            <p class="text-xs text-gray-400">아이폰은 '홈 화면에 추가' 후 알림을 허용해주세요.</p>
+            <p class="text-xs text-gray-400">아이폰은 설치 후 '알림 허용'이 필수입니다.</p>
         </div>
     </div>
 
@@ -89,6 +84,7 @@
             <div id="room-list" class="flex-1 overflow-y-auto p-2 space-y-1 bg-gray-50"></div>
             <div class="p-4 border-t bg-white">
                 <input type="text" id="new-room-name" placeholder="방 이름" class="w-full p-2.5 bg-gray-50 border rounded-xl text-sm outline-none mb-2">
+                <input type="password" id="new-room-pw" placeholder="비밀번호 (선택)" class="w-full p-2.5 bg-gray-50 border rounded-xl text-sm outline-none mb-2">
                 <button id="create-room-btn" class="w-full bg-main text-white py-2.5 rounded-xl font-bold text-sm shadow-md">+ 방 만들기</button>
             </div>
         </aside>
@@ -105,13 +101,13 @@
                         <button id="back-btn" class="md:hidden text-gray-500 w-8 h-8"><i class="fas fa-arrow-left"></i></button>
                         <h2 id="current-room-title" class="font-bold text-gray-800 truncate text-sm">채팅방</h2>
                     </div>
-                    <button id="cycle-theme-btn" class="text-[10px] font-bold px-2 py-1 border rounded-lg">THEME</button>
+                    <div class="flex items-center gap-2">
+                        <button id="cycle-theme-btn" class="text-[10px] font-bold px-2 py-1 border rounded-lg">THEME</button>
+                        <button id="leave-room-btn" class="text-[10px] font-bold px-2 py-1 border rounded-lg text-red-500 bg-red-50">나가기</button>
+                    </div>
                 </header>
-
                 <div id="messages" class="chat-area-bg"></div>
-
                 <div id="emoji-picker"><div class="emoji-grid" id="emoji-grid"></div></div>
-
                 <div class="border-t bg-white safe-area-bottom">
                     <div class="input-area-wrapper">
                         <button id="emoji-btn" class="p-2 text-gray-400"><i class="far fa-smile text-2xl"></i></button>
@@ -128,7 +124,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, query, onSnapshot, orderBy, serverTimestamp, doc, getDoc, setDoc, where, limit } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, query, onSnapshot, orderBy, serverTimestamp, doc, getDoc, setDoc, deleteDoc, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDIp1Hb0FT5vgK7QZWY89RmEmWbnj5KRM4",
@@ -147,49 +143,78 @@
         let currentUser = null, currentRoomId = null, unsubscribeMessages = null, isInitialLoad = true, lastDateStr = null;
         const unreadListeners = {};
 
-        // --- 1. 알림 및 권한 ---
+        // --- 서비스 워커 등록 (아이폰 알림 필수) ---
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js').then(() => console.log("SW Registered"));
+        }
+
+        // --- 1. 알림 로직 ---
         const triggerNoti = (msg, rid) => {
             if (msg.uid === currentUser.uid || isInitialLoad) return;
-            document.getElementById('noti-sound').play().catch(()=>{});
+            
+            // 소리 재생 (사용자 상호작용 후 활성화됨)
+            const sound = document.getElementById('noti-sound');
+            sound.currentTime = 0;
+            sound.play().catch(e => console.log("오디오 재생 실패:", e));
+
+            // 인앱 토스트
             const toast = document.getElementById('notification-toast');
             document.getElementById('noti-msg').innerText = `${msg.userName}: ${msg.text}`;
             toast.classList.add('show');
             setTimeout(() => toast.classList.remove('show'), 3000);
 
+            // 시스템 알림
             if (Notification.permission === "granted" && (currentRoomId !== rid || document.hidden)) {
-                new Notification(msg.userName, { body: msg.text, icon: msg.userPhoto });
+                navigator.serviceWorker.ready.then(registration => {
+                    registration.showNotification(msg.userName, {
+                        body: msg.text,
+                        icon: msg.userPhoto,
+                        badge: 'https://b-o-o-x.github.io/pwa/cloud-chat/cloud-chat-512.png'
+                    });
+                });
             }
         };
 
-        // --- 2. 방 리스트 & 실시간 배지 로직 ---
+        // --- 2. 방 목록 & 자물쇠 표시 복구 ---
         const loadRooms = () => {
             onSnapshot(query(collection(db, "rooms"), orderBy("createdAt", "desc")), (snap) => {
                 const list = document.getElementById('room-list');
                 list.innerHTML = '';
                 snap.docs.forEach(async d => {
                     const room = d.data(), rid = d.id;
+                    const memberRef = doc(db, `rooms/${rid}/members`, currentUser.uid);
+                    const memberSnap = await getDoc(memberRef);
+                    const isJoined = memberSnap.exists() || room.owner === currentUser.uid;
+
                     const div = document.createElement('div');
                     div.id = `room-${rid}`;
                     div.className = `p-4 m-1 rounded-2xl cursor-pointer flex items-center transition ${currentRoomId === rid ? 'bg-main text-white shadow-md' : 'bg-white border text-gray-700'}`;
-                    div.innerHTML = `<span class="text-sm font-bold truncate">${room.name}</span><span id="badge-${rid}" class="unread-badge hidden">0</span>`;
+                    
+                    // 자물쇠 아이콘 로직 복구
+                    let lockIcon = room.password ? `<i class="fas fa-${isJoined ? 'lock-open' : 'lock'} text-[10px] ml-2 opacity-40"></i>` : "";
+                    
+                    div.innerHTML = `
+                        <div class="flex items-center overflow-hidden">
+                            <span class="text-sm font-bold truncate">${room.name}</span>
+                            ${lockIcon}
+                        </div>
+                        <span id="badge-${rid}" class="unread-badge hidden">0</span>`;
+                    
                     div.onclick = () => enterRoom(rid, room);
                     list.appendChild(div);
-                    watchUnread(rid);
+                    if (isJoined) watchUnread(rid);
                 });
             });
         };
 
         const watchUnread = (rid) => {
             if (unreadListeners[rid]) unreadListeners[rid]();
-            // lastRead 이후의 모든 메시지를 감시
             const lastRead = parseInt(localStorage.getItem(`lastRead_${rid}_${currentUser.uid}`)) || 0;
             const q = query(collection(db, `rooms/${rid}/messages`), where("createdAt", ">", new Date(lastRead)));
             
             unreadListeners[rid] = onSnapshot(q, (snap) => {
                 const badge = document.getElementById(`badge-${rid}`);
                 if (!badge || currentRoomId === rid) return;
-                
-                // 내가 쓰지 않은 메시지만 필터링하여 개수 산정
                 const count = snap.docs.filter(doc => doc.data().uid !== currentUser.uid).length;
                 if (count > 0) {
                     badge.innerText = count > 99 ? '99+' : count;
@@ -200,22 +225,33 @@
             });
         };
 
-        // --- 3. 방 입장 및 메시지 읽음 처리 ---
+        // --- 3. 방 입장 & 암호 체크 복구 ---
         const enterRoom = async (id, room) => {
             if (currentRoomId === id) return;
+
+            // 암호 확인 로직 복구
+            const memberRef = doc(db, `rooms/${id}/members`, currentUser.uid);
+            let memberSnap = await getDoc(memberRef);
+            const isJoined = memberSnap.exists() || room.owner === currentUser.uid;
+
+            if (!isJoined && room.password) {
+                const pw = prompt("비밀번호를 입력하세요:");
+                if (pw !== room.password) return alert("비밀번호가 틀렸습니다.");
+                await setDoc(memberRef, { joinedAt: serverTimestamp() });
+            } else if (!isJoined) {
+                await setDoc(memberRef, { joinedAt: serverTimestamp() });
+            }
+
             isInitialLoad = true; lastDateStr = null;
             document.getElementById('messages').innerHTML = '';
-            
-            // 입장 즉시 읽음 처리 및 배지 제거
             localStorage.setItem(`lastRead_${id}_${currentUser.uid}`, Date.now());
-            const badge = document.getElementById(`badge-${id}`);
-            if (badge) badge.classList.add('hidden');
 
             currentRoomId = id;
             document.body.classList.add('chat-open');
             document.getElementById('chat-welcome').classList.add('hidden');
             document.getElementById('chat-section').classList.remove('hidden');
             document.getElementById('current-room-title').innerText = room.name;
+            document.getElementById('leave-room-btn').innerText = room.owner === currentUser.uid ? "방 삭제" : "나가기";
 
             if (unsubscribeMessages) unsubscribeMessages();
             loadMessages(id);
@@ -228,15 +264,16 @@
                 snap.docChanges().forEach(change => {
                     if (change.type === "added") {
                         const m = change.doc.data();
-                        const dStr = m.createdAt ? new Date(m.createdAt.toMillis()).toLocaleDateString('ko-KR', {year:'numeric', month:'2-digit', day:'2-digit'}).replace(/\. /g, '-').replace('.','') : "";
+                        // 연도 표시 복구 (2026-02-20)
+                        const dateObj = m.createdAt ? m.createdAt.toDate() : new Date();
+                        const dStr = `${dateObj.getFullYear()}-${String(dateObj.getMonth()+1).padStart(2,'0')}-${String(dateObj.getDate()).padStart(2,'0')}`;
                         
-                        if (dStr && lastDateStr !== dStr) {
+                        if (lastDateStr !== dStr) {
                             box.innerHTML += `<div class="date-divider">${dStr}</div>`;
                             lastDateStr = dStr;
                         }
                         renderMsg(m, box);
                         triggerNoti(m, rid);
-                        // 방 안에 있을 때 메시지가 오면 실시간으로 lastRead 갱신
                         if (currentRoomId === rid) localStorage.setItem(`lastRead_${rid}_${currentUser.uid}`, Date.now());
                     }
                 });
@@ -263,7 +300,7 @@
                 </div>`;
         };
 
-        // --- 4. 스와이프 뒤로가기 ---
+        // --- 4. 스와이프 & 로그인 ---
         let startX = 0;
         const chatCont = document.getElementById('chat-container');
         chatCont.addEventListener('touchstart', e => startX = e.touches[0].clientX, {passive:true});
@@ -271,11 +308,10 @@
             if (e.changedTouches[0].clientX - startX > 100 && document.body.classList.contains('chat-open')) {
                 document.body.classList.remove('chat-open');
                 currentRoomId = null;
-                loadRooms(); // 목록 복구 시 배지 상태 동기화
+                loadRooms();
             }
         }, {passive:true});
 
-        // --- 5. 로그인 & 기타 ---
         onAuthStateChanged(auth, u => {
             if (u) {
                 currentUser = u;
@@ -292,11 +328,14 @@
 
         document.getElementById('login-btn').onclick = () => signInWithPopup(auth, provider);
         document.getElementById('logout-btn').onclick = () => signOut(auth);
+        
         document.getElementById('create-room-btn').onclick = async () => {
             const n = document.getElementById('new-room-name').value.trim();
+            const p = document.getElementById('new-room-pw').value;
             if (!n) return;
-            await addDoc(collection(db, "rooms"), { name: n, owner: currentUser.uid, createdAt: serverTimestamp() });
+            await addDoc(collection(db, "rooms"), { name: n, password: p, owner: currentUser.uid, createdAt: serverTimestamp() });
             document.getElementById('new-room-name').value = '';
+            document.getElementById('new-room-pw').value = '';
         };
 
         const send = async () => {
@@ -311,11 +350,24 @@
         document.getElementById('send-btn').onclick = send;
         document.getElementById('msg-input').onkeydown = e => { if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } };
         document.getElementById('back-btn').onclick = () => { document.body.classList.remove('chat-open'); currentRoomId = null; loadRooms(); };
+        
+        document.getElementById('leave-room-btn').onclick = async () => {
+            if (!confirm("정말 나가시겠습니까?")) return;
+            const roomRef = doc(db, "rooms", currentRoomId);
+            const roomSnap = await getDoc(roomRef);
+            if (roomSnap.data().owner === currentUser.uid) {
+                await deleteDoc(roomRef);
+            } else {
+                await deleteDoc(doc(db, `rooms/${currentRoomId}/members`, currentUser.uid));
+            }
+            document.body.classList.remove('chat-open');
+            currentRoomId = null;
+        };
 
         const emojis = ["😀","😃","😄","😁","😆","😅","😂","🤣","😍","🥰","😘","😋","😛","😜","🤪","🤨","🧐","😎","🥳","😏","😒","😞","😔","😟","😕","🙁","😣","😖","😫","😩","🥺","😢","😭","😤","😠","😡","🤬","🤯","😳","🥵","🥶","😱","😨","😰","😥","😓","🤗","🤔","🤭","🤫","🤥","😶","😐","😑","😬","🙄","😯","😦","😧","😮","😲","🥱","😴","🤤","😪","😵","🤐","🥴","🤢","🤮","🤧","😷","🤒","🤕","🤑","🤠","😈","👿","👹","👺","🤡","💩","👻","💀","☠️","👽","👾","🤖","🎃"];
         const grid = document.getElementById('emoji-grid');
         emojis.forEach(e => {
-            const b = document.createElement('div'); b.className = 'emoji-item cursor-pointer'; b.innerText = e;
+            const b = document.createElement('div'); b.className = 'emoji-item cursor-pointer text-center py-1 text-2xl'; b.innerText = e;
             b.onclick = () => { document.getElementById('msg-input').value += e; };
             grid.appendChild(b);
         });
