@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>A♥️J Cloud Chat</title>
+    <title>A♥️J Cloud Chat Pro</title>
     <link rel="manifest" href="manifest.json">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -20,14 +20,10 @@
         .bg-main { background-color: var(--main-color); transition: background 0.3s; }
         .text-main { color: var(--main-color); }
         .chat-area-bg { background-color: var(--chat-bg); transition: background 0.3s; }
-
         .big-emoji { font-size: 3.5rem; line-height: 1.2; padding: 10px 0; }
         
-        /* 레이아웃 구조 */
         #main-section { display: flex; flex: 1; width: 100vw; height: 100%; position: relative; overflow: hidden; }
         #chat-container { display: flex; flex-direction: column; height: 100%; background: white; flex: 1; position: relative; }
-        
-        /* 메시지 영역 - flex-1과 flex-col-reverse를 안 쓰는 이유는 순차 렌더링 때문입니다. */
         #messages { flex: 1; overflow-y: auto; display: flex; flex-direction: column; padding: 1rem; }
 
         @media (max-width: 768px) {
@@ -40,13 +36,16 @@
         .emoji-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; max-height: 200px; overflow-y: auto; }
         .emoji-item { cursor: pointer; font-size: 1.5rem; text-align: center; border-radius: 8px; }
         .emoji-item:hover { background: #f0f0f0; }
+
+        /* 아이폰 버튼 찌그러짐 방지 및 고정 */
+        #send-btn { flex-shrink: 0 !important; -webkit-appearance: none; }
     </style>
 </head>
 <body class="theme-blue">
 
     <div id="auth-section" class="fixed inset-0 bg-white z-[1000] flex items-center justify-center p-6">
         <div class="text-center">
-            <h1 class="text-3xl font-bold mb-8 text-blue-600 tracking-tight">Cloud Chat Pro</h1>
+            <h1 class="text-3xl font-bold mb-8 text-blue-600 tracking-tight">A♥️J Cloud Chat Pro</h1>
             <button id="login-btn" class="flex items-center gap-3 px-8 py-3 border rounded-full hover:bg-gray-50 transition shadow-sm">
                 <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" class="w-6 h-6"> Google 로그인
             </button>
@@ -73,20 +72,18 @@
         <main id="chat-container">
             <div id="chat-welcome" class="flex-1 flex flex-col items-center justify-center text-gray-300">
                 <i class="fas fa-comment-dots text-7xl mb-4 opacity-10"></i>
-                <p>방을 선택하여 대화를 시작하세요</p>
+                <p>대화를 시작하세요</p>
             </div>
 
             <div id="chat-section" class="hidden flex-1 flex flex-col h-full overflow-hidden">
                 <header class="p-4 border-b flex items-center justify-between bg-white z-10">
-                    <div class="flex items-center gap-3">
-                        <button id="back-btn" class="md:hidden text-gray-500 w-8 h-8 rounded-full"><i class="fas fa-arrow-left"></i></button>
-                        <h2 id="current-room-title" class="font-bold text-gray-800">채팅방</h2>
+                    <div class="flex items-center gap-3 overflow-hidden">
+                        <button id="back-btn" class="md:hidden text-gray-500 w-8 h-8 flex-shrink-0"><i class="fas fa-arrow-left"></i></button>
+                        <h2 id="current-room-title" class="font-bold text-gray-800 truncate">채팅방</h2>
                     </div>
-                    <div class="flex items-center gap-3">
-                        <button id="cycle-theme-btn" class="text-xs font-semibold px-3 py-1.5 border rounded-full hover:bg-gray-50 transition">
-                            <span class="w-2 h-2 rounded-full bg-main inline-block mr-1"></span> Theme
-                        </button>
-                        <button id="download-btn" class="text-gray-400 hover:text-main p-1.5"><i class="fas fa-download"></i></button>
+                    <div class="flex items-center gap-2">
+                        <button id="cycle-theme-btn" class="text-[10px] font-bold px-2 py-1 border rounded-lg hover:bg-gray-50">THEME</button>
+                        <button id="room-action-btn" class="text-[10px] font-bold px-2 py-1 border rounded-lg bg-red-50 text-red-500">나가기</button>
                     </div>
                 </header>
 
@@ -98,11 +95,11 @@
 
                 <div class="p-3 bg-white border-t sm:p-4 mt-auto">
                     <div class="flex items-end gap-2 max-w-5xl mx-auto">
-                        <button id="emoji-btn" class="p-2 text-gray-400 hover:text-yellow-500"><i class="far fa-smile text-2xl"></i></button>
+                        <button id="emoji-btn" class="p-2 text-gray-400 hover:text-yellow-500 flex-shrink-0"><i class="far fa-smile text-2xl"></i></button>
                         <div class="flex-1 bg-gray-100 rounded-2xl flex items-end px-3">
                             <textarea id="msg-input" rows="1" placeholder="메시지 입력..." class="flex-1 bg-transparent border-none py-3 text-[15px] outline-none resize-none max-h-32"></textarea>
                         </div>
-                        <button id="send-btn" class="bg-main text-white w-11 h-11 rounded-full flex items-center justify-center shadow-lg active:scale-90 transition mb-0.5">
+                        <button id="send-btn" class="bg-main text-white w-11 h-11 rounded-full flex items-center justify-center shadow-lg active:scale-90 transition mb-0.5 flex-shrink-0">
                             <i class="fas fa-paper-plane"></i>
                         </button>
                     </div>
@@ -114,7 +111,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, query, onSnapshot, orderBy, limit, serverTimestamp, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, query, onSnapshot, orderBy, limit, serverTimestamp, doc, getDoc, setDoc, deleteDoc, where, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDIp1Hb0FT5vgK7QZWY89RmEmWbnj5KRM4",
@@ -134,40 +131,171 @@
         let currentRoomId = null;
         let unsubscribeMessages = null;
 
-        // --- 방 만들기 (복구 완료) ---
+        // --- 방 만들기 ---
         document.getElementById('create-room-btn').onclick = async () => {
             const name = document.getElementById('new-room-name').value.trim();
             const password = document.getElementById('new-room-pw').value;
             if (!name) return alert("방 이름을 입력해주세요!");
-            
             try {
                 await addDoc(collection(db, "rooms"), {
                     name, password, owner: currentUser.uid, createdAt: serverTimestamp()
                 });
                 document.getElementById('new-room-name').value = '';
                 document.getElementById('new-room-pw').value = '';
-                alert("방이 생성되었습니다!");
-            } catch (e) { alert("오류 발생: " + e.message); }
+            } catch (e) { alert("오류: " + e.message); }
         };
 
-        // --- 테마 순환 ---
+        // --- 방 나가기 / 삭제 로직 ---
+        document.getElementById('room-action-btn').onclick = async () => {
+            const roomRef = doc(db, "rooms", currentRoomId);
+            const roomSnap = await getDoc(roomRef);
+            const roomData = roomSnap.data();
+
+            if (roomData.owner === currentUser.uid) {
+                if (!confirm("방장입니다. 방을 삭제하면 모든 메시지가 사라집니다. 삭제할까요?")) return;
+                // 방 삭제 (메시지는 하위 컬렉션이라 별도 삭제 로직이 필요하나 편의상 방 문서만 우선 삭제)
+                await deleteDoc(roomRef);
+                alert("방이 삭제되었습니다.");
+            } else {
+                if (!confirm("이 방에서 나갈까요? (재입장 전까지 이전 메시지는 볼 수 없습니다)")) return;
+                await deleteDoc(doc(db, `rooms/${currentRoomId}/members`, currentUser.uid));
+                alert("방을 나갔습니다.");
+            }
+            document.body.classList.remove('chat-open');
+            currentRoomId = null;
+        };
+
+        // --- 시간 포맷팅 함수 ---
+        const formatTime = (date) => {
+            if (!date) return "";
+            return new Intl.DateTimeFormat('ko-KR', { hour: 'numeric', minute: 'numeric', hour12: true }).format(date);
+        };
+
+        // --- 입장 로직 ---
+        async function enterRoom(id, room) {
+            // 6. 화면 클리어 (잔상 제거)
+            document.getElementById('messages').innerHTML = '';
+            
+            const memberRef = doc(db, `rooms/${id}/members`, currentUser.uid);
+            let memberSnap = await getDoc(memberRef);
+
+            // 방장이 아니고 멤버 정보도 없으면 비번 확인 후 입장
+            if (!memberSnap.exists() && room.owner !== currentUser.uid) {
+                if (room.password && prompt("암호:") !== room.password) return alert("암호 오류");
+                const joinTime = serverTimestamp();
+                await setDoc(memberRef, { joinedAt: joinTime });
+                await addDoc(collection(db, `rooms/${id}/messages`), { type: 'system', text: `${currentUser.displayName}님이 입장했습니다.`, createdAt: joinTime });
+                memberSnap = await getDoc(memberRef); // 정보 갱신
+            }
+
+            currentRoomId = id;
+            const actionBtn = document.getElementById('room-action-btn');
+            actionBtn.innerText = (room.owner === currentUser.uid) ? "방 삭제" : "나가기";
+
+            document.body.className = localStorage.getItem(`theme_${id}`) || 'theme-blue';
+            document.body.classList.add('chat-open');
+            document.getElementById('chat-welcome').classList.add('hidden');
+            document.getElementById('chat-section').classList.remove('hidden');
+            document.getElementById('current-room-title').innerText = room.name;
+
+            if (unsubscribeMessages) unsubscribeMessages();
+            
+            // 3. 필터링 로직: 입장한 시간(joinedAt) 이후의 메시지만 불러옴 (방장은 전체)
+            const joinedAt = (room.owner === currentUser.uid) ? new Date(0) : memberSnap.data()?.joinedAt?.toDate() || new Date();
+            loadMessages(id, joinedAt);
+        }
+
+        function loadMessages(roomId, joinedAt) {
+            const q = query(
+                collection(db, `rooms/${roomId}/messages`), 
+                orderBy("createdAt", "asc"),
+                where("createdAt", ">=", joinedAt)
+            );
+
+            unsubscribeMessages = onSnapshot(q, (snapshot) => {
+                const msgDiv = document.getElementById('messages');
+                msgDiv.innerHTML = '';
+                snapshot.forEach(docSnap => {
+                    const msg = docSnap.data();
+                    const isMe = msg.uid === currentUser.uid;
+                    const timeStr = msg.createdAt ? formatTime(msg.createdAt.toDate()) : "";
+                    const emojiRegex = /^(\u00a9|\u00ae|[\u2000-\u3300]|\ud83c[\ud000-\udfff]|\ud83d[\ud000-\udfff]|\ud83e[\ud000-\udfff])$/;
+                    const isEmoji = emojiRegex.test(msg.text?.trim());
+
+                    if (msg.type === 'system') {
+                        msgDiv.innerHTML += `<div class="text-center text-[10px] text-gray-400 my-4 uppercase">${msg.text}</div>`;
+                    } else {
+                        msgDiv.innerHTML += `
+                            <div class="flex ${isMe ? 'flex-row-reverse' : 'flex-row'} items-end gap-1 mb-3">
+                                <img src="${msg.userPhoto}" class="w-8 h-8 rounded-full border mb-4">
+                                <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'} max-w-[70%]">
+                                    <span class="text-[9px] text-gray-400 px-1">${msg.userName}</span>
+                                    <div class="${isEmoji ? 'big-emoji' : `px-3 py-2 rounded-2xl text-[14px] shadow-sm ${isMe ? 'bg-main text-white rounded-tr-none' : 'bg-white text-gray-800 border rounded-tl-none'}`}">
+                                        ${msg.text.replace(/\n/g, '<br>')}
+                                    </div>
+                                </div>
+                                <span class="text-[8px] text-gray-400 pb-1 flex-shrink-0">${timeStr}</span>
+                            </div>`;
+                    }
+                });
+                msgDiv.scrollTop = msgDiv.scrollHeight;
+            }, (error) => {
+                // 방이 삭제되었을 때 처리
+                if (currentRoomId === roomId) {
+                    alert("방이 존재하지 않거나 삭제되었습니다.");
+                    document.body.classList.remove('chat-open');
+                }
+            });
+        }
+
+        // --- 나머지 기본 기능 (인증, 이모지, 테마 등) ---
+        onAuthStateChanged(auth, user => {
+            if (user) {
+                currentUser = user;
+                document.getElementById('auth-section').classList.add('hidden');
+                document.getElementById('main-section').classList.remove('hidden');
+                document.getElementById('user-name').innerText = user.displayName;
+                document.getElementById('user-photo').src = user.photoURL;
+                loadRooms();
+            } else {
+                document.getElementById('auth-section').classList.remove('hidden');
+                document.getElementById('main-section').classList.add('hidden');
+            }
+        });
+
+        async function loadRooms() {
+            onSnapshot(query(collection(db, "rooms"), orderBy("createdAt", "desc")), (snapshot) => {
+                const list = document.getElementById('room-list');
+                list.innerHTML = '';
+                snapshot.forEach(docSnap => {
+                    const room = docSnap.data();
+                    const div = document.createElement('div');
+                    div.className = `p-4 m-1 rounded-2xl cursor-pointer flex justify-between items-center transition ${currentRoomId === docSnap.id ? 'bg-main text-white shadow-md' : 'bg-white border text-gray-700 hover:bg-gray-50'}`;
+                    // 1. 비번 없으면 아이콘 숨김
+                    const lockIcon = room.password ? `<i class="fas fa-lock text-[10px] opacity-30"></i>` : "";
+                    div.innerHTML = `<div class="text-sm font-bold truncate">${room.name}</div>${lockIcon}`;
+                    div.onclick = () => enterRoom(docSnap.id, room);
+                    list.appendChild(div);
+                });
+            });
+        }
+
+        document.getElementById('login-btn').onclick = () => signInWithPopup(auth, provider);
+        document.getElementById('logout-btn').onclick = () => signOut(auth);
+        
         const themes = ['theme-blue', 'theme-green', 'theme-purple', 'theme-dark'];
         document.getElementById('cycle-theme-btn').onclick = () => {
             if (!currentRoomId) return;
             const currentTheme = Array.from(document.body.classList).find(c => c.startsWith('theme-')) || 'theme-blue';
-            let nextIndex = (themes.indexOf(currentTheme) + 1) % themes.length;
-            const nextTheme = themes[nextIndex];
-            document.body.className = nextTheme;
+            const nextTheme = themes[(themes.indexOf(currentTheme) + 1) % themes.length];
+            document.body.className = nextTheme + (document.body.classList.contains('chat-open') ? ' chat-open' : '');
             localStorage.setItem(`theme_${currentRoomId}`, nextTheme);
         };
 
-        // --- 이모지 피커 ---
-        const emojis = ["😀","😃","😄","😁","😆","😅","😂","🤣","☺️","😊","😇","🙂","🙃","😉","😌","😍","🥰","😘","😗","😙","😚","😋","😛","😝","😜","🤪","🤨","🧐","🤓","😎","🤩","🥳","😏","😒","😞","😔","😟","😕","🙁","☹️","😣","😖","😫","😩","🥺","😢","😭","😤","😠","😡","🤬","🤯","😳","🥵","🥶","😱","😨","😰","😥","😓","🤗","🤔","🤭","🤫","🤥","😶","😐","😑","😬","🙄","😯","😦","😧","😮","😲","🥱","😴","🤤","😪","😵","🤐","🥴","🤢","🤮","🤧","😷","🤒","🤕","🤑","🤠","😈","👿","👹","👺","🤡","💩","👻","💀","☠️","👽","👾","🤖","🎃","😺","😸","😹","😻","😼","😽","🙀","😿","😾"];
+        const emojis = ["😀","😃","😄","😁","😆","😅","😂","🤣","😍","🥰","😘","😋","😛","😜","🤪","🤨","🧐","😎","🥳","😏","😒","😞","😔","😟","😕","🙁","😣","😖","😫","😩","🥺","😢","😭","😤","😠","😡","🤬","🤯","😳","🥵","🥶","😱","😨","😰","😥","😓","🤗","🤔","🤭","🤫","🤥","😶","😐","😑","😬","🙄","😯","😦","😧","😮","😲","🥱","😴","🤤","😪","😵","🤐","🥴","🤢","🤮","🤧","😷","🤒","🤕","🤑","🤠","😈","👿","👹","👺","🤡","💩","👻","💀","☠️","👽","👾","🤖","🎃","😺","😸","😹","😻","😼","😽","🙀","😿","😾"];
         const grid = document.getElementById('emoji-grid');
         emojis.forEach(e => {
-            const btn = document.createElement('div');
-            btn.className = 'emoji-item p-1';
-            btn.innerText = e;
+            const btn = document.createElement('div'); btn.className = 'emoji-item p-1'; btn.innerText = e;
             btn.onclick = () => {
                 const input = document.getElementById('msg-input');
                 const start = input.selectionStart;
@@ -184,88 +312,6 @@
         };
         document.addEventListener('click', () => document.getElementById('emoji-picker').style.display = 'none');
 
-        // --- 인증 ---
-        onAuthStateChanged(auth, user => {
-            if (user) {
-                currentUser = user;
-                document.getElementById('auth-section').classList.add('hidden');
-                document.getElementById('main-section').classList.remove('hidden');
-                document.getElementById('user-name').innerText = user.displayName;
-                document.getElementById('user-photo').src = user.photoURL;
-                loadRooms();
-            } else {
-                document.getElementById('auth-section').classList.remove('hidden');
-                document.getElementById('main-section').classList.add('hidden');
-            }
-        });
-
-        document.getElementById('login-btn').onclick = () => signInWithPopup(auth, provider);
-        document.getElementById('logout-btn').onclick = () => signOut(auth);
-
-        async function loadRooms() {
-            onSnapshot(query(collection(db, "rooms"), orderBy("createdAt", "desc")), async (snapshot) => {
-                const list = document.getElementById('room-list');
-                list.innerHTML = '';
-                for (const docSnap of snapshot.docs) {
-                    const room = docSnap.data();
-                    const memberSnap = await getDoc(doc(db, `rooms/${docSnap.id}/members`, currentUser.uid));
-                    const isJoined = memberSnap.exists() || room.owner === currentUser.uid;
-                    const div = document.createElement('div');
-                    div.className = `p-4 m-1 rounded-2xl cursor-pointer flex justify-between items-center transition ${currentRoomId === docSnap.id ? 'bg-main text-white shadow-md' : 'bg-white border text-gray-700 hover:bg-gray-50'}`;
-                    div.innerHTML = `<div><div class="text-sm font-bold truncate">${room.name}</div></div><i class="fas ${isJoined ? 'fa-lock-open' : (room.password ? 'fa-lock opacity-30' : 'fa-hashtag opacity-10')} text-[10px]"></i>`;
-                    div.onclick = () => enterRoom(docSnap.id, room);
-                    list.appendChild(div);
-                }
-            });
-        }
-
-        async function enterRoom(id, room) {
-            const memberRef = doc(db, `rooms/${id}/members`, currentUser.uid);
-            const memberSnap = await getDoc(memberRef);
-            if (!memberSnap.exists() && room.owner !== currentUser.uid) {
-                if (room.password && prompt("암호:") !== room.password) return alert("암호 오류");
-                await setDoc(memberRef, { joinedAt: serverTimestamp() });
-                await addDoc(collection(db, `rooms/${id}/messages`), { type: 'system', text: `${currentUser.displayName}님이 입장하였습니다.`, createdAt: serverTimestamp() });
-            }
-            currentRoomId = id;
-            document.body.className = localStorage.getItem(`theme_${id}`) || 'theme-blue';
-            document.body.classList.add('chat-open');
-            document.getElementById('chat-welcome').classList.add('hidden');
-            document.getElementById('chat-section').classList.remove('hidden');
-            document.getElementById('current-room-title').innerText = room.name;
-            if (unsubscribeMessages) unsubscribeMessages();
-            loadMessages(id);
-        }
-
-        function loadMessages(roomId) {
-            const q = query(collection(db, `rooms/${roomId}/messages`), orderBy("createdAt", "asc"), limit(50));
-            unsubscribeMessages = onSnapshot(q, (snapshot) => {
-                const msgDiv = document.getElementById('messages');
-                msgDiv.innerHTML = '';
-                snapshot.forEach(docSnap => {
-                    const msg = docSnap.data();
-                    const isMe = msg.uid === currentUser.uid;
-                    const emojiRegex = /^(\u00a9|\u00ae|[\u2000-\u3300]|\ud83c[\ud000-\udfff]|\ud83d[\ud000-\udfff]|\ud83e[\ud000-\udfff])$/;
-                    const isEmoji = emojiRegex.test(msg.text?.trim());
-                    if (msg.type === 'system') {
-                        msgDiv.innerHTML += `<div class="text-center text-[10px] text-gray-400 my-4 uppercase tracking-tighter">${msg.text}</div>`;
-                    } else {
-                        msgDiv.innerHTML += `
-                            <div class="flex ${isMe ? 'flex-row-reverse' : 'flex-row'} items-start gap-2 mb-3">
-                                <img src="${msg.userPhoto}" class="w-8 h-8 rounded-full border shadow-sm mt-0.5">
-                                <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'} max-w-[85%]">
-                                    <span class="text-[9px] text-gray-400 mb-0.5 px-1">${msg.userName}</span>
-                                    <div class="${isEmoji ? 'big-emoji' : `px-4 py-2.5 rounded-2xl text-[14.5px] shadow-sm ${isMe ? 'bg-main text-white rounded-tr-none' : 'bg-white text-gray-800 border rounded-tl-none'}`}">
-                                        ${msg.text.replace(/\n/g, '<br>')}
-                                    </div>
-                                </div>
-                            </div>`;
-                    }
-                });
-                msgDiv.scrollTop = msgDiv.scrollHeight;
-            });
-        }
-
         const sendMessage = async () => {
             const input = document.getElementById('msg-input');
             const text = input.value.trim();
@@ -281,7 +327,6 @@
         document.getElementById('msg-input').onkeydown = e => { if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } };
         document.getElementById('back-btn').onclick = () => document.body.classList.remove('chat-open');
 
-        // 스와이프 (모바일 전용)
         let tsX = 0;
         document.addEventListener('touchstart', e => tsX = e.touches[0].clientX);
         document.addEventListener('touchend', e => {
