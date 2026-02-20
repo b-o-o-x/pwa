@@ -247,14 +247,40 @@
         };
 
         document.getElementById('voice-call-btn').onclick = async () => {
+            const targetUser = selectedUser; // 클로저 문제 방지
             closeProfile();
-            showCallOverlay(selectedUser.name, selectedUser.photo, false);
+            
+            // 1. 오버레이를 먼저 띄워 사용자에게 진행 상황 알림
+            showCallOverlay(targetUser.name, targetUser.photo, false);
+        
             try {
-                localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                const call = peer.call(selectedUser.uid, localStream);
-                handleCallStream(call);
+                // 2. iOS Safari를 위해 명시적으로 오디오 컨텍스트를 깨우거나 스트림을 먼저 요청
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    audio: {
+                        echoCancellation: true,
+                        noiseSuppression: true,
+                        autoGainControl: true
+                    } 
+                });
+                
+                localStream = stream;
+                
+                // 3. PeerJS 통화 시도
+                if (peer && !peer.destroyed) {
+                    const call = peer.call(targetUser.uid, localStream);
+                    if (call) {
+                        handleCallStream(call);
+                    } else {
+                        throw new Error("Call 객체 생성 실패");
+                    }
+                } else {
+                    alert("통화 서버와 연결이 끊겼습니다. 새로고침 후 다시 시도해주세요.");
+                    endCallUI();
+                }
             } catch (err) {
-                alert("마이크 접근 권한이 필요합니다.");
+                console.error("마이크 접근 에러:", err);
+                // iOS에서 '허용'을 눌렀음에도 이쪽으로 온다면, 설정 문제일 수 있음
+                alert("마이크를 사용할 수 없습니다. 아이폰 [설정 > Safari > 마이크]가 '허용'인지 확인해주세요.");
                 endCallUI();
             }
         };
