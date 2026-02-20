@@ -54,7 +54,6 @@
         .text-input-container { flex: 1; min-width: 0; background: #f3f4f6; border-radius: 20px; display: flex; align-items: flex-end; padding: 0 12px; }
         #send-btn { width: 40px; height: 40px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; border-radius: 50%; background-color: var(--main-color); color: white; }
 
-        /* --- 추가: 통화 및 프로필 팝업 스타일 --- */
         #profile-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 5000; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
         .modal-content { background: white; width: 280px; border-radius: 30px; padding: 30px; text-align: center; animation: modalPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
         @keyframes modalPop { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
@@ -161,7 +160,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, query, onSnapshot, orderBy, serverTimestamp, doc, getDoc, setDoc, deleteDoc, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, query, onSnapshot, orderBy, serverTimestamp, doc, getDoc, setDoc, deleteDoc, where, limit } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDIp1Hb0FT5vgK7QZWY89RmEmWbnj5KRM4",
@@ -180,17 +179,16 @@
         // 전역 변수
         let currentUser = null, currentRoomId = null, unsubscribeMessages = null, isInitialLoad = true, lastDateStr = null;
         let peer = null, localStream = null, currentCall = null, selectedUser = null;
-        const unreadListeners = {};
+        const activeUnreadListeners = {}; // [수정] 모든 방 실시간 리스너 관리
 
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('sw.js').then(() => console.log("SW Registered"));
         }
 
-        // --- [추가] 보이스 통화 엔진 (PeerJS) ---
+        // --- 보이스 통화 엔진 (PeerJS) ---
         const initPeer = (uid) => {
             peer = new Peer(uid);
             peer.on('call', async (incomingCall) => {
-                // 수신 알림음 대신 UI 표시
                 showCallOverlay("상대방", "", true); 
                 document.getElementById('answer-btn').onclick = async () => {
                     localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -233,7 +231,7 @@
             endCallUI();
         };
 
-        // --- [추가] 프로필 팝업 로직 ---
+        // --- 프로필 팝업 로직 ---
         window.openProfile = (uid, name, photo) => {
             if (uid === currentUser.uid) return; 
             selectedUser = { uid, name, photo };
@@ -250,8 +248,6 @@
             const targetUser = selectedUser; 
             closeProfile();
             
-            // 1. [핵심 추가] 상대방이 홈 화면에 있어도 알림이 뜨도록 메시지 전송
-            // 이 코드가 실행되면 상대방 폰에 "사용자님: 📞 보이스톡 연결 중..." 배너가 뜹니다.
             await addDoc(collection(db, `rooms/${currentRoomId}/messages`), {
                 text: "📞 보이스톡 연결을 시도 중입니다...",
                 uid: currentUser.uid,
@@ -260,64 +256,50 @@
                 createdAt: serverTimestamp()
             });
         
-            // 2. 오버레이 표시
             showCallOverlay(targetUser.name, targetUser.photo, false);
         
             try {
-                // 3. iOS Safari 호환성을 위한 마이크 스트림 요청
                 const stream = await navigator.mediaDevices.getUserMedia({ 
-                    audio: {
-                        echoCancellation: true,
-                        noiseSuppression: true,
-                        autoGainControl: true
-                    } 
+                    audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } 
                 });
-                
                 localStream = stream;
-                
-                // 4. PeerJS 통화 시도
                 if (peer && !peer.destroyed) {
                     const call = peer.call(targetUser.uid, localStream);
-                    if (call) {
-                        handleCallStream(call);
-                    } else {
-                        throw new Error("Call 객체 생성 실패");
-                    }
-                } else {
-                    alert("통화 서버와 연결이 끊겼습니다.");
-                    endCallUI();
+                    if (call) handleCallStream(call);
                 }
             } catch (err) {
-                console.error("마이크 접근 에러:", err);
-                alert("마이크를 사용할 수 없습니다. 아이폰 [설정 > Safari > 마이크] 권한을 확인해주세요.");
+                alert("마이크를 사용할 수 없습니다.");
                 endCallUI();
             }
         };
 
-        // --- 1. 알림 로직 (기존 유지) ---
-        const triggerNoti = (msg, rid) => {
-            if (msg.uid === currentUser.uid || isInitialLoad) return;
+        // --- [수정] 통합 알림 로직 (방 이름 포함) ---
+        const triggerNoti = (msg, rid, roomName) => {
+            // 내가 보낸 메시지거나, 현재 해당 방 안에 있다면 알림 안 띄움
+            if (msg.uid === currentUser.uid || currentRoomId === rid) return;
+
             const sound = document.getElementById('noti-sound');
             sound.currentTime = 0;
-            sound.play().catch(e => console.log("오디오 재생 실패:", e));
+            sound.play().catch(() => {});
 
             const toast = document.getElementById('notification-toast');
-            document.getElementById('noti-msg').innerText = `${msg.userName}: ${msg.text}`;
+            // 토스트에 방 이름과 보낸 사람 표시
+            document.getElementById('noti-msg').innerText = `[${roomName}] ${msg.userName}: ${msg.text}`;
             toast.classList.add('show');
             setTimeout(() => toast.classList.remove('show'), 3000);
 
-            if (Notification.permission === "granted" && (currentRoomId !== rid || document.hidden)) {
-                navigator.serviceWorker.ready.then(registration => {
-                    registration.showNotification(msg.userName, {
+            if (Notification.permission === "granted" && document.hidden) {
+                navigator.serviceWorker.ready.then(reg => {
+                    reg.showNotification(`[${roomName}] ${msg.userName}`, {
                         body: msg.text,
                         icon: msg.userPhoto,
-                        badge: 'https://b-o-o-x.github.io/pwa/cloud-chat/cloud-chat-512.png'
+                        tag: rid // 같은 방 알림은 하나로 그룹화
                     });
                 });
             }
         };
 
-        // --- 2. 방 목록 & 자물쇠 표시 (기존 유지) ---
+        // --- [수정] 방 목록 로드 및 전체 실시간 감시 ---
         const loadRooms = () => {
             onSnapshot(query(collection(db, "rooms"), orderBy("createdAt", "desc")), (snap) => {
                 const list = document.getElementById('room-list');
@@ -333,7 +315,6 @@
                     div.className = `p-4 m-1 rounded-2xl cursor-pointer flex items-center transition ${currentRoomId === rid ? 'bg-main text-white shadow-md' : 'bg-white border text-gray-700'}`;
                     
                     let lockIcon = room.password ? `<i class="fas fa-${isJoined ? 'lock-open' : 'lock'} text-[10px] ml-2 opacity-40"></i>` : "";
-                    
                     div.innerHTML = `
                         <div class="flex items-center overflow-hidden">
                             <span class="text-sm font-bold truncate">${room.name}</span>
@@ -343,53 +324,69 @@
                     
                     div.onclick = () => enterRoom(rid, room);
                     list.appendChild(div);
-                    if (isJoined) watchUnread(rid);
+
+                    // 참여 중인 방이면 실시간 메시지 감시 (알림용)
+                    if (isJoined) setupGlobalListener(rid, room.name);
                 });
             });
         };
 
-        const watchUnread = (rid) => {
-            if (unreadListeners[rid]) unreadListeners[rid]();
-            const lastRead = parseInt(localStorage.getItem(`lastRead_${rid}_${currentUser.uid}`)) || 0;
-            const q = query(collection(db, `rooms/${rid}/messages`), where("createdAt", ">", new Date(lastRead)));
+        // --- [신규] 모든 방의 메시지를 밖에서도 감시하는 리스너 ---
+        const setupGlobalListener = (rid, roomName) => {
+            if (activeUnreadListeners[rid]) return; // 이미 리스너가 돌고 있으면 패스
+
+            // 최신 메시지 1개만 계속 감시
+            const q = query(collection(db, `rooms/${rid}/messages`), orderBy("createdAt", "desc"), limit(1));
             
-            unreadListeners[rid] = onSnapshot(q, (snap) => {
-                const badge = document.getElementById(`badge-${rid}`);
-                if (!badge || currentRoomId === rid) return;
-                const count = snap.docs.filter(doc => doc.data().uid !== currentUser.uid).length;
-                if (count > 0) {
-                    badge.innerText = count > 99 ? '99+' : count;
-                    badge.classList.remove('hidden');
-                } else {
-                    badge.classList.add('hidden');
-                }
+            activeUnreadListeners[rid] = onSnapshot(q, (snap) => {
+                if (snap.empty || isInitialLoad) return;
+
+                snap.docChanges().forEach(change => {
+                    if (change.type === "added") {
+                        const m = change.doc.data();
+                        
+                        // 내가 보낸 게 아니고, 현재 이 방을 보고 있지 않을 때만 알림
+                        if (m.uid !== currentUser.uid && currentRoomId !== rid) {
+                            triggerNoti(m, rid, roomName);
+                            updateBadge(rid); // 뱃지 숫자 증가
+                        }
+                    }
+                });
             });
         };
 
-        // --- 3. 방 입장 & 암호 체크 (기존 유지) ---
+        const updateBadge = (rid) => {
+            const badge = document.getElementById(`badge-${rid}`);
+            if (!badge) return;
+            let count = parseInt(badge.innerText) || 0;
+            badge.innerText = count + 1;
+            badge.classList.remove('hidden');
+        };
+
+        // --- 방 입장 로직 (버그 수정됨) ---
         const enterRoom = async (id, room) => {
             if (currentRoomId === id) return;
             
-            // 1. 초기화
             isInitialLoad = true; 
-            lastDateStr = null; // 날짜 구분선 초기화 중요!
+            lastDateStr = null; 
             currentRoomId = id;
             
             const box = document.getElementById('messages');
-            box.innerHTML = ''; // 화면 깨끗이 비우기
-        
-            // 2. UI 전환
+            box.innerHTML = ''; 
+
             document.body.classList.add('chat-open');
             document.getElementById('chat-welcome').classList.add('hidden');
             document.getElementById('chat-section').classList.remove('hidden');
             document.getElementById('current-room-title').innerText = room.name;
+
+            // 들어가면 해당 방 뱃지 숨김
+            const badge = document.getElementById(`badge-${id}`);
+            if(badge) { badge.innerText = "0"; badge.classList.add('hidden'); }
         
-            // 3. 메시지 로드
             loadMessages(id);
         };
         
         const loadMessages = (rid) => {
-            // 이전 리스너가 있다면 제거
             if (unsubscribeMessages) unsubscribeMessages();
         
             const q = query(collection(db, `rooms/${rid}/messages`), orderBy("createdAt", "asc"));
@@ -400,11 +397,10 @@
                     if (change.type === "added") {
                         const m = change.doc.data();
                         
-                        // [수정 포인트] 서버 시간이 아직 안 찍혔다면 브라우저 현재 시간을 임시로 사용
+                        // createdAt이 null일 때(서버 전송 중)도 현재 시간으로 즉시 표시하여 내 메시지 실종 방지
                         const dateObj = m.createdAt ? m.createdAt.toDate() : new Date();
                         const dStr = `${dateObj.getFullYear()}-${String(dateObj.getMonth()+1).padStart(2,'0')}-${String(dateObj.getDate()).padStart(2,'0')}`;
                         
-                        // 날짜 구분선 추가 로직
                         if (lastDateStr !== dStr) {
                             const divider = document.createElement('div');
                             divider.className = 'date-divider';
@@ -413,14 +409,9 @@
                             lastDateStr = dStr;
                         }
                         
-                        // 메시지 렌더링
                         renderMsg(m, box);
                         
-                        // 알림 처리: 내가 보낸 게 아닐 때만
-                        if (!isInitialLoad && m.uid !== currentUser.uid) {
-                            triggerNoti(m, rid);
-                        }
-                        
+                        // 마지막 읽은 시간 업데이트
                         if (currentRoomId === rid) {
                             localStorage.setItem(`lastRead_${rid}_${currentUser.uid}`, Date.now());
                         }
@@ -431,13 +422,12 @@
             });
         };
 
-        // --- 메시지 렌더링 (프사 클릭 이벤트 포함) ---
         const renderMsg = (m, box) => {
             const isMe = m.uid === currentUser.uid;
-            const tStr = m.createdAt ? new Intl.DateTimeFormat('ko-KR', { hour: 'numeric', minute: 'numeric', hour12: true }).format(m.createdAt.toDate()) : "";
+            const tStr = m.createdAt ? new Intl.DateTimeFormat('ko-KR', { hour: 'numeric', minute: 'numeric', hour12: true }).format(m.createdAt.toDate()) : "전송 중";
             const isEmoji = /^(\u00a9|\u00ae|[\u2000-\u3300]|\ud83c[\ud000-\udfff]|\ud83d[\ud000-\udfff]|\ud83e[\ud000-\udfff])$/.test(m.text?.trim());
 
-            box.innerHTML += `
+            box.insertAdjacentHTML('beforeend', `
                 <div class="flex ${isMe ? 'flex-row-reverse' : 'flex-row'} items-end gap-1 mb-4">
                     <img src="${m.userPhoto}" onclick="openProfile('${m.uid}', '${m.userName}', '${m.userPhoto}')" 
                          class="w-8 h-8 rounded-full border mb-4 flex-shrink-0 cursor-pointer active:scale-90 transition shadow-sm">
@@ -448,10 +438,10 @@
                         </div>
                     </div>
                     <span class="text-[8px] text-gray-400 pb-1 flex-shrink-0">${tStr}</span>
-                </div>`;
+                </div>`);
         };
 
-        // --- 스와이프 & 로그인 (기존 유지) ---
+        // --- 기타 UI 제어 로직 ---
         let startX = 0;
         const chatCont = document.getElementById('chat-container');
         chatCont.addEventListener('touchstart', e => startX = e.touches[0].clientX, {passive:true});
@@ -459,7 +449,6 @@
             if (e.changedTouches[0].clientX - startX > 100 && document.body.classList.contains('chat-open')) {
                 document.body.classList.remove('chat-open');
                 currentRoomId = null;
-                loadRooms();
             }
         }, {passive:true});
 
@@ -470,8 +459,7 @@
                 document.getElementById('main-section').classList.remove('hidden');
                 document.getElementById('user-name').innerText = u.displayName;
                 document.getElementById('user-photo').src = u.photoURL;
-                
-                initPeer(u.uid); // 보이스 통화 엔진 가동
+                initPeer(u.uid);
                 checkNotiPermission();
                 loadRooms();
             } else {
@@ -502,7 +490,7 @@
 
         document.getElementById('send-btn').onclick = send;
         document.getElementById('msg-input').onkeydown = e => { if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } };
-        document.getElementById('back-btn').onclick = () => { document.body.classList.remove('chat-open'); currentRoomId = null; loadRooms(); };
+        document.getElementById('back-btn').onclick = () => { document.body.classList.remove('chat-open'); currentRoomId = null; };
         
         document.getElementById('leave-room-btn').onclick = async () => {
             if (!confirm("정말 나가시겠습니까?")) return;
@@ -517,8 +505,7 @@
             currentRoomId = null;
         };
 
-        // 이모지 & 테마 (기존 유지)
-        const emojis = ["😀","😃","😄","😁","😆","😅","😂","🤣","😍","🥰","😘","😋","😛","😜","🤪","🤨","🧐","😎","🥳","😏","😒","😞","😔","😟","😕","🙁","😣","😖","😫","😩","🥺","😢","😭","😤","😠","😡","🤬","🤯","😳","🥵","🥶","😱","😨","😰","😥","😓","🤗","🤔","🤭","🤫","🤥","😶","😐","😑","😬","🙄","😯","😦","😧","😮","😲","🥱","😴","🤤","😪","😵","🤐","🥴","🤢","🤮","🤧","😷","🤒","🤕","🤑","🤠","😈","👿","👹","👺","🤡","💩","👻","💀","☠️","👽","👾","🤖","🎃"];
+        const emojis = ["😀","😃","😄","😁","😆","😅","😂","🤣","😍","🥰","😘","😋","😛","😜","🤪","🤨","🧐","😎","🥳","😏","😒","😞","😔","😟","😕","🙁","😣","😖","😫","😩","🥺","😢","😭","😤","😠","😡","🤬","🤯","😳","🥵","🥶","😱","😨","😰","😥","😓","🤗","🤔","🤭","🤫","🤥","😶","😐","😑","😬","🙄","😯","😦","😧","😮","😲","🥱","😴","🤤","😪","😵","🤐","🥴","🤢","🤮","🤧","😷","🤒","🤕","🤑","🤠","😈","👿","👹","👺","🤡","💩","Ghosts","💀","☠️","👽","👾","🤖","🎃"];
         const grid = document.getElementById('emoji-grid');
         emojis.forEach(e => {
             const b = document.createElement('div'); b.className = 'emoji-item cursor-pointer text-center py-1 text-2xl'; b.innerText = e;
@@ -542,7 +529,6 @@
         document.getElementById('enable-noti-btn').onclick = async () => {
             const permission = await Notification.requestPermission();
             if (permission === "granted") {
-                alert("알림이 활성화되었습니다!");
                 checkNotiPermission();
                 navigator.serviceWorker.ready.then(reg => {
                     reg.showNotification("A♥️J Cloud Chat", { body: "알림 설정 완료!", icon: "https://b-o-o-x.github.io/pwa/cloud-chat/cloud-chat-512.png" });
