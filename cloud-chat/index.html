@@ -340,27 +340,33 @@
             let memberSnap = await getDoc(memberRef);
             const isOwner = room.owner === currentUser.uid;
         
+            // 비밀번호 확인 및 멤버 등록 로직
             if (room.password && !memberSnap.exists() && !isOwner) {
                 const inputPw = prompt("비밀번호 입력:");
                 if (inputPw === null) return;
-                if (inputPw !== room.password) return alert("비번 틀림");
+                if (inputPw !== room.password) return alert("비밀번호가 틀렸습니다.");
                 await setDoc(memberRef, { joinedAt: serverTimestamp() });
+                
+                // 자물쇠 아이콘 즉시 변경
                 const icon = document.querySelector(`#room-${id} .lock-status-icon`);
                 if(icon) icon.className = "fas fa-lock-open text-[10px] ml-2 text-blue-400 lock-status-icon";
-                setupGlobalListener(id, room.name); // [수정] 입장 즉시 리스너 등록
+                setupGlobalListener(id, room.name); 
             }
             
+            // 신규 입장 시 시스템 메시지 전송
             if (!memberSnap.exists() && !isOwner) {
                 const now = serverTimestamp();
                 await setDoc(memberRef, { joinedAt: now });
                 await addDoc(collection(db, `rooms/${id}/messages`), {
                     text: `📢 ${currentUser.displayName}님이 입장하셨습니다.`, type: "system", createdAt: now
                 });
-                setupGlobalListener(id, room.name); // [수정] 신규 입장 시 리스너 등록
+                setupGlobalListener(id, room.name);
             }
         
             memberSnap = await getDoc(memberRef);
             const joinTime = isOwner ? room.createdAt : memberSnap.data().joinedAt;
+            
+            // 뱃지 초기화
             const badge = document.getElementById('badge-' + id);
             if (badge) { badge.innerText = "0"; badge.classList.add('hidden'); }
         
@@ -369,15 +375,40 @@
             document.body.classList.add('chat-open');
             document.getElementById('chat-section').classList.remove('hidden');
             document.getElementById('chat-welcome').classList.add('hidden');
-            document.getElementById('current-room-title').innerText = room.name;
+            
+            // --- 방 제목 설정 및 방장 전용 이름 수정 기능 ---
+            const titleEl = document.getElementById('current-room-title');
+            titleEl.innerText = room.name;
 
-            // [추가] 방별 테마 적용
+            if (isOwner) {
+                titleEl.classList.add('cursor-pointer', 'hover:opacity-70');
+                titleEl.title = "클릭하여 방 이름 변경";
+                titleEl.onclick = async () => {
+                    const newName = prompt("변경할 채팅방 이름을 입력하세요:", titleEl.innerText);
+                    if (newName && newName.trim() !== "" && newName !== titleEl.innerText) {
+                        try {
+                            // Firestore의 방 이름 업데이트
+                            await setDoc(doc(db, "rooms", id), { name: newName.trim() }, { merge: true });
+                            titleEl.innerText = newName.trim(); 
+                        } catch (e) {
+                            alert("이름 변경에 실패했습니다.");
+                        }
+                    }
+                };
+            } else {
+                titleEl.classList.remove('cursor-pointer', 'hover:opacity-70');
+                titleEl.onclick = null;
+            }
+
+            // 방별 테마 적용
             const savedTheme = roomThemes[id] || 'theme-blue';
             applyTheme(savedTheme);
         
+            // 버튼 텍스트 설정 (방 제거 vs 나가기)
             const leaveBtn = document.getElementById('leave-room-btn');
             leaveBtn.innerText = isOwner ? "방 제거" : "나가기";
             leaveBtn.className = isOwner ? "text-[10px] font-bold px-2 py-1 border rounded-lg text-white bg-red-500" : "text-[10px] font-bold px-2 py-1 border rounded-lg text-red-500 bg-red-50";
+            
             loadMessages(id, joinTime);
         };
         
@@ -420,14 +451,22 @@
                 </div>`);
         };
 
-        const exitChatUI = (ridToLock = null) => { // [수정] 나가는 방 잠금 처리 추가
+        const exitChatUI = (ridToLock = null) => {
+            // 퇴장 시 해당 방 자물쇠 다시 잠금 처리
             if (ridToLock) {
                 const icon = document.querySelector(`#room-${ridToLock} .lock-status-icon`);
                 if(icon) icon.className = "fas fa-lock text-[10px] ml-2 opacity-40 lock-status-icon";
             }
+            
             document.body.classList.remove('chat-open');
             document.getElementById('chat-section').classList.add('hidden');
             document.getElementById('chat-welcome').classList.remove('hidden');
+            
+            // 방장 전용 클릭 이벤트 초기화
+            const titleEl = document.getElementById('current-room-title');
+            titleEl.onclick = null;
+            titleEl.classList.remove('cursor-pointer', 'hover:opacity-70');
+            
             currentRoomId = null;
             if (unsubscribeMessages) unsubscribeMessages();
         };
