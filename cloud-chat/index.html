@@ -322,7 +322,10 @@
                 document.getElementById('main-section').classList.remove('hidden');
                 document.getElementById('user-name').innerText = u.displayName;
                 document.getElementById('user-photo').src = u.photoURL;
-                if ("Notification" in window) Notification.requestPermission();
+                if ("Notification" in window) {
+                    //Notification.requestPermission(); // 로그인후 바로 권한 허용창 띄우기
+                    checkNotiPermission();
+                }
                 loadRooms();
             } else {
                 document.getElementById('auth-section').classList.remove('hidden');
@@ -380,6 +383,35 @@
             const themes = ['theme-blue', 'theme-green', 'theme-purple', 'theme-dark'];
             const cur = Array.from(document.body.classList).find(c => c.startsWith('theme-')) || 'theme-blue';
             document.body.className = themes[(themes.indexOf(cur) + 1) % themes.length] + (document.body.classList.contains('chat-open') ? ' chat-open' : '');
+        };
+
+        // 권한 상태에 따라 버튼 보이기/숨기기 로직
+        const checkNotiPermission = () => {
+            const btn = document.getElementById('enable-noti-btn');
+            if (Notification.permission !== "granted") {
+                btn.classList.remove('hidden');
+            } else {
+                btn.classList.add('hidden');
+            }
+        };
+        
+        // 알림 버튼 클릭 이벤트 (사용자 제스처 필수!)
+        document.getElementById('enable-noti-btn').onclick = async () => {
+            const permission = await Notification.requestPermission();
+            if (permission === "granted") {
+                alert("알림이 활성화되었습니다! 이제 설정-알림에 나타날 거예요.");
+                checkNotiPermission();
+                
+                // 아이폰 알림 배너를 위한 서비스 워커 연동 확인
+                navigator.serviceWorker.ready.then(reg => {
+                    reg.showNotification("A♥️J Cloud Chat", {
+                        body: "알림 설정이 완료되었습니다!",
+                        icon: "https://b-o-o-x.github.io/pwa/cloud-chat/cloud-chat-512.png"
+                    });
+                });
+            } else {
+                alert("알림 권한이 거부되었습니다. 설정에서 직접 허용해주세요.");
+            }
         };
     </script>
 </body>
