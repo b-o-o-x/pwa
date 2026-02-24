@@ -1,85 +1,38 @@
-<!DOCTYPE html>
-<html lang="ko">
-<head>
-    <meta charset="UTF-8">
-    <title>Atom Editor - Cloud Atom Note</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.2.0/github-markdown.min.css">
-    <style>
-        :root { --sidebar-bg: #1e293b; --accent: #3b82f6; --text-light: #f1f5f9; --border: #334155; }
-        body { display: flex; height: 100vh; margin: 0; font-family: 'Pretendard', sans-serif; overflow: hidden; background: #f8fafc; }
-        
-        /* 좌측 판넬 */
-        #sidebar { width: 350px; background: var(--sidebar-bg); color: var(--text-light); display: flex; flex-direction: column; border-right: 1px solid var(--border); }
-        .sidebar-nav { padding: 15px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; }
-        .sidebar-nav a { color: var(--text-light); text-decoration: none; font-size: 0.9rem; opacity: 0.8; }
-        
-        .board-meta { padding: 20px; border-bottom: 1px solid var(--border); }
-        .board-meta input { width: 100%; background: #0f172a; border: 1px solid var(--border); color: white; padding: 10px; border-radius: 6px; box-sizing: border-box; margin-bottom: 10px; }
-        .btn-group { display: flex; gap: 5px; }
-        .btn { flex: 1; padding: 8px; border-radius: 4px; border: none; cursor: pointer; font-size: 0.85rem; font-weight: 600; }
-        .btn-primary { background: var(--accent); color: white; }
-        .btn-danger { background: #ef4444; color: white; }
-        
-        /* 트리 구조 */
-        #tree-root { flex: 1; overflow-y: auto; padding: 15px; }
-        .tree-item { margin: 2px 0; }
-        .node-row { display: flex; align-items: center; padding: 8px 12px; border-radius: 6px; cursor: pointer; transition: 0.2s; position: relative; }
-        .node-row:hover { background: #334155; }
-        .node-row.active { background: var(--accent); color: white; }
-        .node-handle { cursor: grab; margin-right: 10px; color: #64748b; font-size: 0.8rem; }
-        .sub-tree { margin-left: 20px; min-height: 5px; } 
-
-        /* 우측 판넬 */
-        #main-content { flex: 1; display: flex; flex-direction: column; background: #fff; position: relative; }
-        .editor-header { padding: 20px 30px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; background: #fff; z-index: 10; }
-        .content-area { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; }
-        
-        #viewer, #editor { width: 100%; height: 100%; padding: 40px; box-sizing: border-box; overflow-y: auto; position: absolute; top: 0; left: 0; }
-        #editor { display: none; border: none; outline: none; font-family: 'Fira Code', monospace; font-size: 16px; resize: none; background: #fafafa; border-left: 4px solid var(--accent); }
-        
-        .action-btns { display: flex; gap: 10px; }
-        .btn-edit { background: #10b981; color: white; }
-    </style>
-</head>
-<body>
+<style>
+    .node-input-group { display: none; padding: 5px 10px; background: #334155; border-radius: 4px; margin: 5px 0; }
+    .node-input-group input { background: #0f172a; border: 1px solid var(--accent); color: white; padding: 5px; width: 70%; }
+    .node-input-group button { background: var(--accent); color: white; border: none; padding: 5px; cursor: pointer; }
+    
+    /* 루트 노드(게시판) 스타일 */
+    .root-node-display { font-weight: bold; font-size: 1.1rem; color: var(--accent); padding: 10px; border-bottom: 2px solid var(--accent); margin-bottom: 10px; display: flex; align-items: center; }
+</style>
 
 <aside id="sidebar">
     <div class="sidebar-nav">
         <a href="index.html"><i class="fas fa-arrow-left"></i> 목록으로</a>
         <span>Cloud Atom Editor</span>
     </div>
+    
     <div class="board-meta">
-        <input type="text" id="board-name" placeholder="게시판 이름 (고유 ID)">
+        <label style="font-size: 0.75rem; color: #94a3b8;">최상위 루트 (게시판 이름)</label>
+        <input type="text" id="board-name" placeholder="게시판 이름 입력">
         <div class="btn-group">
-            <button onclick="saveBoardInfo()" class="btn btn-primary"><i class="fas fa-save"></i> 게시판 저장</button>
-            <button id="del-board-btn" onclick="deleteBoard()" class="btn btn-danger" style="display:none;"><i class="fas fa-trash"></i> 삭제</button>
+            <button onclick="saveBoardInfo()" class="btn btn-primary"><i class="fas fa-save"></i> 이름 수정/저장</button>
+            <button id="del-board-btn" onclick="deleteBoard()" class="btn btn-danger" style="display:none;"><i class="fas fa-trash"></i> 게시판 삭제</button>
         </div>
     </div>
-    <div style="padding: 10px 20px;">
-        <button onclick="addNewNode(null)" class="btn btn-primary" style="width:100%"><i class="fas fa-plus"></i> 새 루트 노드 추가</button>
-    </div>
-    <div id="tree-root" data-parent="root">
+
+    <div id="tree-root-container">
+        <div class="root-node-display">
+            <i class="fas fa-database" style="margin-right:10px;"></i>
+            <span id="root-title-display">미설정</span>
+            <i class="fas fa-plus-circle" onclick="showNodeInput(null)" style="margin-left:auto; cursor:pointer; font-size: 1rem;"></i>
         </div>
+        <div id="input-root" class="node-input-group">
+            <input type="text" id="new-node-title-root" placeholder="노드 제목">
+            <button onclick="confirmAddNode(null)">추가</button>
+            <button onclick="hideNodeInput(null)" style="background:#475569;">취소</button>
+        </div>
+        <div id="tree-root" data-parent="root"></div>
+    </div>
 </aside>
-
-<main id="main-content">
-    <div class="editor-header">
-        <h2 id="active-node-title">노드를 선택해 주세요</h2>
-        <div id="action-buttons" style="display:none;" class="action-btns">
-            <button id="btn-toggle" class="btn btn-primary" onclick="toggleEditMode()">쓰기/수정</button>
-            <button id="btn-save" class="btn btn-primary" onclick="saveNodeContent()" style="display:none;">내용 저장</button>
-            <button id="btn-clear" class="btn btn-danger" onclick="clearNodeContent()">내용 삭제</button>
-        </div>
-    </div>
-    <div class="content-area">
-        <div id="viewer" class="markdown-body"></div>
-        <textarea id="editor" placeholder="여기에 마크다운으로 내용을 입력하세요..."></textarea>
-    </div>
-</main>
-
-<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-<script type="module" src="./js/atom-editor.js"></script>
-</body>
-</html>
