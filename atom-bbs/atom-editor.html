@@ -1,38 +1,250 @@
-<style>
-    .node-input-group { display: none; padding: 5px 10px; background: #334155; border-radius: 4px; margin: 5px 0; }
-    .node-input-group input { background: #0f172a; border: 1px solid var(--accent); color: white; padding: 5px; width: 70%; }
-    .node-input-group button { background: var(--accent); color: white; border: none; padding: 5px; cursor: pointer; }
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Atom Editor - Cloud Atom Note</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.2.0/github-markdown.min.css">
     
-    /* 루트 노드(게시판) 스타일 */
-    .root-node-display { font-weight: bold; font-size: 1.1rem; color: var(--accent); padding: 10px; border-bottom: 2px solid var(--accent); margin-bottom: 10px; display: flex; align-items: center; }
-</style>
+    <style>
+        :root { 
+            --sidebar-bg: #1e293b; 
+            --accent: #3b82f6; 
+            --text-light: #f1f5f9; 
+            --border: #334155; 
+            --header-bg: #ffffff;
+        }
+
+        body { 
+            display: flex; 
+            height: 100vh; 
+            margin: 0; 
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif; 
+            overflow: hidden; 
+            background: #f8fafc; 
+        }
+
+        /* --- 좌측 사이드바 --- */
+        #sidebar { 
+            width: 380px; 
+            background: var(--sidebar-bg); 
+            color: var(--text-light); 
+            display: flex; 
+            flex-direction: column; 
+            border-right: 1px solid var(--border); 
+        }
+
+        .sidebar-nav { 
+            padding: 15px 20px; 
+            border-bottom: 1px solid var(--border); 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center;
+        }
+
+        .sidebar-nav a { 
+            color: var(--text-light); 
+            text-decoration: none; 
+            font-size: 0.85rem; 
+            opacity: 0.7; 
+            transition: 0.2s;
+        }
+
+        .sidebar-nav a:hover { opacity: 1; }
+
+        .board-meta { padding: 20px; border-bottom: 1px solid var(--border); }
+        .board-meta label { font-size: 0.75rem; color: #94a3b8; display: block; margin-bottom: 5px; }
+        .board-meta input { 
+            width: 100%; 
+            background: #0f172a; 
+            border: 1px solid var(--border); 
+            color: white; 
+            padding: 10px; 
+            border-radius: 6px; 
+            box-sizing: border-box; 
+            margin-bottom: 12px; 
+            font-size: 1rem;
+        }
+
+        .btn-group { display: flex; gap: 8px; }
+        .btn { 
+            flex: 1; 
+            padding: 10px; 
+            border-radius: 6px; 
+            border: none; 
+            cursor: pointer; 
+            font-size: 0.85rem; 
+            font-weight: 600; 
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
+        .btn-primary { background: var(--accent); color: white; }
+        .btn-primary:hover { background: #2563eb; }
+        .btn-danger { background: #ef4444; color: white; }
+        .btn-danger:hover { background: #dc2626; }
+
+        /* --- 트리 구조 --- */
+        #tree-container { flex: 1; overflow-y: auto; padding: 15px; }
+        
+        .root-node-display { 
+            font-weight: bold; 
+            font-size: 1.1rem; 
+            color: var(--accent); 
+            padding: 12px; 
+            border-bottom: 2px solid var(--accent); 
+            margin-bottom: 10px; 
+            display: flex; 
+            align-items: center; 
+            background: rgba(59, 130, 246, 0.1);
+            border-radius: 6px 6px 0 0;
+        }
+
+        .tree-item { margin: 4px 0; }
+        .node-row { 
+            display: flex; 
+            align-items: center; 
+            padding: 10px 12px; 
+            border-radius: 6px; 
+            cursor: pointer; 
+            transition: 0.2s; 
+            position: relative;
+        }
+        .node-row:hover { background: #334155; }
+        .node-row.active { background: var(--accent); color: white; }
+        
+        .node-handle { cursor: grab; margin-right: 12px; color: #64748b; font-size: 0.8rem; }
+        .node-title { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        
+        .sub-tree { margin-left: 22px; min-height: 5px; border-left: 1px solid #334155; }
+
+        /* 인라인 입력창 */
+        .node-input-group { 
+            margin: 5px 0 10px 22px; 
+            padding: 10px; 
+            background: #1e293b; 
+            border: 1px solid var(--accent); 
+            border-radius: 6px; 
+        }
+        .node-input-group input { 
+            background: #0f172a; 
+            border: 1px solid #475569; 
+            color: white; 
+            padding: 8px; 
+            width: 100%; 
+            box-sizing: border-box; 
+            margin-bottom: 8px; 
+            border-radius: 4px;
+        }
+
+        /* --- 우측 편집 영역 --- */
+        #main-content { flex: 1; display: flex; flex-direction: column; background: #fff; position: relative; }
+        
+        .editor-header { 
+            padding: 20px 35px; 
+            border-bottom: 1px solid #e2e8f0; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            background: var(--header-bg); 
+            z-index: 10;
+        }
+        
+        .content-area { flex: 1; position: relative; overflow: hidden; }
+        
+        #viewer, #editor { 
+            width: 100%; 
+            height: 100%; 
+            padding: 40px 60px; 
+            box-sizing: border-box; 
+            overflow-y: auto; 
+            position: absolute; 
+            top: 0; 
+            left: 0; 
+        }
+        
+        #editor { 
+            display: none; 
+            border: none; 
+            outline: none; 
+            font-family: 'Fira Code', 'Cascadia Code', monospace; 
+            font-size: 16px; 
+            line-height: 1.6;
+            resize: none; 
+            background: #fdfdfd; 
+            border-left: 6px solid var(--accent); 
+        }
+
+        .action-btns { display: flex; gap: 10px; }
+        .markdown-body { font-size: 16px; line-height: 1.7; }
+    </style>
+</head>
+<body>
 
 <aside id="sidebar">
     <div class="sidebar-nav">
         <a href="index.html"><i class="fas fa-arrow-left"></i> 목록으로</a>
-        <span>Cloud Atom Editor</span>
+        <span style="font-weight: bold; font-size: 0.9rem; letter-spacing: 0.5px;">ATOM EDITOR</span>
     </div>
     
     <div class="board-meta">
-        <label style="font-size: 0.75rem; color: #94a3b8;">최상위 루트 (게시판 이름)</label>
+        <label>게시판 고유 ID 및 루트 이름</label>
         <input type="text" id="board-name" placeholder="게시판 이름 입력">
         <div class="btn-group">
-            <button onclick="saveBoardInfo()" class="btn btn-primary"><i class="fas fa-save"></i> 이름 수정/저장</button>
-            <button id="del-board-btn" onclick="deleteBoard()" class="btn btn-danger" style="display:none;"><i class="fas fa-trash"></i> 게시판 삭제</button>
+            <button onclick="saveBoardInfo()" class="btn btn-primary"><i class="fas fa-save"></i> 저장/수정</button>
+            <button id="del-board-btn" onclick="deleteBoard()" class="btn btn-danger" style="display:none;"><i class="fas fa-trash-alt"></i> 삭제</button>
         </div>
     </div>
 
-    <div id="tree-root-container">
+    <div id="tree-container">
         <div class="root-node-display">
-            <i class="fas fa-database" style="margin-right:10px;"></i>
+            <i class="fas fa-sitemap" style="margin-right:12px; font-size: 0.9rem;"></i>
             <span id="root-title-display">미설정</span>
-            <i class="fas fa-plus-circle" onclick="showNodeInput(null)" style="margin-left:auto; cursor:pointer; font-size: 1rem;"></i>
+            <i class="fas fa-plus-circle" onclick="showNodeInput(null)" style="margin-left:auto; cursor:pointer; font-size: 1.1rem; opacity: 0.8;" title="최상위 자식 노드 추가"></i>
         </div>
-        <div id="input-root" class="node-input-group">
-            <input type="text" id="new-node-title-root" placeholder="노드 제목">
-            <button onclick="confirmAddNode(null)">추가</button>
-            <button onclick="hideNodeInput(null)" style="background:#475569;">취소</button>
+
+        <div id="input-root" class="node-input-group" style="display:none; margin-left:0;">
+            <input type="text" id="new-node-title-root" placeholder="새 노드 제목 입력...">
+            <div class="btn-group">
+                <button onclick="confirmAddNode(null)" class="btn btn-primary" style="padding:5px;">추가</button>
+                <button onclick="hideNodeInput(null)" class="btn" style="background:#475569; color:white; padding:5px;">취소</button>
+            </div>
         </div>
-        <div id="tree-root" data-parent="root"></div>
+
+        <div id="tree-root" data-parent="root">
+            </div>
     </div>
 </aside>
+
+<main id="main-content">
+    <div class="editor-header">
+        <h2 id="active-node-title" style="margin:0; font-size: 1.5rem; color: #1e293b;">노드를 선택해 주세요</h2>
+        <div id="action-buttons" style="display:none;" class="action-btns">
+            <button id="btn-toggle" class="btn btn-primary" onclick="toggleEditMode()" style="background:#10b981; min-width:100px;">
+                <i class="fas fa-edit"></i> 쓰기/수정
+            </button>
+            <button id="btn-save" class="btn btn-primary" onclick="saveNodeContent()" style="display:none; min-width:100px;">
+                <i class="fas fa-check"></i> 내용 저장
+            </button>
+            <button id="btn-clear" class="btn btn-danger" onclick="clearNodeContent()" title="내용만 초기화">
+                <i class="fas fa-eraser"></i>
+            </button>
+        </div>
+    </div>
+    <div class="content-area">
+        <div id="viewer" class="markdown-body">
+            </div>
+        <textarea id="editor" spellcheck="false" placeholder="마크다운 형식을 사용하여 내용을 입력하세요..."></textarea>
+    </div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+<script type="module" src="./js/atom-editor.js"></script>
+
+</body>
+</html>
