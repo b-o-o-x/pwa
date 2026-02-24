@@ -6,58 +6,76 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.2.0/github-markdown.min.css">
     <style>
-        :root { --sidebar-bg: #1e293b; --accent: #3b82f6; --text-light: #f1f5f9; }
-        body { display: flex; height: 100vh; margin: 0; font-family: 'Pretendard', sans-serif; overflow: hidden; }
+        :root { --sidebar-bg: #1e293b; --accent: #3b82f6; --text-light: #f1f5f9; --border: #334155; }
+        body { display: flex; height: 100vh; margin: 0; font-family: 'Pretendard', sans-serif; overflow: hidden; background: #f8fafc; }
         
         /* 좌측 판넬 */
-        #sidebar { width: 350px; background: var(--sidebar-bg); color: var(--text-light); display: flex; flex-direction: column; }
-        .board-meta { padding: 20px; border-bottom: 1px solid #334155; }
-        .board-meta input { width: 100%; background: #0f172a; border: 1px solid #475569; color: white; padding: 8px; border-radius: 4px; margin-bottom: 10px; }
+        #sidebar { width: 350px; background: var(--sidebar-bg); color: var(--text-light); display: flex; flex-direction: column; border-right: 1px solid var(--border); }
+        .sidebar-nav { padding: 15px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; }
+        .sidebar-nav a { color: var(--text-light); text-decoration: none; font-size: 0.9rem; opacity: 0.8; }
+        
+        .board-meta { padding: 20px; border-bottom: 1px solid var(--border); }
+        .board-meta input { width: 100%; background: #0f172a; border: 1px solid var(--border); color: white; padding: 10px; border-radius: 6px; box-sizing: border-box; margin-bottom: 10px; }
+        .btn-group { display: flex; gap: 5px; }
+        .btn { flex: 1; padding: 8px; border-radius: 4px; border: none; cursor: pointer; font-size: 0.85rem; font-weight: 600; }
+        .btn-primary { background: var(--accent); color: white; }
+        .btn-danger { background: #ef4444; color: white; }
         
         /* 트리 구조 */
-        #tree-root { flex: 1; overflow-y: auto; padding: 10px; }
-        .tree-item { margin: 4px 0; }
-        .node-row { display: flex; align-items: center; padding: 8px; border-radius: 6px; cursor: pointer; transition: 0.2s; }
+        #tree-root { flex: 1; overflow-y: auto; padding: 15px; }
+        .tree-item { margin: 2px 0; }
+        .node-row { display: flex; align-items: center; padding: 8px 12px; border-radius: 6px; cursor: pointer; transition: 0.2s; position: relative; }
         .node-row:hover { background: #334155; }
-        .node-row.active { background: var(--accent); }
-        .node-handle { cursor: grab; margin-right: 10px; color: #64748b; }
-        .sub-tree { margin-left: 20px; min-height: 5px; } /* 드래그 타겟 영역 */
+        .node-row.active { background: var(--accent); color: white; }
+        .node-handle { cursor: grab; margin-right: 10px; color: #64748b; font-size: 0.8rem; }
+        .sub-tree { margin-left: 20px; min-height: 5px; } 
 
         /* 우측 판넬 */
-        #main-content { flex: 1; display: flex; flex-direction: column; background: #fff; }
-        .editor-header { padding: 15px 25px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; }
-        #viewer, #editor { flex: 1; padding: 40px; overflow-y: auto; }
-        #editor { display: none; width: 100%; border: none; outline: none; font-family: monospace; font-size: 16px; resize: none; }
+        #main-content { flex: 1; display: flex; flex-direction: column; background: #fff; position: relative; }
+        .editor-header { padding: 20px 30px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; background: #fff; z-index: 10; }
+        .content-area { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; }
+        
+        #viewer, #editor { width: 100%; height: 100%; padding: 40px; box-sizing: border-box; overflow-y: auto; position: absolute; top: 0; left: 0; }
+        #editor { display: none; border: none; outline: none; font-family: 'Fira Code', monospace; font-size: 16px; resize: none; background: #fafafa; border-left: 4px solid var(--accent); }
+        
+        .action-btns { display: flex; gap: 10px; }
+        .btn-edit { background: #10b981; color: white; }
     </style>
 </head>
 <body>
 
 <aside id="sidebar">
+    <div class="sidebar-nav">
+        <a href="index.html"><i class="fas fa-arrow-left"></i> 목록으로</a>
+        <span>Cloud Atom Editor</span>
+    </div>
     <div class="board-meta">
-        <input type="text" id="board-name" placeholder="아톰 게시판 이름">
-        <div style="display: flex; gap: 5px;">
-            <button onclick="saveBoardInfo()" class="btn"><i class="fas fa-save"></i> 저장</button>
-            <button onclick="deleteBoard()" class="btn btn-danger"><i class="fas fa-trash"></i> 삭제</button>
+        <input type="text" id="board-name" placeholder="게시판 이름 (고유 ID)">
+        <div class="btn-group">
+            <button onclick="saveBoardInfo()" class="btn btn-primary"><i class="fas fa-save"></i> 게시판 저장</button>
+            <button id="del-board-btn" onclick="deleteBoard()" class="btn btn-danger" style="display:none;"><i class="fas fa-trash"></i> 삭제</button>
         </div>
     </div>
     <div style="padding: 10px 20px;">
-        <button onclick="addNewNode(null)" style="width:100%"><i class="fas fa-plus"></i> 새 루트 노드</button>
+        <button onclick="addNewNode(null)" class="btn btn-primary" style="width:100%"><i class="fas fa-plus"></i> 새 루트 노드 추가</button>
     </div>
-    <div id="tree-root">
+    <div id="tree-root" data-parent="root">
         </div>
 </aside>
 
 <main id="main-content">
     <div class="editor-header">
-        <h2 id="active-node-title">노드를 선택하세요</h2>
-        <div id="action-buttons" style="display:none;">
-            <button id="btn-edit" onclick="toggleMode('edit')">쓰기/수정</button>
-            <button id="btn-save" onclick="saveNodeContent()" style="display:none;">저장</button>
-            <button id="btn-clear" onclick="clearContent()" style="color:red;">내용 지우기</button>
+        <h2 id="active-node-title">노드를 선택해 주세요</h2>
+        <div id="action-buttons" style="display:none;" class="action-btns">
+            <button id="btn-toggle" class="btn btn-primary" onclick="toggleEditMode()">쓰기/수정</button>
+            <button id="btn-save" class="btn btn-primary" onclick="saveNodeContent()" style="display:none;">내용 저장</button>
+            <button id="btn-clear" class="btn btn-danger" onclick="clearNodeContent()">내용 삭제</button>
         </div>
     </div>
-    <div id="viewer" class="markdown-body"></div>
-    <textarea id="editor" placeholder="마크다운으로 내용을 입력하세요..."></textarea>
+    <div class="content-area">
+        <div id="viewer" class="markdown-body"></div>
+        <textarea id="editor" placeholder="여기에 마크다운으로 내용을 입력하세요..."></textarea>
+    </div>
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
