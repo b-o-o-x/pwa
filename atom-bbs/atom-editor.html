@@ -1,37 +1,67 @@
-<style>
-    /* ...이전 답변의 스타일 유지하되 더 세련되게 수정... */
-    #sidebar { background: #1e293b; color: #f1f5f9; } /* 다크 사이드바 */
-    .node-content.active { background: #3b82f6; border-radius: 4px; }
-    .edit-mode-btn { background: #10b981; color: white; padding: 8px 16px; border-radius: 6px; border: none; cursor: pointer; }
-</style>
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>Atom Editor - Cloud Atom Note</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.2.0/github-markdown.min.css">
+    <style>
+        :root { --sidebar-bg: #1e293b; --accent: #3b82f6; --text-light: #f1f5f9; }
+        body { display: flex; height: 100vh; margin: 0; font-family: 'Pretendard', sans-serif; overflow: hidden; }
+        
+        /* 좌측 판넬 */
+        #sidebar { width: 350px; background: var(--sidebar-bg); color: var(--text-light); display: flex; flex-direction: column; }
+        .board-meta { padding: 20px; border-bottom: 1px solid #334155; }
+        .board-meta input { width: 100%; background: #0f172a; border: 1px solid #475569; color: white; padding: 8px; border-radius: 4px; margin-bottom: 10px; }
+        
+        /* 트리 구조 */
+        #tree-root { flex: 1; overflow-y: auto; padding: 10px; }
+        .tree-item { margin: 4px 0; }
+        .node-row { display: flex; align-items: center; padding: 8px; border-radius: 6px; cursor: pointer; transition: 0.2s; }
+        .node-row:hover { background: #334155; }
+        .node-row.active { background: var(--accent); }
+        .node-handle { cursor: grab; margin-right: 10px; color: #64748b; }
+        .sub-tree { margin-left: 20px; min-height: 5px; } /* 드래그 타겟 영역 */
+
+        /* 우측 판넬 */
+        #main-content { flex: 1; display: flex; flex-direction: column; background: #fff; }
+        .editor-header { padding: 15px 25px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; }
+        #viewer, #editor { flex: 1; padding: 40px; overflow-y: auto; }
+        #editor { display: none; width: 100%; border: none; outline: none; font-family: monospace; font-size: 16px; resize: none; }
+    </style>
+</head>
+<body>
 
 <aside id="sidebar">
-    <div class="sidebar-header">
-        <input type="text" id="board-title-input" placeholder="게시판 고유 이름 입력">
-        <button id="save-board-info" onclick="checkAndSaveBoard()"><i class="fas fa-save"></i></button>
+    <div class="board-meta">
+        <input type="text" id="board-name" placeholder="아톰 게시판 이름">
+        <div style="display: flex; gap: 5px;">
+            <button onclick="saveBoardInfo()" class="btn"><i class="fas fa-save"></i> 저장</button>
+            <button onclick="deleteBoard()" class="btn btn-danger"><i class="fas fa-trash"></i> 삭제</button>
+        </div>
     </div>
-    <div id="tree-control" style="padding: 10px; border-bottom: 1px solid #334155;">
-        <button onclick="addNode('root')"><i class="fas fa-folder-plus"></i> 최상위 노드</button>
+    <div style="padding: 10px 20px;">
+        <button onclick="addNewNode(null)" style="width:100%"><i class="fas fa-plus"></i> 새 루트 노드</button>
     </div>
-    <div id="tree-container"></div>
+    <div id="tree-root">
+        </div>
 </aside>
 
-<main id="editor-container">
-    <div id="view-mode">
-        <div class="view-header">
-            <h2 id="display-node-title">노드를 선택하세요</h2>
-            <button class="edit-mode-btn" id="edit-btn" style="display:none;" onclick="enterEditMode()">쓰기/수정</button>
-        </div>
-        <div id="rendered-content" class="markdown-body">
-            </div>
-    </div>
-    
-    <div id="edit-mode" style="display:none;">
-        <textarea id="markdown-input"></textarea>
-        <div class="edit-actions">
-            <button onclick="saveNodeContent()">저장</button>
-            <button onclick="exitEditMode()">취소</button>
-            <button onclick="clearNodeContent()" style="background:#ef4444;">내용 삭제</button>
+<main id="main-content">
+    <div class="editor-header">
+        <h2 id="active-node-title">노드를 선택하세요</h2>
+        <div id="action-buttons" style="display:none;">
+            <button id="btn-edit" onclick="toggleMode('edit')">쓰기/수정</button>
+            <button id="btn-save" onclick="saveNodeContent()" style="display:none;">저장</button>
+            <button id="btn-clear" onclick="clearContent()" style="color:red;">내용 지우기</button>
         </div>
     </div>
+    <div id="viewer" class="markdown-body"></div>
+    <textarea id="editor" placeholder="마크다운으로 내용을 입력하세요..."></textarea>
 </main>
+
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script type="module" src="./js/atom-editor.js"></script>
+</body>
+</html>
