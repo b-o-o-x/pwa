@@ -25,51 +25,24 @@
 }
 body {
   margin:0; background:var(--bg); font-family:system-ui,sans-serif;
-  display:flex; justify-content:center; align-items:center; height:100dvh; /* 주소창 높이를 감안한 동적 높이 */
+  display:flex; justify-content:center; align-items:center; height:100dvh;
   overflow: hidden; touch-action: manipulation;
 }
 .calculator {
-  width: 95%; /* 좌우 여백 확보 */
-  max-width: 380px;
-  background: var(--panel);
-  border-radius: 16px;
-  padding: 12px; /* 패딩을 살짝 줄임 */
-  box-sizing: border-box;
-  
-  /* 주소창이 있어도 안전하도록 높이를 더 보수적으로 잡음 */
-  max-height: 90dvh; 
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
+  width: 95%; max-width: 380px; background: var(--panel);
+  border-radius: 16px; padding: 12px; box-sizing: border-box;
+  max-height: 90dvh; display: flex; flex-direction: column; justify-content: space-between;
 }
-
-/* 버튼들 크기를 화면 높이에 따라 유연하게 조정 */
-.buttons button {
-  padding: 15px 0; /* 버튼 높이를 살짝 줄여 여유 공간 확보 */
-  font-size: 1.3rem;
-}
+.buttons button { padding: 15px 0; font-size: 1.3rem; }
 .display-wrap { background:var(--display-bg); border-radius:12px; padding:12px; position: relative; }
 .display {
-  color:var(--display-text);
-  text-align:right;
-  white-space: pre-wrap;
-  line-height:1.6;
-  font-size:1.7rem;
-  min-height:6.5em;
-  max-height:6.5em;
-  overflow-y:auto;
-  outline: none;
-  scrollbar-gutter: stable;
-  caret-color: #fff;
-  word-break: normal;
+  color:var(--display-text); text-align:right; white-space: pre-wrap;
+  line-height:1.6; font-size:1.7rem; min-height:6.5em; max-height:6.5em;
+  overflow-y:auto; outline: none; scrollbar-gutter: stable;
+  caret-color: #fff; word-break: normal;
 }
-.display span {
-  display: inline-block;
-  white-space: nowrap;
-}
-.preview {
-  color:#888; text-align:right; margin-top:6px; font-size:1.1rem; height: 1.2em;
-}
+.display span { display: inline-block; white-space: nowrap; }
+.preview { color:#888; text-align:right; margin-top:6px; font-size:1.1rem; height: 1.2em; }
 .buttons { margin-top:14px; display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
 button {
   font-size:1.4rem; padding:18px 0; border:none; border-radius:12px;
@@ -79,14 +52,10 @@ button {
 button:active { opacity: 0.7; }
 .operator { background:var(--accent); }
 .top-row { grid-column:span 4; display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
-
-/* 기록 팝업 스타일 수정 */
 .history-popup {
-  color: var(--history-text); /* 테마에 따라 변경되는 텍스트 색상 */
-  position:fixed; bottom:0; left:0; width:100%; height:66%;
+  color: var(--history-text); position:fixed; bottom:0; left:0; width:100%; height:66%;
   background:var(--panel); border-radius:16px 16px 0 0; z-index:1000;
-  display:flex; flex-direction:column;
-  box-shadow: 0 -5px 15px rgba(0,0,0,0.3);
+  display:flex; flex-direction:column; box-shadow: 0 -5px 15px rgba(0,0,0,0.3);
 }
 .hidden { display:none; }
 .history-header { padding:15px; display:flex; justify-content:space-between; border-bottom:1px solid rgba(128,128,128,0.3); font-weight: bold; }
@@ -147,14 +116,13 @@ const historyList = document.getElementById("historyList");
 let timeline = JSON.parse(localStorage.getItem("calcTimeline")) || [];
 let historyStack = [], redoStack = [];
 let longPressTimer;
+let lastInputTime = Date.now(); // 10초 체크용
 
-function scrollToBottom() {
-    display.scrollTop = display.scrollHeight;
-}
+function scrollToBottom() { display.scrollTop = display.scrollHeight; }
 
 function getCaretPosition(element) {
     const selection = window.getSelection();
-    if (selection.rangeCount === 0) return element.innerText.length; // 포커스 없을 시 끝 반환
+    if (selection.rangeCount === 0) return element.innerText.length;
     const range = selection.getRangeAt(0);
     if (!element.contains(range.startContainer)) return element.innerText.length;
     const preCaretRange = range.cloneRange();
@@ -189,7 +157,7 @@ function setCaretPosition(element, offset) {
     selection.addRange(range);
 }
 
-function renderDisplay(forceCaretPos = null) {
+function renderDisplay(caretPos) {
     const rawText = display.innerText.replace(/,/g, "");
     const tokens = rawText.match(/(\d+|\+|-|\*|\/|%|\.|\s|[가-힣a-zA-Z]+)/g) || [];
     let html = "";
@@ -198,19 +166,23 @@ function renderDisplay(forceCaretPos = null) {
         else html += `<span>${token}</span>`;
     });
     display.innerHTML = html || "<span>0</span>";
-    if (forceCaretPos !== null) setCaretPosition(display, forceCaretPos);
+    
+    // 계산된 포지션으로 커서 복원
+    setCaretPosition(display, caretPos);
     scrollToBottom();
 }
 
-function formatString(str) {
-    return str.replace(/\d+/g, m => parseInt(m).toLocaleString());
-}
+function formatString(str) { return str.replace(/\d+/g, m => parseInt(m).toLocaleString()); }
 
 function append(v) {
     saveState();
     let currentText = display.innerText;
-    // 포커스가 없거나 맨 앞일 때를 고려하여 기본값을 맨 뒤로 처리
     let currentOffset = getCaretPosition(display);
+
+    // 10초 지났으면 맨 뒤로 이동
+    if (Date.now() - lastInputTime > 10000) {
+        currentOffset = currentText.length;
+    }
     
     if (currentText.replace(/,/g, "").trim() === "0" && !isNaN(v)) { currentText = ""; currentOffset = 0; }
     
@@ -220,7 +192,12 @@ function append(v) {
     const formattedLeft = formatString(cleanLeft);
     
     display.innerText = left + v + right;
-    renderDisplay(formattedLeft.length);
+    
+    // 새로운 커서 위치 계산 (formattedLeft는 콤마가 포함된 문자열)
+    const newPos = formattedLeft.length; 
+    renderDisplay(newPos);
+    
+    lastInputTime = Date.now();
     previewCalc();
     persist();
 }
@@ -235,21 +212,21 @@ function backspace() {
     const cleanLeft = left.replace(/,/g, "");
     const formattedLeft = formatString(cleanLeft);
     const newFullRaw = (cleanLeft + right.replace(/,/g, ""));
-    if (newFullRaw === "") { display.innerText = "0"; renderDisplay(1); }
-    else { display.innerText = newFullRaw; renderDisplay(formattedLeft.length); }
+    
+    display.innerText = newFullRaw === "" ? "0" : newFullRaw;
+    renderDisplay(formattedLeft.length);
+    
+    lastInputTime = Date.now();
     previewCalc();
     persist();
 }
 
-/* 2. 기록 저장 (날짜 포맷 변경) */
 function calculate() {
     try {
         const raw = display.innerText;
         const clean = raw.replace(/,/g, "").replace(/[^0-9+\-*/().%]/g, "");
         if(!clean) return;
         const result = eval(clean.replace(/(\d+)%/g, "($1/100)"));
-        
-        // 년월일 시분초 포함 포맷
         const now = new Date();
         const dateStr = `${now.getFullYear()}.${now.getMonth()+1}.${now.getDate()} ${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}:${now.getSeconds().toString().padStart(2,'0')}`;
 
@@ -257,11 +234,11 @@ function calculate() {
         display.innerHTML = `<span>${result.toLocaleString()}</span>`;
         preview.innerText = "";
         persist();
+        lastInputTime = Date.now();
         scrollToBottom();
     } catch { preview.innerText = "에러"; }
 }
 
-/* 3. 테마 및 UI 관리 */
 const themes = [
     {bg:"#121212",panel:"#1e1e1e",display:"#000",text:"#fff",accent:"#ff9500",num:"#2a2a2a",dtext:"#0f0", htext: "#fff"},
     {bg:"#f2f2f2",panel:"#fff",display:"#eaeaea",text:"#000",accent:"#ff9500",num:"#ddd",dtext:"#000", htext: "#000"}
@@ -273,18 +250,12 @@ function applyTheme(i){
     r.setProperty("--bg",t.bg); r.setProperty("--panel",t.panel);
     r.setProperty("--display-bg",t.display); r.setProperty("--text",t.text);
     r.setProperty("--accent",t.accent); r.setProperty("--number",t.num);
-    r.setProperty("--display-text",t.dtext);
-    r.setProperty("--history-text",t.htext);
+    r.setProperty("--display-text",t.dtext); r.setProperty("--history-text",t.htext);
 }
 applyTheme(themeIndex);
 
-function changetheme(){ 
-    themeIndex=(themeIndex+1)%themes.length; 
-    applyTheme(themeIndex); 
-    localStorage.setItem("themeIndex",themeIndex); 
-}
+function changetheme(){ themeIndex=(themeIndex+1)%themes.length; applyTheme(themeIndex); localStorage.setItem("themeIndex",themeIndex); }
 
-/* 4. 기록 팝업 렌더링 */
 function renderHistory(){
     historyList.innerHTML="";
     timeline.forEach((h,i)=>{
@@ -301,13 +272,12 @@ function renderHistory(){
 
 function showhistory(){ renderHistory(); document.getElementById("historyPopup").classList.remove("hidden"); }
 function closeHistory(){ document.getElementById("historyPopup").classList.add("hidden"); }
-function useHistory(expr) { display.innerText = expr; renderDisplay(); previewCalc(); closeHistory(); }
+function useHistory(expr) { display.innerText = expr; renderDisplay(expr.length); previewCalc(); closeHistory(); }
 function deleteHistory(i) { timeline.splice(i, 1); persist(); renderHistory(); }
 
-/* 5. 기타 기본 기능 */
 function saveState() { historyStack.push(display.innerText); if(historyStack.length > 50) historyStack.shift(); redoStack = []; }
-function undo() { if (historyStack.length > 0) { redoStack.push(display.innerText); display.innerText = historyStack.pop(); renderDisplay(); previewCalc(); } }
-function redo() { if (redoStack.length > 0) { historyStack.push(display.innerText); display.innerText = redoStack.pop(); renderDisplay(); previewCalc(); } }
+function undo() { if (historyStack.length > 0) { redoStack.push(display.innerText); display.innerText = historyStack.pop(); renderDisplay(display.innerText.length); previewCalc(); } }
+function redo() { if (redoStack.length > 0) { historyStack.push(display.innerText); display.innerText = redoStack.pop(); renderDisplay(display.innerText.length); previewCalc(); } }
 function clearAll() { saveState(); display.innerHTML = "<span>0</span>"; preview.innerText = ""; persist(); }
 function previewCalc() {
     try {
@@ -324,10 +294,10 @@ display.addEventListener('touchstart', (e) => {
 });
 display.addEventListener('touchend', () => clearTimeout(longPressTimer));
 display.addEventListener('blur', () => display.setAttribute("inputmode", "none"));
-display.addEventListener('input', () => { previewCalc(); persist(); });
+display.addEventListener('input', () => { lastInputTime = Date.now(); previewCalc(); persist(); });
 
 const saved = localStorage.getItem("calcValue");
-if(saved) { display.innerHTML = saved; scrollToBottom(); } else renderDisplay();
+if(saved) { display.innerHTML = saved; scrollToBottom(); }
 previewCalc();
 </script>
 
