@@ -38,8 +38,7 @@ body {
 .display {
   color:var(--display-text); text-align:right; white-space: pre-wrap;
   line-height:1.6; font-size:1.7rem; min-height:6.5em; max-height:6.5em;
-  overflow-y:auto; outline: none; scrollbar-gutter: stable;
-  caret-color: #fff; word-break: normal;
+  overflow-y:auto; outline: none; caret-color: #fff; word-break: normal;
 }
 .display span { display: inline-block; white-space: nowrap; }
 .preview { color:#888; text-align:right; margin-top:6px; font-size:1.1rem; height: 1.2em; }
@@ -116,9 +115,7 @@ const historyList = document.getElementById("historyList");
 let timeline = JSON.parse(localStorage.getItem("calcTimeline")) || [];
 let historyStack = [], redoStack = [];
 let longPressTimer;
-let lastInputTime = Date.now(); // 10초 체크용
-
-function scrollToBottom() { display.scrollTop = display.scrollHeight; }
+let lastInputTime = Date.now();
 
 function getCaretPosition(element) {
     const selection = window.getSelection();
@@ -151,13 +148,9 @@ function setCaretPosition(element, offset) {
             for (let i = node.childNodes.length - 1; i >= 0; i--) nodeStack.push(node.childNodes[i]);
         }
     }
-    range.selectNodeContents(element);
-    range.collapse(false);
-    selection.removeAllRanges();
-    selection.addRange(range);
 }
 
-function renderDisplay(caretPos) {
+function renderDisplay(targetPos) {
     const rawText = display.innerText.replace(/,/g, "");
     const tokens = rawText.match(/(\d+|\+|-|\*|\/|%|\.|\s|[가-힣a-zA-Z]+)/g) || [];
     let html = "";
@@ -167,35 +160,27 @@ function renderDisplay(caretPos) {
     });
     display.innerHTML = html || "<span>0</span>";
     
-    // 계산된 포지션으로 커서 복원
-    setCaretPosition(display, caretPos);
-    scrollToBottom();
+    // 강제 스크롤 없이 커서만 복원
+    setCaretPosition(display, targetPos);
 }
-
-function formatString(str) { return str.replace(/\d+/g, m => parseInt(m).toLocaleString()); }
 
 function append(v) {
     saveState();
     let currentText = display.innerText;
-    let currentOffset = getCaretPosition(display);
+    let pos = getCaretPosition(display);
 
-    // 10초 지났으면 맨 뒤로 이동
-    if (Date.now() - lastInputTime > 10000) {
-        currentOffset = currentText.length;
-    }
+    if (Date.now() - lastInputTime > 10000) pos = currentText.length;
     
-    if (currentText.replace(/,/g, "").trim() === "0" && !isNaN(v)) { currentText = ""; currentOffset = 0; }
+    const left = currentText.slice(0, pos);
+    const right = currentText.slice(pos);
     
-    const left = currentText.slice(0, currentOffset);
-    const right = currentText.slice(currentOffset);
-    const cleanLeft = (left + v).replace(/,/g, "");
-    const formattedLeft = formatString(cleanLeft);
+    // 콤마 제거 후 연산
+    const newText = left + v + right;
+    const cleanNew = newText.replace(/,/g, "");
     
-    display.innerText = left + v + right;
-    
-    // 새로운 커서 위치 계산 (formattedLeft는 콤마가 포함된 문자열)
-    const newPos = formattedLeft.length; 
-    renderDisplay(newPos);
+    display.innerText = cleanNew;
+    // 커서를 삽입한 위치 다음으로 이동
+    renderDisplay(pos + v.length);
     
     lastInputTime = Date.now();
     previewCalc();
@@ -204,17 +189,14 @@ function append(v) {
 
 function backspace() {
     saveState();
-    const currentOffset = getCaretPosition(display);
-    if (currentOffset === 0) return;
-    const fullText = display.innerText;
-    const left = fullText.slice(0, currentOffset - 1);
-    const right = fullText.slice(currentOffset);
-    const cleanLeft = left.replace(/,/g, "");
-    const formattedLeft = formatString(cleanLeft);
-    const newFullRaw = (cleanLeft + right.replace(/,/g, ""));
+    let pos = getCaretPosition(display);
+    if (pos === 0) return;
     
-    display.innerText = newFullRaw === "" ? "0" : newFullRaw;
-    renderDisplay(formattedLeft.length);
+    const fullText = display.innerText;
+    const newText = fullText.slice(0, pos - 1) + fullText.slice(pos);
+    
+    display.innerText = newText === "" ? "0" : newText;
+    renderDisplay(pos - 1);
     
     lastInputTime = Date.now();
     previewCalc();
@@ -235,7 +217,6 @@ function calculate() {
         preview.innerText = "";
         persist();
         lastInputTime = Date.now();
-        scrollToBottom();
     } catch { preview.innerText = "에러"; }
 }
 
@@ -297,16 +278,8 @@ display.addEventListener('blur', () => display.setAttribute("inputmode", "none")
 display.addEventListener('input', () => { lastInputTime = Date.now(); previewCalc(); persist(); });
 
 const saved = localStorage.getItem("calcValue");
-if(saved) { display.innerHTML = saved; scrollToBottom(); }
+if(saved) display.innerHTML = saved;
 previewCalc();
-</script>
-
-<script>
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('./sw.js').then(() => {
-    console.log("서비스 워커 등록 완료!");
-  });
-}
 </script>
 </body>
 </html>
