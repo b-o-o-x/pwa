@@ -72,7 +72,7 @@ button:active { opacity: 0.7; }
   <div class="display-wrap">
     <div id="display" class="display" contenteditable="true" inputmode="none" spellcheck="false">0</div>
     <div class="preview-container">
-      <div class="version">V260809-0211</div>
+      <div class="version">V260809-0215</div>
       <div id="preview" class="preview"></div>
     </div>
   </div>
@@ -160,8 +160,11 @@ function setCaretAndScroll(element, offset) {
     if (found) {
         const span = document.createElement("span");
         range.insertNode(span);
-        // 'end'로 수정하여 스크롤이 맨 아래에 딱 붙도록 처리 (숫자가 잘려 보이는 오해 방지)
-        span.scrollIntoView({ block: 'end' });
+        
+        // 스크롤이 위쪽에 머무는 현상을 막기 위해 커서 위치 요소로 이동 후 컨테이너 스크롤을 최하단으로 강제 보정
+        span.scrollIntoView({ block: 'nearest' });
+        element.scrollTop = element.scrollHeight;
+        
         span.remove();
     }
 }
