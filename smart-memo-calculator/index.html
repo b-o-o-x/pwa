@@ -72,7 +72,7 @@ button:active { opacity: 0.7; }
   <div class="display-wrap">
     <div id="display" class="display" contenteditable="true" inputmode="none" spellcheck="false">0</div>
     <div class="preview-container">
-      <div class="version">V260809-0215</div>
+      <div class="version">V260809-0219</div>
       <div id="preview" class="preview"></div>
     </div>
   </div>
@@ -161,9 +161,15 @@ function setCaretAndScroll(element, offset) {
         const span = document.createElement("span");
         range.insertNode(span);
         
-        // 스크롤이 위쪽에 머무는 현상을 막기 위해 커서 위치 요소로 이동 후 컨테이너 스크롤을 최하단으로 강제 보정
-        span.scrollIntoView({ block: 'nearest' });
-        element.scrollTop = element.scrollHeight;
+        // 핵심 로직: 커서가 맨 마지막(전체 길이 근처)에 있을 때만 맨 아래로 스크롤 이동
+        const isAtEnd = offset >= element.innerText.length - 2;
+        if (isAtEnd) {
+            span.scrollIntoView({ block: 'nearest' });
+            element.scrollTop = element.scrollHeight;
+        } else {
+            // 중간에 입력할 때는 해당 커서 위치가 화면에 보이도록 하되 강제 최하단 이동은 안 함
+            span.scrollIntoView({ block: 'nearest' });
+        }
         
         span.remove();
     }
