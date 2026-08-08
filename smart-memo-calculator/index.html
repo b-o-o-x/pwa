@@ -120,7 +120,7 @@ let lastInputTime = Date.now();
 function getCaretPosition(element) {
     const selection = window.getSelection();
     if (selection.rangeCount === 0) return element.innerText.length;
-    const range = selection.getRangeAt0(0); // 에러 방지 수정
+    const range = selection.getRangeAt(0); // 수정 완료
     if (!element.contains(range.startContainer)) return element.innerText.length;
     const preCaretRange = range.cloneRange();
     preCaretRange.selectNodeContents(element);
@@ -151,7 +151,7 @@ function setCaretAndScroll(element, offset) {
             for (let i = node.childNodes.length - 1; i >= 0; i--) nodeStack.push(node.childNodes[i]);
         }
     }
-    // 핵심: 커서 위치를 화면에 보이게 함
+    
     if (found) {
         const span = document.createElement("span");
         range.insertNode(span);
@@ -177,7 +177,6 @@ function append(v) {
     let currentText = display.innerText;
     let pos = getCaretPosition(display);
 
-    // 10초 경과 시 맨 뒤로, 아니면 현재 커서 위치
     if (Date.now() - lastInputTime > 10000) pos = currentText.length;
     
     const left = currentText.slice(0, pos);
@@ -222,7 +221,6 @@ function calculate() {
     } catch { preview.innerText = "에러"; }
 }
 
-/* ... 기존 테마/기록/UI 관리 함수 유지 ... */
 const themes = [
     {bg:"#121212",panel:"#1e1e1e",display:"#000",text:"#fff",accent:"#ff9500",num:"#2a2a2a",dtext:"#0f0", htext: "#fff"},
     {bg:"#f2f2f2",panel:"#fff",display:"#eaeaea",text:"#000",accent:"#ff9500",num:"#ddd",dtext:"#000", htext: "#000"}
