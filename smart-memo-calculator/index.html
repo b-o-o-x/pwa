@@ -120,7 +120,7 @@ let lastInputTime = Date.now();
 function getCaretPosition(element) {
     const selection = window.getSelection();
     if (selection.rangeCount === 0) return element.innerText.length;
-    const range = selection.getRangeAt(0);[cite: 1]
+    const range = selection.getRangeAt(0);
     if (!element.contains(range.startContainer)) return element.innerText.length;
     const preCaretRange = range.cloneRange();
     preCaretRange.selectNodeContents(element);
@@ -160,17 +160,12 @@ function setCaretAndScroll(element, offset) {
     }
 }
 
-// 숫자 단위별 콤마 자동 포맷팅 (커서 밀림 현상 방지 계산 포함)
 function formatWithCaret(rawText, oldCaretPos, addedLen) {
     let cleanBefore = rawText.slice(0, oldCaretPos).replace(/,/g, "");
     let cleanAll = rawText.replace(/,/g, "");
-    
-    // 토큰 단위로 나누어 숫자마다 콤마 적용
     let formattedAll = cleanAll.replace(/(\d+)/g, match => Number(match).toLocaleString());
     
-    // 이전 커서 위치까지의 순수 숫자 길이를 기준으로 새로운 콤마 포함 위치 계산
     let numericPos = cleanBefore.length + addedLen;
-    let currentCount = 0;
     let newCaretPos = formattedAll.length;
     
     let tempCleanCount = 0;
@@ -201,7 +196,6 @@ function append(v) {
     let currentText = display.innerText;
     let pos = getCaretPosition(display);
 
-    // 포커스가 없거나 10초 경과 시 맨 뒤로 설정
     const selection = window.getSelection();
     if (selection.rangeCount === 0 || Date.now() - lastInputTime > 10000) {
         pos = currentText.length;
@@ -239,7 +233,6 @@ function backspace() {
     if (pos === 0) return;
     
     const rawText = currentText.replace(/,/g, "");
-    let cleanPos = 0;
     let tempCount = 0;
     for (let i = 0; i < currentText.length && i < pos; i++) {
         if (currentText[i] !== ',') tempCount++;
