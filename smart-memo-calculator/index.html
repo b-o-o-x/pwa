@@ -41,7 +41,9 @@ body {
   overflow-y:auto; outline: none; caret-color: #fff; word-break: break-all;
 }
 .display span { display: inline-block; white-space: nowrap; }
-.preview { color:#888; text-align:right; margin-top:6px; font-size:1.1rem; height: 1.2em; }
+.preview-container { display: flex; justify-content: space-between; align-items: center; margin-top: 6px; height: 1.2em; }
+.version { color: #555; font-size: 0.75rem; font-family: monospace; }
+.preview { color:#888; text-align:right; font-size:1.1rem; flex: 1; }
 .buttons { margin-top:14px; display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
 button {
   font-size:1.4rem; padding:18px 0; border:none; border-radius:12px;
@@ -69,7 +71,10 @@ button:active { opacity: 0.7; }
 <div class="calculator">
   <div class="display-wrap">
     <div id="display" class="display" contenteditable="true" inputmode="none" spellcheck="false">0</div>
-    <div id="preview" class="preview"></div>
+    <div class="preview-container">
+      <div class="version">V260809-0211</div>
+      <div id="preview" class="preview"></div>
+    </div>
   </div>
 
   <div class="buttons">
@@ -155,7 +160,8 @@ function setCaretAndScroll(element, offset) {
     if (found) {
         const span = document.createElement("span");
         range.insertNode(span);
-        span.scrollIntoView({ block: 'nearest' });
+        // 'end'로 수정하여 스크롤이 맨 아래에 딱 붙도록 처리 (숫자가 잘려 보이는 오해 방지)
+        span.scrollIntoView({ block: 'end' });
         span.remove();
     }
 }
