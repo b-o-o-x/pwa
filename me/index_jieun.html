@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>전문강사 김지은 | Profile</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Noto Sans KR', sans-serif;
+        }
+
+        body {
+            background-color: #f4f6f9;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* 실시간 웨이브 캔버스 */
+        #waveCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none; /* 클릭 이벤트가 프로필 카드로 전달되도록 설정 */
+        }
+
+        .container {
+            position: relative;
+            z-index: 1; /* 웨이브 위에 카드가 뜨도록 설정 */
+            background-color: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px); /* 배경 투명감 연출 */
+            width: 100%;
+            max-width: 800px;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        @media (min-width: 768px) {
+            .container {
+                flex-direction: row;
+            }
+        }
+
+        /* 왼쪽 프로필 요약 카드 */
+        .profile-side {
+            background: linear-gradient(135deg, #6e8efb, #a777e3);
+            color: white;
+            padding: 40px 30px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            justify-content: center;
+        }
+
+        @media (min-width: 768px) {
+            .profile-side {
+                width: 35%;
+            }
+        }
+
+        .profile-img {
+            width: 130px;
+            height: 130px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 4px solid rgba(255, 255, 255, 0.8);
+            margin-bottom: 20px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .name {
+            font-size: 1.6rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .title {
+            font-size: 0.95rem;
+            font-weight: 300;
+            opacity: 0.9;
+            margin-bottom: 20px;
+        }
+
+        .tag {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 400;
+        }
+
+        /* 오른쪽 상세 정보 */
+        .content-side {
+            padding: 40px 35px;
+            flex: 1;
+        }
+
+        .intro {
+            font-size: 1rem;
+            line-height: 1.6;
+            color: #555;
+            margin-bottom: 30px;
+            word-break: keep-all;
+        }
+
+        .section-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .section-title::before {
+            content: '';
+            display: inline-block;
+            width: 4px;
+            height: 16px;
+            background-color: #6e8efb;
+            border-radius: 2px;
+        }
+
+        .info-list {
+            list-style: none;
+            margin-bottom: 25px;
+        }
+
+        .info-list li {
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: flex-start;
+        }
+
+        .info-list li span {
+            display: inline-block;
+            width: 80px;
+            font-weight: 500;
+            color: #333;
+            flex-shrink: 0;
+        }
+
+        .contact-btn {
+            display: inline-block;
+            width: 100%;
+            padding: 12px 0;
+            background-color: #6e8efb;
+            color: white;
+            text-align: center;
+            text-decoration: none;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+            box-shadow: 0 4px 12px rgba(110, 142, 251, 0.3);
+        }
+
+        .contact-btn:hover {
+            background-color: #5a7be3;
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 웨이브 배경 Canvas -->
+    <canvas id="waveCanvas"></canvas>
+
+    <div class="container">
+        <!-- 왼쪽: 프로필 요약 -->
+        <div class="profile-side">
+            <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=300&auto=format&fit=crop" alt="김지은 강사" class="profile-img">
+            <h1 class="name">김지은</h1>
+            <p class="title">전문강사</p>
+            <span class="tag">#성장 #소통 #역량강화</span>
+        </div>
+
+        <!-- 오른쪽: 세부 소개 -->
+        <div class="content-side">
+            <p class="intro">
+                안녕하세요, 배움과 변화를 전달하는 <strong>전문강사 김지은</strong>입니다. 
+                명확한 핵심 전달과 입체적인 참여형 강의로 학습자 스스로 성장할 수 있는 동기를 부여합니다.
+            </p>
+
+            <h2 class="section-title">주요 강의 분야</h2>
+            <ul class="info-list">
+                <li>• 커뮤니케이션 & 리더십 교육</li>
+                <li>• 조직 활성화 및 동기부여</li>
+                <li>• 서비스 마인드 & CS 역량 강화</li>
+            </ul>
+
+            <h2 class="section-title">연락처 및 문의</h2>
+            <ul class="info-list">
+                <li><span>이메일</span> migosachuk@naver.com</li>
+                <li><span>연락처</span> 010-2829-1912</li>
+                <li><span>블로그</span> blog.naver.com/jieun_lecture</li>
+            </ul>
+
+            <a href="mailto:migosachuk@naver.com" class="contact-btn">강의 문의하기</a>
+        </div>
+    </div>
+
+    <!-- 웨이브 애니메이션 스크립트 -->
+    <script>
+        const canvas = document.getElementById('waveCanvas');
+        const ctx = canvas.getContext('2d');
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        let step = 0;
+
+        function drawWave() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // 물결 레이어 설정 (색상 및 속도 다르게 부여)
+            const waves = [
+                { length: 0.005, amplitude: 25, speed: 0.02, color: 'rgba(110, 142, 251, 0.15)', offset: 0 },
+                { length: 0.008, amplitude: 35, speed: 0.015, color: 'rgba(167, 119, 227, 0.12)', offset: 2 },
+                { length: 0.004, amplitude: 20, speed: 0.025, color: 'rgba(110, 142, 251, 0.08)', offset: 4 }
+            ];
+
+            waves.forEach(wave => {
+                ctx.beginPath();
+                ctx.fillStyle = wave.color;
+
+                const baseHeight = canvas.height * 0.75; // 파도가 위치할 기본 높이
+
+                ctx.moveTo(0, canvas.height);
+                for (let x = 0; x <= canvas.width; x++) {
+                    const y = Math.sin(x * wave.length + step * wave.speed + wave.offset) * wave.amplitude + baseHeight;
+                    ctx.lineTo(x, y);
+                }
+
+                ctx.lineTo(canvas.width, canvas.height);
+                ctx.closePath();
+                ctx.fill();
+            });
+
+            step++;
+            requestAnimationFrame(drawWave);
+        }
+
+        drawWave();
+    </script>
+</body>
+</html>

@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>양승민 | Programmer Profile</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', 'Noto Sans KR', sans-serif;
+            background-color: #0f172a;
+            color: #f1f5f9;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            overflow: hidden;
+        }
+
+        /* 캔버스 배경 (웨이브 효과) */
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 0;
+        }
+
+        /* 메인 카드 컨테이너 */
+        .profile-card {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            padding: 40px;
+            width: 100%;
+            max-width: 480px;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            animation: fadeIn 0.8s ease-out;
+            position: relative;
+            z-index: 1;
+        }
+
+        .avatar {
+            width: 100px;
+            height: 100px;
+            background: linear-gradient(135deg, #38bdf8, #818cf8);
+            border-radius: 50%;
+            margin: 0 auto 24px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 2rem;
+            box-shadow: 0 0 20px rgba(56, 189, 248, 0.4);
+        }
+
+        h1 { font-size: 1.8rem; font-weight: 700; margin-bottom: 8px; }
+        .subtitle { font-size: 1rem; color: #38bdf8; font-weight: 500; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 1px; }
+        .description { font-size: 0.95rem; color: #94a3b8; line-height: 1.6; margin-bottom: 32px; font-weight: 300; }
+
+        .tech-tags { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-bottom: 32px; }
+        .tag { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); padding: 6px 14px; border-radius: 50px; font-size: 0.85rem; color: #cbd5e1; transition: all 0.3s ease; }
+        .tag:hover { background: #38bdf8; color: #0f172a; transform: translateY(-2px); }
+
+        .contact-btn { display: inline-block; width: 100%; padding: 14px; background: #f1f5f9; color: #0f172a; text-decoration: none; border-radius: 12px; font-weight: 500; font-size: 0.95rem; transition: all 0.3s ease; cursor: pointer; }
+        .contact-btn:hover { background: #38bdf8; color: #ffffff; box-shadow: 0 8px 20px rgba(56, 189, 248, 0.3); transform: translateY(-2px); }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+
+    <canvas id="waveCanvas"></canvas>
+
+    <div class="profile-card">
+        <div class="avatar">👨‍💻</div>
+        <h1>양승민</h1>
+        <div class="subtitle">Programmer</div>
+        <p class="description">
+            복잡한 문제를 단순하고 아름다운 코드로 해결하는 것을 좋아합니다. 
+            현재 파이어베이스와 웹 기술을 활용한 효율적인 비즈니스 도구를 개발하고 있습니다.
+        </p>
+        <div class="tech-tags">
+            <span class="tag">HTML / CSS</span>
+            <span class="tag">JavaScript</span>
+            <span class="tag">Firebase</span>
+            <span class="tag">Web App</span>
+        </div>
+        <a class="contact-btn" onclick="toggleMusic()">🎵 음악 재생/정지</a>
+        <audio id="bgm" loop>
+            <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mpeg">
+        </audio>
+    </div>
+
+    <script>
+        // 배경 웨이브 스크립트
+        const canvas = document.getElementById('waveCanvas');
+        const ctx = canvas.getContext('2d');
+        let width, height;
+
+        function init() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        }
+
+        function drawWaves(t) {
+            ctx.clearRect(0, 0, width, height);
+            ctx.fillStyle = '#0f172a';
+            ctx.fillRect(0, 0, width, height);
+            ctx.beginPath();
+            ctx.moveTo(0, height);
+            for (let i = 0; i <= width; i += 10) {
+                let y = Math.sin(i * 0.005 + t * 0.02) * 50 + Math.sin(i * 0.002 + t * 0.01) * 30 + height / 1.5;
+                ctx.lineTo(i, y);
+            }
+            ctx.lineTo(width, height);
+            ctx.fillStyle = '#1e293b';
+            ctx.fill();
+            requestAnimationFrame(() => drawWaves(t + 1));
+        }
+
+        window.addEventListener('resize', init);
+        init();
+        drawWaves(0);
+
+        // 음악 컨트롤
+        function toggleMusic() {
+            const audio = document.getElementById('bgm');
+            audio.paused ? audio.play() : audio.pause();
+        }
+    </script>
+</body>
+</html>
