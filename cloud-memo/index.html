@@ -63,9 +63,10 @@
 
 <div id="mainSection" class="hidden">
     <div class="header">
-        <div class="flex items-center gap-2">
+        <!-- flex 레이아웃을 인라인 스타일로 구현 -->
+        <div style="display: flex; align-items: center; gap: 8px;">
             <b id="userInfo">☁️ Cloud Memo - 내 메모</b>
-        <span class="text-[11px] text-gray-400 font-mono">V260811-0138</span>
+            <span style="font-size: 11px; color: #999; font-family: monospace;">V260811-0213</span>
         </div>
         <button onclick="logout()" class="btn" style="background:none; color:#999;">로그아웃</button>
     </div>
