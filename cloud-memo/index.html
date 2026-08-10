@@ -63,7 +63,8 @@
 
 <div id="mainSection" class="hidden">
     <div class="header">
-        <b id="userInfo">내 메모</b>
+        <b id="userInfo">☁️ Cloud Memo - 내 메모</b>
+        <span class="text-[11px] text-gray-400 font-mono">V260811-0138</span>
         <button onclick="logout()" class="btn" style="background:none; color:#999;">로그아웃</button>
     </div>
 
@@ -74,6 +75,9 @@
         <div style="margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center;">
             <button class="btn btn-back" onclick="showList()">◀ 목록</button>
             <div>
+                <!-- Undo, Redo 버튼 추가 -->
+                <button class="btn" id="undoBtn" onclick="undoMemo()" style="background:#e0e0e0; color:#333; margin-right:4px;" disabled>↩ 취소</button>
+                <button class="btn" id="redoBtn" onclick="redoMemo()" style="background:#e0e0e0; color:#333; margin-right:8px;" disabled>↪ 복구</button>
                 <button class="btn btn-delete" onclick="deleteMemo()" style="margin-right:8px;">삭제</button>
                 <button class="btn" style="background:#34a853; color:white;" onclick="saveMemo()">저장</button>
             </div>
@@ -119,6 +123,11 @@
     let activeColor = "#fff9c4";
     let debounceTimer;
     let detailUnsubscribe = null;
+
+    // Undo / Redo를 위한 상태 변수
+    let undoStack = [];
+    let redoStack = [];
+    let isInternalChange = false;
 
     onAuthStateChanged(auth, (user) => {
         if (user) {
@@ -168,7 +177,13 @@
         activeMemoId = id;
         activeColor = color || "#fff9c4";
         const memoInput = document.getElementById('memoInput');
-        memoInput.value = content;
+        
+        // 히스토리 초기화
+        undoStack = [content || ""];
+        redoStack = [];
+        updateUndoRedoUI();
+
+        memoInput.value = content || "";
         updateUIWithColor(activeColor);
         showDetail();
 
@@ -181,16 +196,12 @@
                 // 사용자가 타이핑 중이 아닐 때만 업데이트
                 if (!isTyping) {
                     if (memoInput.value !== data.content) {
-                        // 1. 현재 커서의 시작/끝 위치를 기억해둡니다.
                         const start = memoInput.selectionStart;
                         const end = memoInput.selectionEnd;
         
-                        // 2. 내용을 업데이트합니다.
                         memoInput.value = data.content;
                         updateUIWithColor(data.color || "#fff9c4");
         
-                        // 3. 기억해둔 위치로 커서를 다시 복구합니다.
-                        // (단, 포커스 상태일 때만 의미가 있으므로 체크해줍니다.)
                         if (document.activeElement === memoInput) {
                             memoInput.setSelectionRange(start, end);
                         }
@@ -241,7 +252,66 @@
         }
     };
 
-    document.getElementById('memoInput').addEventListener('input', () => {
+    // Undo / Redo 관련 함수 및 버튼 상태 업데이트
+    function updateUndoRedoUI() {
+        const undoBtn = document.getElementById('undoBtn');
+        const redoBtn = document.getElementById('redoBtn');
+        
+        if (undoStack.length > 1) {
+            undoBtn.disabled = false;
+            undoBtn.style.background = '#ff9800';
+            undoBtn.style.color = 'white';
+        } else {
+            undoBtn.disabled = true;
+            undoBtn.style.background = '#e0e0e0';
+            undoBtn.style.color = '#333';
+        }
+
+        if (redoStack.length > 0) {
+            redoBtn.disabled = false;
+            redoBtn.style.background = '#ff9800';
+            redoBtn.style.color = 'white';
+        } else {
+            redoBtn.disabled = true;
+            redoBtn.style.background = '#e0e0e0';
+            redoBtn.style.color = '#333';
+        }
+    }
+
+    window.undoMemo = () => {
+        if (undoStack.length > 1) {
+            const currentState = undoStack.pop();
+            redoStack.push(currentState);
+            const prevState = undoStack[undoStack.length - 1];
+            
+            isInternalChange = true;
+            const memo = document.getElementById('memoInput');
+            memo.value = prevState;
+            updateUndoRedoUI();
+            saveMemo();
+            isInternalChange = false;
+        }
+    };
+
+    window.redoMemo = () => {
+        if (redoStack.length > 0) {
+            const nextState = redoStack.pop();
+            undoStack.push(nextState);
+            
+            isInternalChange = true;
+            const memo = document.getElementById('memoInput');
+            memo.value = nextState;
+            updateUndoRedoUI();
+            saveMemo();
+            isInternalChange = false;
+        }
+    };
+
+    const memo = document.getElementById('memoInput');
+
+    memo.addEventListener('input', (e) => {
+        if (isInternalChange) return;
+
         isTyping = true; // 타이핑 시작
         document.getElementById('status').innerText = "입력 중...";
         
@@ -255,6 +325,72 @@
         typingTimer = setTimeout(() => {
             isTyping = false;
         }, 2000); 
+
+        // 히스토리 스택에 저장 (글자 입력 시)
+        undoStack.push(memo.value);
+        redoStack = []; // 새로운 입력을 하면 redo 스택은 초기화
+        updateUndoRedoUI();
+
+        // 3. Smart Memo 자동 계산 기능 통합[cite: 1]
+        if (e.data === '=') {
+            const value = memo.value;
+            const pos = memo.selectionStart;
+            
+            // 현재 줄 가져오기
+            const lines = value.substring(0, pos).split('\n');
+            let currentLine = lines[lines.length - 1]; // 예: "3*4=12+2="
+
+            // 연속 계산 처리: 마지막 '=' 기호를 제외하고 그 이전의 '='가 있는지 확인
+            const contentBeforeLastEqual = currentLine.slice(0, -1);
+            const lastEqualIndex = contentBeforeLastEqual.lastIndexOf('=');
+            
+            // 계산 대상 구간 추출 (가장 마지막 '=' 이후부터 현재 '=' 직전까지)
+            let targetSegment = (lastEqualIndex === -1) 
+                ? contentBeforeLastEqual 
+                : contentBeforeLastEqual.substring(lastEqualIndex + 1);
+
+            // 1. 콤마 여부 확인 (대상 구간 내에 콤마가 있는지)
+            const hasComma = targetSegment.includes(',');
+
+            // 2. 문자가 포함된 괄호 영역 제거
+            let processedSegment = targetSegment.replace(/\([^)]*[가-힣a-zA-Z][^)]*\)/g, '');
+
+            // 3. % 연산 처리
+            processedSegment = processedSegment.replace(/([0-9.,]+)%/g, '($1/100)');
+
+            // 4. 순수 수식 추출
+            let cleanExpr = processedSegment.replace(/[^-0-9+*/().,]/g, '').replace(/,/g, '');
+
+            try {
+                if (cleanExpr.trim() !== '') {
+                    // eval은 문자열 수식을 계산함
+                    let result = eval(cleanExpr);
+                    
+                    // 소수점 처리 (최대 10자리까지만, 불필요한 0 제거)
+                    if (!Number.isInteger(result)) {
+                        result = Number(result.toFixed(10));
+                    }
+                    
+                    let formattedResult = hasComma ? result.toLocaleString() : result;
+                    
+                    const before = value.substring(0, pos);
+                    const after = value.substring(pos);
+                    memo.value = before + formattedResult + after;
+                    
+                    const newPos = pos + String(formattedResult).length;
+                    memo.setSelectionRange(newPos, newPos);
+                    
+                    // 계산 결과 반영 후 스택에 반영
+                    undoStack.push(memo.value);
+                    updateUndoRedoUI();
+
+                    localStorage.setItem('smartMemoContent', memo.value);
+                    saveMemo(); // 계산 결과 즉시 저장
+                }
+            } catch (err) {
+                console.log("계산 오류: ", err);
+            }
+        }
     });
 
     window.showDetail = () => {
