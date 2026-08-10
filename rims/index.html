@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>재고 및 대여 관리 시스템</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans antialiased min-h-screen flex flex-col">
+
+    <!-- 1. 관리자 로그인 화면 -->
+    <section id="login-section" class="flex-1 flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-md p-8 rounded-2xl shadow-sm border border-gray-100">
+            <div class="text-center mb-8">
+                <div class="bg-indigo-50 w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4 text-indigo-600">
+                    <i data-lucide="shield-check" class="w-7 h-7"></i>
+                </div>
+                <h1 class="text-2xl font-bold text-gray-900">관리자 로그인</h1>
+                <p class="text-sm text-gray-500 mt-1">재고관리 시스템</p>
+            </div>
+            <form onsubmit="handleLogin(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">아이디 (이메일)</label>
+                    <input type="email" id="admin-email" required class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm" placeholder="admin@example.com">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">비밀번호</label>
+                    <input type="password" id="admin-password" required class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm" placeholder="••••••••">
+                </div>
+                <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-3 rounded-xl transition duration-200 shadow-sm cursor-pointer">
+                    로그인
+                </button>
+            </form>
+        </div>
+    </section>
+
+    <!-- 2. 메인 대시보드 -->
+    <div id="app-section" class="hidden flex-1 flex flex-col">
+        <header class="bg-white border-b border-gray-200 sticky top-0 z-10">
+            <div class="max-w-[95rem] mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <div class="bg-indigo-600 text-white p-2 rounded-lg">
+                        <i data-lucide="package" class="w-5 h-5"></i>
+                    </div>
+                    <span class="font-bold text-lg text-gray-900">재고 및 대여 관리</span>
+                </div>
+                <button onclick="handleLogout()" class="text-sm text-gray-500 hover:text-red-600 flex items-center gap-1 font-medium transition cursor-pointer">
+                    <i data-lucide="log-out" class="w-4 h-4"></i> 로그아웃
+                </button>
+            </div>
+        </header>
+
+        <main class="flex-1 max-w-[95rem] w-full mx-auto p-4 sm:p-6 lg:p-8">
+            <!-- [페이지 A] 재고 목록 페이지 (5개씩 보이도록 lg:grid-cols-5 적용) -->
+            <div id="page-inventory-list" class="space-y-6">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h2 class="text-xl font-bold text-gray-900">재고 현황 목록</h2>
+                        <p class="text-sm text-gray-500 mt-0.5">자재를 클릭하여 정보를 수정할 수 있습니다.</p>
+                    </div>
+                    <button onclick="showPage('add')" class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm px-4 py-2.5 rounded-xl font-medium transition flex items-center gap-1.5 shadow-sm cursor-pointer">
+                        <i data-lucide="plus" class="w-4 h-4"></i> 재고 입력
+                    </button>
+                </div>
+
+                <div id="inventory-container" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+                    <!-- 데이터 동적 삽입 -->
+                </div>
+            </div>
+
+            <!-- [페이지 B] 신규 자재 입력 페이지 -->
+            <div id="page-inventory-add" class="hidden max-w-xl mx-auto bg-white rounded-2xl border border-gray-200 p-6 sm:p-8 shadow-xs space-y-6">
+                <div class="flex items-center justify-between border-b border-gray-100 pb-4">
+                    <h2 class="text-xl font-bold text-gray-900">신규 자재 등록</h2>
+                    <button onclick="showPage('list')" class="text-gray-400 hover:text-gray-600 text-sm font-medium cursor-pointer">취소</button>
+                </div>
+
+                <form onsubmit="handleSaveInventory(event)" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">자재번호 (자동생성)</label>
+                        <input type="text" id="item-code" readonly class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-gray-500 text-sm font-mono">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">자재명</label>
+                        <input type="text" id="item-name" required class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm" placeholder="예: 글라스 패널 (100x100)">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">사진 업로드</label>
+                        <input type="file" id="item-image" accept="image/*" class="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">자재위치</label>
+                        <input type="text" id="item-location" required class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm" placeholder="예: 창고 A동 3열">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">재고 수량</label>
+                        <input type="number" id="item-qty" required min="0" class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm" placeholder="예: 10">
+                    </div>
+                    <div class="pt-2">
+                        <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-3 rounded-xl transition duration-200 shadow-sm cursor-pointer">
+                            저장 후 목록으로 이동
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- [페이지 C] 자재 정보 수정 페이지 (사진 업로드 및 조그마한 미리보기 추가) -->
+            <div id="page-inventory-edit" class="hidden max-w-xl mx-auto bg-white rounded-2xl border border-gray-200 p-6 sm:p-8 shadow-xs space-y-6">
+                <div class="flex items-center justify-between border-b border-gray-100 pb-4">
+                    <h2 class="text-xl font-bold text-gray-900">자재 정보 수정</h2>
+                    <button onclick="showPage('list')" class="text-gray-400 hover:text-gray-600 text-sm font-medium cursor-pointer">취소</button>
+                </div>
+
+                <form onsubmit="handleUpdateInventory(event)" class="space-y-4">
+                    <input type="hidden" id="edit-doc-id">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">자재번호</label>
+                        <input type="text" id="edit-item-code" readonly class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-gray-500 text-sm font-mono">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">자재명</label>
+                        <input type="text" id="edit-item-name" required class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">사진 변경 및 미리보기</label>
+                        <div class="flex items-center gap-4">
+                            <div id="edit-image-preview-container" class="w-16 h-16 bg-gray-100 rounded-xl border border-gray-200 flex items-center justify-center overflow-hidden shrink-0">
+                                <i data-lucide="image" class="w-6 h-6 text-gray-400"></i>
+                            </div>
+                            <input type="file" id="edit-item-image" accept="image/*" class="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">자재위치</label>
+                        <input type="text" id="edit-item-location" required class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">전체 재고 수량</label>
+                        <input type="number" id="edit-item-qty" required min="0" class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm">
+                    </div>
+                    <div class="pt-2 flex gap-3">
+                        <button type="submit" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-3 rounded-xl transition duration-200 shadow-sm cursor-pointer">
+                            수정 내용 저장
+                        </button>
+                        <button type="button" onclick="handleDeleteInventory()" class="bg-red-50 hover:bg-red-100 text-red-600 px-5 font-medium py-3 rounded-xl transition duration-200 cursor-pointer text-sm">
+                            자재 삭제
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </main>
+    </div>
+
+    <!-- 대여 등록 모달 팝업 (폼 및 달력 선택) -->
+    <div id="rent-modal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+        <div class="bg-white p-6 sm:p-8 rounded-2xl w-full max-w-md space-y-4 shadow-xl">
+            <div class="flex justify-between items-center border-b border-gray-100 pb-3">
+                <h3 class="font-bold text-lg text-gray-900">대여 등록</h3>
+                <button onclick="closeRentModal()" class="text-gray-400 hover:text-gray-600 text-sm font-medium cursor-pointer">취소</button>
+            </div>
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">대여자명</label>
+                    <input type="text" id="rent-name" class="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="대여자 이름을 입력하세요">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">대여 수량 <span id="rent-max-label" class="text-indigo-600 font-normal"></span></label>
+                    <input type="number" id="rent-qty" min="1" class="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="수량 입력">
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">대여 시작일</label>
+                        <input type="date" id="rent-start-date" class="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">대여 종료일</label>
+                        <input type="date" id="rent-end-date" class="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                    </div>
+                </div>
+            </div>
+            <div class="pt-2 flex gap-2">
+                <button onclick="submitRentModal()" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-3 rounded-xl transition duration-200 cursor-pointer">대여 확정</button>
+                <button onclick="closeRentModal()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-5 font-medium py-3 rounded-xl transition duration-200 cursor-pointer text-sm">취소</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase 및 앱 로직 스크립트 -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, deleteDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAF2qxRABXg1rBzRIUu8pAPJi4jXlfYJXg",
+            authDomain: "inventory-app-b3965.firebaseapp.com",
+            projectId: "inventory-app-b3965",
+            storageBucket: "inventory-app-b3965.firebasestorage.app",
+            messagingSenderId: "635515962355",
+            appId: "1:635515962355:web:76832b13600893ca074886",
+            measurementId: "G-M8C0E4428N"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        window.handleLogin = function(event) {
+            event.preventDefault();
+            const email = document.getElementById('admin-email').value;
+            const password = document.getElementById('admin-password').value;
+            signInWithEmailAndPassword(auth, email, password).catch((error) => {
+                alert("로그인 실패: " + error.message);
+            });
+        };
+
+        window.handleLogout = function() {
+            signOut(auth);
+        };
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                document.getElementById('login-section').classList.add('hidden');
+                document.getElementById('app-section').classList.remove('hidden');
+                window.loadInventoryList();
+            } else {
+                document.getElementById('login-section').classList.remove('hidden');
+                document.getElementById('app-section').classList.add('hidden');
+            }
+        });
+
+        // 재고 목록 불러오기 (다중 대여자 목록 렌더링 포함)
+        window.loadInventoryList = async function() {
+            const container = document.getElementById('inventory-container');
+            container.innerHTML = '<p class="text-sm text-gray-400 col-span-full text-center py-8">데이터를 불러오는 중...</p>';
+
+            try {
+                const querySnapshot = await getDocs(collection(db, "inventories"));
+                container.innerHTML = '';
+
+                if (querySnapshot.empty) {
+                    container.innerHTML = '<p class="text-sm text-gray-400 col-span-full text-center py-8">등록된 자재가 없습니다. [재고 입력]을 눌러 등록해주세요.</p>';
+                    return;
+                }
+
+                querySnapshot.forEach((documentSnapshot) => {
+                    const item = documentSnapshot.data();
+                    const docId = documentSnapshot.id;
+                    const totalQty = Number(item.qty) || 0;
+                    const renters = item.renters || []; 
+
+                    const currentRentedQty = renters.reduce((sum, r) => sum + Number(r.qty), 0);
+
+                    let rentersHTML = '';
+                    if (renters.length === 0) {
+                        rentersHTML = '<p class="text-xs text-gray-400 text-center py-1">대여 내역 없음</p>';
+                    } else {
+                        renters.forEach((r, idx) => {
+                            rentersHTML += `
+                                <div class="flex justify-between items-center text-xs text-gray-600 border-b border-gray-100 last:border-0 pb-1.5 pt-1">
+                                    <div>
+                                        <strong class="text-gray-900">${r.name}</strong> (${r.qty}개)
+                                        <div class="text-[10px] text-gray-400">${r.period}</div>
+                                    </div>
+                                    <button onclick="togglePayment('${docId}', ${idx}, ${r.isPaid})" class="px-2 py-0.5 rounded font-semibold text-[11px] transition cursor-pointer ${r.isPaid ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200' : 'bg-amber-100 text-amber-700 hover:bg-amber-200'}">
+                                        ${r.isPaid ? '입금완료' : '미입금'}
+                                    </button>
+                                </div>
+                            `;
+                        });
+                    }
+
+                    const cardHTML = `
+                        <div class="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-xs flex flex-col">
+                            <div onclick="openEditPage('${docId}')" class="cursor-pointer group">
+                                <div class="relative h-44 bg-gray-100 flex items-center justify-center text-gray-400 overflow-hidden">
+                                    ${item.imageUrl ? `<img src="${item.imageUrl}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300">` : '<i data-lucide="image" class="w-10 h-10"></i>'}
+                                    <span class="absolute top-3 left-3 bg-black/60 text-white text-xs px-2.5 py-1 rounded-full font-medium">No. ${item.code}</span>
+                                    <div class="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition flex items-center justify-center opacity-0 group-hover:opacity-100">
+                                        <span class="bg-white/90 text-gray-900 text-xs px-3 py-1.5 rounded-lg font-medium shadow-xs">클릭하여 수정</span>
+                                    </div>
+                                </div>
+                                <div class="p-4 pb-2">
+                                    <div class="flex justify-between items-start">
+                                        <h3 class="font-bold text-gray-900 text-base group-hover:text-indigo-600 transition truncate max-w-[120px]">${item.name}</h3>
+                                        <span class="text-[11px] bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-md font-medium truncate max-w-[80px]">${item.location}</span>
+                                    </div>
+                                    <div class="flex justify-between items-center mt-2 text-xs text-gray-500">
+                                        <span>전체: <strong class="text-gray-800">${totalQty}개</strong></span>
+                                        <span class="text-indigo-600 font-medium">가능: ${totalQty - currentRentedQty}개</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="px-4 pb-4 flex-1 flex flex-col justify-between space-y-3">
+                                <div class="bg-gray-50 rounded-xl p-2.5 border border-gray-100 space-y-1">
+                                    <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">대여 현황 목록</div>
+                                    ${rentersHTML}
+                                </div>
+
+                                <button onclick="openRentModal('${docId}', ${totalQty}, ${currentRentedQty})" class="w-full bg-gray-900 hover:bg-gray-800 text-white py-2 rounded-xl text-xs font-medium transition cursor-pointer flex items-center justify-center gap-1.5 shadow-xs">
+                                    <i data-lucide="calendar-plus" class="w-3.5 h-3.5"></i> 대여 등록
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    container.innerHTML += cardHTML;
+                });
+                lucide.createIcons();
+            } catch (error) {
+                console.error("데이터 로드 오류:", error);
+                container.innerHTML = '<p class="text-sm text-red-500 col-span-full text-center py-8">데이터를 불러오지 못했습니다.</p>';
+            }
+        };
+
+        // 신규 자재 저장 (사진 포함)
+        window.handleSaveInventory = async function(event) {
+            event.preventDefault();
+            const code = document.getElementById('item-code').value;
+            const name = document.getElementById('item-name').value;
+            const location = document.getElementById('item-location').value;
+            const qty = Number(document.getElementById('item-qty').value);
+            const imageInput = document.getElementById('item-image');
+
+            let imageUrl = "";
+            if (imageInput.files && imageInput.files[0]) {
+                const reader = new FileReader();
+                reader.readAsDataURL(imageInput.files[0]);
+                await new Promise((resolve) => {
+                    reader.onload = () => { imageUrl = reader.result; resolve(); };
+                });
+            }
+
+            try {
+                await addDoc(collection(db, "inventories"), {
+                    code, name, location, qty, imageUrl,
+                    renters: [],
+                    createdAt: new Date()
+                });
+                alert('새 자재가 등록되었습니다.');
+                event.target.reset();
+                showPage('list');
+            } catch (error) {
+                alert('등록 실패: ' + error.message);
+            }
+        };
+
+        // 대여 등록 모달 제어 변수 및 함수
+        let currentRentDocId = null;
+        let currentMaxAvailable = 0;
+
+        window.openRentModal = function(docId, totalQty, currentRentedQty) {
+            const availableQty = totalQty - currentRentedQty;
+            if (availableQty <= 0) {
+                alert('현재 남은 재고 수량이 없습니다!');
+                return;
+            }
+            currentRentDocId = docId;
+            currentMaxAvailable = availableQty;
+
+            document.getElementById('rent-max-label.base') || (document.getElementById('rent-max-label').innerText = `(최대 ${availableQty}개 가능)`);
+            document.getElementById('rent-name').value = '';
+            document.getElementById('rent-qty').value = '';
+            document.getElementById('rent-start-date').value = '';
+            document.getElementById('rent-end-date').value = '';
+            document.getElementById('rent-modal').classList.remove('hidden');
+        };
+
+        window.closeRentModal = function() {
+            document.getElementById('rent-modal').classList.add('hidden');
+            currentRentDocId = null;
+        };
+
+        window.submitRentModal = async function() {
+            const renterName = document.getElementById('rent-name').value.trim();
+            const rentQty = Number(document.getElementById('rent-qty').value);
+            const startDate = document.getElementById('rent-start-date').value;
+            const endDate = document.getElementById('rent-end-date').value;
+
+            if (!renterName) {
+                alert('대여자명을 입력해주세요.');
+                return;
+            }
+            if (isNaN(rentQty) || rentQty <= 0) {
+                alert('올바른 대여 수량을 입력해주세요.');
+                return;
+            }
+            if (rentQty > currentMaxAvailable) {
+                alert(`재고 수량이 부족합니다! (최대 대여 가능 수량: ${currentMaxAvailable}개)`);
+                return;
+            }
+            if (!startDate || !endDate) {
+                alert('대여 시작일과 종료일을 모두 선택해주세요.');
+                return;
+            }
+
+            // 날짜 포맷팅 (예: 2026-08-10 ~ 2026-08-12 -> 08.10 ~ 08.12 형태로 변환 또는 그대로 사용)
+            const formatDateStr = (dStr) => {
+                const parts = dStr.split('-');
+                return `${parts[1]}.${parts[2]}`;
+            };
+            const rentPeriod = `${formatDateStr(startDate)} ~ ${formatDateStr(endDate)}`;
+
+            try {
+                const docRef = doc(db, "inventories", currentRentDocId);
+                const docSnap = await getDoc(docRef);
+                const existingData = docSnap.data();
+                const renters = existingData.renters || [];
+
+                renters.push({
+                    name: renterName,
+                    qty: rentQty,
+                    period: rentPeriod,
+                    isPaid: false
+                });
+
+                await updateDoc(docRef, { renters });
+                alert('대여 정보가 등록되었습니다.');
+                closeRentModal();
+                loadInventoryList();
+            } catch (error) {
+                alert('대여 등록 실패: ' + error.message);
+            }
+        };
+
+        // 개별 대여자 입금 상태 토글
+        window.togglePayment = async function(docId, renterIndex, currentStatus) {
+            try {
+                const docRef = doc(db, "inventories", docId);
+                const docSnap = await getDoc(docRef);
+                const renters = docSnap.data().renters || [];
+
+                if (renters[renterIndex]) {
+                    renters[renterIndex].isPaid = !currentStatus;
+                    await updateDoc(docRef, { renters });
+                    loadInventoryList();
+                }
+            } catch (error) {
+                alert('상태 변경 실패: ' + error.message);
+            }
+        };
+
+        // 자재 수정 페이지 열기 (사진 미리보기 포함)
+        window.openEditPage = async function(docId) {
+            try {
+                const docRef = doc(db, "inventories", docId);
+                const docSnap = await getDoc(docRef);
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    document.getElementById('edit-doc-id').value = docId;
+                    document.getElementById('edit-item-code').value = data.code;
+                    document.getElementById('edit-item-name').value = data.name;
+                    document.getElementById('edit-item-location').value = data.location;
+                    document.getElementById('edit-item-qty').value = data.qty;
+                    document.getElementById('edit-item-image').value = ''; // 파일 input 초기화
+
+                    const previewContainer = document.getElementById('edit-image-preview-container');
+                    if (data.imageUrl) {
+                        previewContainer.innerHTML = `<img src="${data.imageUrl}" class="w-full h-full object-cover">`;
+                    } else {
+                        previewContainer.innerHTML = `<i data-lucide="image" class="w-6 h-6 text-gray-400"></i>`;
+                    }
+
+                    showPage('edit');
+                    lucide.createIcons();
+                }
+            } catch (error) {
+                alert('정보를 불러오지 못했습니다: ' + error.message);
+            }
+        };
+
+        // 자재 수정 저장 (새 사진 업로드 반영)
+        window.handleUpdateInventory = async function(event) {
+            event.preventDefault();
+            const docId = document.getElementById('edit-doc-id').value;
+            const name = document.getElementById('edit-item-name').value;
+            const location = document.getElementById('edit-item-location').value;
+            const qty = Number(document.getElementById('edit-item-qty').value);
+            const imageInput = document.getElementById('edit-item-image');
+
+            try {
+                const docRef = doc(db, "inventories", docId);
+                let updateData = { name, location, qty };
+
+                if (imageInput.files && imageInput.files[0]) {
+                    const reader = new FileReader();
+                    reader.readAsDataURL(imageInput.files[0]);
+                    await new Promise((resolve) => {
+                        reader.onload = () => { updateData.imageUrl = reader.result; resolve(); };
+                    });
+                }
+
+                await updateDoc(docRef, updateData);
+                alert('자재 정보가 수정되었습니다.');
+                showPage('list');
+            } catch (error) {
+                alert('수정 실패: ' + error.message);
+            }
+        };
+
+        // 자재 삭제
+        window.handleDeleteInventory = async function() {
+            if (!confirm('정말 이 자재를 삭제하시겠습니까?')) return;
+            const docId = document.getElementById('edit-doc-id').value;
+
+            try {
+                await deleteDoc(doc(db, "inventories", docId));
+                alert('자재가 삭제되었습니다.');
+                showPage('list');
+            } catch (error) {
+                alert('삭제 실패: ' + error.message);
+            }
+        };
+    </script>
+
+    <!-- UI 페이지 전환 스크립트 -->
+    <script>
+        lucide.createIcons();
+        function showPage(pageName) {
+            document.getElementById('page-inventory-list').classList.add('hidden');
+            document.getElementById('page-inventory-add').classList.add('hidden');
+            document.getElementById('page-inventory-edit').classList.add('hidden');
+
+            if (pageName === 'list') {
+                document.getElementById('page-inventory-list').classList.remove('hidden');
+                if (window.loadInventoryList) window.loadInventoryList();
+            } else if (pageName === 'add') {
+                document.getElementById('item-code').value = 'INV-' + Date.now().toString().slice(-6);
+                document.getElementById('page-inventory-add').classList.remove('hidden');
+            } else if (pageName === 'edit') {
+                document.getElementById('page-inventory-edit').classList.remove('hidden');
+            }
+            lucide.createIcons();
+        }
+    </script>
+</body>
+</html>
