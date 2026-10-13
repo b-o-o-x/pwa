@@ -72,10 +72,9 @@ button:active { opacity: 0.7; }
   <div class="display-wrap">
     <div id="display" class="display" contenteditable="true" inputmode="none" spellcheck="false">0</div>
     <div class="preview-container">
-      <div class="version">V261013-1655</div>
+      <div class="version">V261013-1715</div>
       <!-- V260809-0219 : 커서이동, 스크롤이동 등의 자잘한 Bug 수정 -->
-      <!-- V261013-1643 : 오류수식 빨강색표시(연속연산자,초과된닫힘괄호) -->
-      <!-- V261013-1655 : 꾹 눌러 입력 시 렌더링/에러 검사 연동 및 % 뒤 연산자 오류 오인식 수정 -->
+      <!-- V261013-1715 : 1) 오류수식 빨강색표시(연속연산자, %, 괄호불일치) 2) 괄호 삭제되는 Bugfix -->
       <div id="preview" class="preview"></div>
     </div>
   </div>
@@ -199,7 +198,8 @@ function formatWithCaret(rawText, oldCaretPos, addedLen) {
 
 function renderDisplay(targetPos) {
     const rawText = display.innerText.replace(/,/g, "");
-    const tokens = rawText.match(/(\d+|\+|-|\*|\/|%|\(\vert{}\)|\.|\s|[가-힣a-zA-Z]+)/g) || [];
+    // 전각괄호 및 기타 문자가 누락되지 않도록 매칭 패턴 확장 및 캐치올 추가
+    const tokens = rawText.match(/(\d+|\+|-|\*|\/|%|[（）\(\)]|\.|\s|[가-힣a-zA-Z]+|.)/g) || [];
     let html = "";
     
     let prevIsOp = false;
@@ -207,9 +207,9 @@ function renderDisplay(targetPos) {
     let errorIndices = new Set();
     let openStack = [];
     tokens.forEach((token, index) => {
-        if (token === '(') {
+        if (token === '(' || token === '（') {
             openStack.push(index);
-        } else if (token === ')') {
+        } else if (token === ')' || token === '）') {
             if (openStack.length > 0) {
                 openStack.pop();
             } else {
@@ -223,24 +223,32 @@ function renderDisplay(targetPos) {
         let isOp = /^[+\-*/%]$/.test(token);
         let isError = false;
         
-        // 연산자 연속 에러 검사 (%는 뒤에 연산자가 와도 정상 수식이므로 제외)
-        if (isOp && prevIsOp && tokens[index - 1] !== '%') {
-            isError = true;
+        // 1. 연산자 연속 에러 검사
+        if (isOp && prevIsOp) {
+            if (!(token !== '%' && tokens[index - 1] === '%')) {
+                isError = true;
+            }
         }
         
-        // 첫 토큰이 *, %, / 이면 에러
+        // 2. 첫 토큰이 *, %, / 이면 에러
         if (index === 0 && /^[*/%]+$/.test(token)) {
             isError = true;
         }
 
-        // 괄호 짝 불일치 에러
+        // 3. % 기호 전용 검사: % 앞이 연산자이거나 첫 토큰이면 에러 (+% 등 감지)
+        if (token === '%') {
+            if (index === 0 || /^[+\-*/%]$/.test(tokens[index - 1])) {
+                isError = true;
+            }
+        }
+
+        // 4. 괄호 짝 불일치 에러
         if (errorIndices.has(index)) {
             isError = true;
         }
 
-        // % 뒤에는 일반 연산자가 올 수 있으므로 다음 연산자에 대해 prevIsOp를 false로 보정
         if (token === '%') {
-            prevIsOp = false;
+            prevIsOp = true;
         } else {
             prevIsOp = isOp;
         }
@@ -328,7 +336,8 @@ function backspace() {
 function calculate() {
     try {
         const raw = display.innerText;
-        const clean = raw.replace(/,/g, "").replace(/[^0-9+\-*/().%]/g, "");
+        // 계산 시 전각 괄호를 반각 괄호로 변환하여 eval 오류 방지
+        const clean = raw.replace(/,/g, "").replace(/（/g, "(").replace(/）/g, ")").replace(/[^0-9+\-*/().%]/g, "");
         if(!clean) return;
         const result = eval(clean.replace(/(\d+)%/g, "($1/100)"));
         const now = new Date();
@@ -381,7 +390,8 @@ function redo() { if (redoStack.length > 0) { historyStack.push(display.innerTex
 function clearAll() { saveState(); display.innerHTML = "<span>0</span>"; preview.innerText = ""; persist(); }
 function previewCalc() {
     try {
-        const clean = display.innerText.replace(/,/g, "").replace(/[^0-9+\-*/().%]/g, "");
+        const raw = display.innerText;
+        const clean = raw.replace(/,/g, "").replace(/（/g, "(").replace(/）/g, ")").replace(/[^0-9+\-*/().%]/g, "");
         if (!clean || /^[\d.]+$/.test(clean)) { preview.innerText = ""; return; }
         const res = eval(clean.replace(/(\d+)%/g, "($1/100)"));
         preview.innerText = "= " + res.toLocaleString();
@@ -399,11 +409,8 @@ display.addEventListener('touchstart', (e) => {
 display.addEventListener('touchend', () => clearTimeout(longPressTimer));
 display.addEventListener('blur', () => display.setAttribute("inputmode", "none"));
 
-// 꾹 눌러서 직접 타이핑하거나 괄호 등을 입력할 때 실시간 렌더링 및 에러 체크 연동
 display.addEventListener('input', () => {
-    let pos = getCaretPosition(display);
     lastInputTime = Date.now();
-    renderDisplay(pos);
     previewCalc();
     persist();
 });
