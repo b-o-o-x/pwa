@@ -72,9 +72,10 @@ button:active { opacity: 0.7; }
   <div class="display-wrap">
     <div id="display" class="display" contenteditable="true" inputmode="none" spellcheck="false">0</div>
     <div class="preview-container">
-      <div class="version">V261013-1632</div>
+      <div class="version">V261013-1655</div>
       <!-- V260809-0219 : 커서이동, 스크롤이동 등의 자잘한 Bug 수정 -->
-	  <!-- V261013-1632 : 오류수식 빨강색표시 (연속연산자,초과된닫힘괄호) -->
+      <!-- V261013-1643 : 오류수식 빨강색표시(연속연산자,초과된닫힘괄호) -->
+      <!-- V261013-1655 : 꾹 눌러 입력 시 렌더링/에러 검사 연동 및 % 뒤 연산자 오류 오인식 수정 -->
       <div id="preview" class="preview"></div>
     </div>
   </div>
@@ -203,43 +204,46 @@ function renderDisplay(targetPos) {
     
     let prevIsOp = false;
     
-    // 1단계: 괄호 짝 검사를 미리 수행하여 잘못된 괄호 위치 파악
-    let unmatchedCloseIndices = new Set();
-    let openBracketCount = 0;
+    let errorIndices = new Set();
+    let openStack = [];
     tokens.forEach((token, index) => {
         if (token === '(') {
-            openBracketCount++;
+            openStack.push(index);
         } else if (token === ')') {
-            if (openBracketCount > 0) {
-                openBracketCount--;
+            if (openStack.length > 0) {
+                openStack.pop();
             } else {
-                // 짝이 없는 닫힌 괄호 에러
-                unmatchedCloseIndices.add(index);
+                errorIndices.add(index);
             }
         }
     });
+    openStack.forEach(index => errorIndices.add(index));
 
-    // 2단계: 토큰별 렌더링 및 에러(빨간색) 판정
     tokens.forEach((token, index) => {
         let isOp = /^[+\-*/%]$/.test(token);
         let isError = false;
         
-        // 연산자 연속 에러
-        if (isOp && prevIsOp) {
+        // 연산자 연속 에러 검사 (%는 뒤에 연산자가 와도 정상 수식이므로 제외)
+        if (isOp && prevIsOp && tokens[index - 1] !== '%') {
             isError = true;
         }
         
-        // 첫 토큰이 *, /, %, + 이면 에러
-        if (index === 0 && /^[*/%+]$/.test(token)) {
+        // 첫 토큰이 *, %, / 이면 에러
+        if (index === 0 && /^[*/%]+$/.test(token)) {
             isError = true;
         }
 
-        // 짝이 안 맞는 닫힌 괄호 에러
-        if (unmatchedCloseIndices.has(index)) {
+        // 괄호 짝 불일치 에러
+        if (errorIndices.has(index)) {
             isError = true;
         }
 
-        prevIsOp = isOp;
+        // % 뒤에는 일반 연산자가 올 수 있으므로 다음 연산자에 대해 prevIsOp를 false로 보정
+        if (token === '%') {
+            prevIsOp = false;
+        } else {
+            prevIsOp = isOp;
+        }
 
         if (/^\d+$/.test(token)) {
             html += `<span>${parseInt(token).toLocaleString()}</span>`;
@@ -254,7 +258,9 @@ function renderDisplay(targetPos) {
     });
 
     display.innerHTML = html || "<span>0</span>";
-    setCaretAndScroll(display, targetPos);
+    if (targetPos !== null && targetPos !== undefined) {
+        setCaretAndScroll(display, targetPos);
+    }
 }
 
 function append(v) {
@@ -382,12 +388,25 @@ function previewCalc() {
     } catch { preview.innerText = ""; }
 }
 function persist(){ localStorage.setItem("calcValue", display.innerHTML); localStorage.setItem("calcTimeline", JSON.stringify(timeline)); }
+
 display.addEventListener('touchstart', (e) => {
-    longPressTimer = setTimeout(() => { display.setAttribute("inputmode", "text"); display.focus(); if (navigator.vibrate) navigator.vibrate(50); }, 600);
+    longPressTimer = setTimeout(() => { 
+        display.setAttribute("inputmode", "text"); 
+        display.focus(); 
+        if (navigator.vibrate) navigator.vibrate(50); 
+    }, 600);
 });
 display.addEventListener('touchend', () => clearTimeout(longPressTimer));
 display.addEventListener('blur', () => display.setAttribute("inputmode", "none"));
-display.addEventListener('input', () => { lastInputTime = Date.now(); previewCalc(); persist(); });
+
+// 꾹 눌러서 직접 타이핑하거나 괄호 등을 입력할 때 실시간 렌더링 및 에러 체크 연동
+display.addEventListener('input', () => {
+    let pos = getCaretPosition(display);
+    lastInputTime = Date.now();
+    renderDisplay(pos);
+    previewCalc();
+    persist();
+});
 
 const saved = localStorage.getItem("calcValue");
 if(saved) display.innerHTML = saved;
