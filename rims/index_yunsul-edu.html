@@ -30,7 +30,7 @@
       <div class="flex items-center gap-2">
         <i class="fa-solid fa-boxes-stacked text-2xl text-indigo-200"></i>
         <h1 class="text-xl font-bold tracking-tight">재고·대여 관리 시스템</h1>
-        <span class="text-[11px] text-gray-400 font-mono">V260808-1630</span>
+        <span class="text-[11px] text-gray-400 font-mono">V260913-2242</span>
       </div>
       <div id="authNav" class="flex items-center gap-2">
         <div class="bg-indigo-700/60 p-1 rounded-lg flex text-xs sm:text-sm font-medium">
@@ -72,22 +72,7 @@
         <i class="fa-solid fa-plus"></i> 신규 자재 등록
       </button>
     </div>
-
-    <!-- Inventory Cards Section -->
-    <section class="mb-10">
-      <div class="flex justify-between items-center mb-4">
-        <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
-          <i class="fa-solid fa-cubes text-indigo-600"></i> 자재 목록
-        </h2>
-        <span id="itemCount" class="text-xs text-slate-500 font-medium">총 0개 항목</span>
-      </div>
-      
-      <!-- PC 5개, 모바일 2~3개 레이아웃 -->
-      <div id="inventoryGrid" class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-4">
-        <!-- JS로 자재 카드가 생성됩니다 -->
-      </div>
-    </section>
-
+    
     <!-- User/Admin Rental Status Section -->
     <section id="userRentalSection" class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
       <h2 id="rentalSectionTitle" class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
@@ -104,6 +89,21 @@
             <!-- JS로 대여 항목이 생성됩니다 -->
           </tbody>
         </table>
+      </div>
+    </section>
+
+    <!-- Inventory Cards Section -->
+    <section class="mb-10">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+          <i class="fa-solid fa-cubes text-indigo-600"></i> 자재 목록
+        </h2>
+        <span id="itemCount" class="text-xs text-slate-500 font-medium">총 0개 항목</span>
+      </div>
+      
+      <!-- PC 5개, 모바일 2~3개 레이아웃 -->
+      <div id="inventoryGrid" class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-4">
+        <!-- JS로 자재 카드가 생성됩니다 -->
       </div>
     </section>
   </main>
