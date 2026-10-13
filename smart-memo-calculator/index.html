@@ -72,8 +72,9 @@ button:active { opacity: 0.7; }
   <div class="display-wrap">
     <div id="display" class="display" contenteditable="true" inputmode="none" spellcheck="false">0</div>
     <div class="preview-container">
-      <div class="version">V260809-0219</div>
+      <div class="version">V261013-1632</div>
       <!-- V260809-0219 : 커서이동, 스크롤이동 등의 자잘한 Bug 수정 -->
+	  <!-- V261013-1632 : 오류수식 빨강색표시 (연속연산자,초과된닫힘괄호) -->
       <div id="preview" class="preview"></div>
     </div>
   </div>
@@ -197,12 +198,61 @@ function formatWithCaret(rawText, oldCaretPos, addedLen) {
 
 function renderDisplay(targetPos) {
     const rawText = display.innerText.replace(/,/g, "");
-    const tokens = rawText.match(/(\d+|\+|-|\*|\/|%|\.|\s|[가-힣a-zA-Z]+)/g) || [];
+    const tokens = rawText.match(/(\d+|\+|-|\*|\/|%|\(\vert{}\)|\.|\s|[가-힣a-zA-Z]+)/g) || [];
     let html = "";
-    tokens.forEach(token => {
-        if (/^\d+$/.test(token)) html += `<span>${parseInt(token).toLocaleString()}</span>`;
-        else html += `<span>${token}</span>`;
+    
+    let prevIsOp = false;
+    
+    // 1단계: 괄호 짝 검사를 미리 수행하여 잘못된 괄호 위치 파악
+    let unmatchedCloseIndices = new Set();
+    let openBracketCount = 0;
+    tokens.forEach((token, index) => {
+        if (token === '(') {
+            openBracketCount++;
+        } else if (token === ')') {
+            if (openBracketCount > 0) {
+                openBracketCount--;
+            } else {
+                // 짝이 없는 닫힌 괄호 에러
+                unmatchedCloseIndices.add(index);
+            }
+        }
     });
+
+    // 2단계: 토큰별 렌더링 및 에러(빨간색) 판정
+    tokens.forEach((token, index) => {
+        let isOp = /^[+\-*/%]$/.test(token);
+        let isError = false;
+        
+        // 연산자 연속 에러
+        if (isOp && prevIsOp) {
+            isError = true;
+        }
+        
+        // 첫 토큰이 *, /, %, + 이면 에러
+        if (index === 0 && /^[*/%+]$/.test(token)) {
+            isError = true;
+        }
+
+        // 짝이 안 맞는 닫힌 괄호 에러
+        if (unmatchedCloseIndices.has(index)) {
+            isError = true;
+        }
+
+        prevIsOp = isOp;
+
+        if (/^\d+$/.test(token)) {
+            html += `<span>${parseInt(token).toLocaleString()}</span>`;
+            prevIsOp = false;
+        } else {
+            if (isError) {
+                html += `<span style="color: #ff453a; font-weight: bold;">${token}</span>`;
+            } else {
+                html += `<span>${token}</span>`;
+            }
+        }
+    });
+
     display.innerHTML = html || "<span>0</span>";
     setCaretAndScroll(display, targetPos);
 }
