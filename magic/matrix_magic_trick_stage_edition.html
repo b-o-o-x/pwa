@@ -56,9 +56,17 @@
             -webkit-text-fill-color: transparent;
         }
 
+        /* Dynamic Grid Card Responsive Typography */
         .grid-card {
             transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
             transform-style: preserve-3d;
+            container-type: inline-size;
+        }
+
+        .grid-card-num {
+            /* Dynamically scales based on card container width */
+            font-size: clamp(2rem, 38cqw, 7.5rem);
+            line-height: 1;
         }
 
         .grid-card.dimmed {
@@ -87,14 +95,26 @@
         }
 
         .grid-card.target-winner {
-            animation: winnerPulse 1.5s infinite alternate;
+            animation: winnerPulse 1.2s infinite alternate;
             border-color: #ffd700;
-            background: radial-gradient(circle, rgba(255,215,0,0.6) 0%, rgba(139,92,246,0.8) 100%);
+            background: radial-gradient(circle, rgba(255,215,0,0.65) 0%, rgba(139,92,246,0.85) 100%);
         }
 
         @keyframes winnerPulse {
-            0% { transform: scale(1.1); box-shadow: 0 0 50px #ffd700, inset 0 0 30px #ffd700; }
-            100% { transform: scale(1.25); box-shadow: 0 0 100px #ffd700, 0 0 50px #06b6d4, inset 0 0 50px #ffd700; }
+            0% { transform: scale(1.08); box-shadow: 0 0 50px #ffd700, inset 0 0 30px #ffd700; }
+            100% { transform: scale(1.22); box-shadow: 0 0 100px #ffd700, 0 0 60px #06b6d4, inset 0 0 50px #ffd700; }
+        }
+
+        /* Dynamic Finale Zoom Animation */
+        .zoom-finale-active {
+            animation: finaleZoomIn 1.1s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+            z-index: 60 !important;
+        }
+
+        @keyframes finaleZoomIn {
+            0% { transform: scale(1); filter: brightness(1); }
+            50% { transform: scale(2.8) rotate(2deg); filter: brightness(2) drop-shadow(0 0 40px #ffd700); }
+            100% { transform: scale(3.5); opacity: 0; }
         }
 
         #svgOverlay {
@@ -152,10 +172,15 @@
                 <span class="font-cinzel text-2xl text-slate-950">🔮</span>
             </div>
             <div>
-                <h1 class="text-2xl md:text-3xl lg:text-4xl font-cinzel font-black tracking-wider gold-gradient-text">
-                    5x5 MATRIX MAGIC <span class="text-sm md:text-base font-orbitron text-cyan-400 tracking-widest uppercase ml-3">Stage Edition</span>
-                </h1>
-                <p class="text-xs md:text-sm text-slate-300 font-medium">관객 참여형 패리티 마인드 리딩 스테이지 마술</p>
+                <div class="flex items-center gap-3">
+                    <h1 class="text-2xl md:text-3xl lg:text-4xl font-cinzel font-black tracking-wider gold-gradient-text">
+                        5x5 MATRIX MAGIC <span class="text-sm md:text-base font-orbitron text-cyan-400 tracking-widest uppercase ml-3">Stage Edition</span>
+                    </h1>
+                </div>
+                <div class="flex items-center gap-3 mt-0.5">
+                    <p class="text-xs md:text-sm text-slate-300 font-medium">관객 참여형 패리티 마인드 리딩 스테이지 마술</p>
+                    <span class="text-[10px] md:text-xs font-mono text-purple-300/80 bg-purple-950/80 px-2 py-0.5 rounded border border-purple-800/50 font-bold">Ver. 20261026-0321</span>
+                </div>
             </div>
         </div>
 
@@ -165,37 +190,37 @@
                 <span id="stepBadgeText" class="font-bold">STEP 1 / 11</span>
             </div>
 
-            <button onclick="toggleSound()" class="px-4 py-2 rounded-xl bg-slate-800/90 text-amber-400 border border-slate-700 text-sm flex items-center gap-2 hover:bg-slate-700 font-semibold">
+            <button onclick="toggleSound()" class="px-4 py-2 rounded-xl bg-slate-800/90 text-amber-400 border border-slate-700 text-sm flex items-center gap-2 hover:bg-slate-700 font-semibold cursor-pointer">
                 <i class="fa-solid fa-volume-high text-base" id="soundIcon"></i>
                 <span id="soundText" class="hidden sm:inline">사운드 ON</span>
             </button>
 
             <!-- Settings Button -->
-            <button onclick="openSettingsModal()" class="px-4 py-2 rounded-xl bg-purple-900/80 text-amber-300 border border-purple-500/50 text-sm flex items-center gap-2 hover:bg-purple-800 font-bold shadow-lg" title="마술사 예언 설정">
+            <button onclick="openSettingsModal()" class="px-4 py-2 rounded-xl bg-purple-900/80 text-amber-300 border border-purple-500/50 text-sm flex items-center gap-2 hover:bg-purple-800 font-bold shadow-lg cursor-pointer" title="마술사 예언 설정">
                 <i class="fa-solid fa-gear text-base"></i>
                 <span class="hidden sm:inline">설정</span>
             </button>
 
-            <button onclick="toggleFullScreen()" class="p-2.5 rounded-xl bg-slate-800/90 text-slate-200 border border-slate-700 text-sm hover:bg-slate-700" title="전체화면 (F)">
+            <button onclick="toggleFullScreen()" class="p-2.5 rounded-xl bg-slate-800/90 text-slate-200 border border-slate-700 text-sm hover:bg-slate-700 cursor-pointer" title="전체화면 (F)">
                 <i class="fa-solid fa-expand text-lg"></i>
             </button>
         </div>
     </header>
 
-    <!-- Settings Modal -->
-    <div id="settingsModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md opacity-0 pointer-events-none transition-all duration-300">
-        <div class="glass-panel bg-slate-900 border-2 border-amber-500/60 rounded-3xl p-6 md:p-8 max-w-lg w-full shadow-2xl space-y-5 text-left relative">
+    <!-- Settings Modal (Completely isolated with hidden class when closed) -->
+    <div id="settingsModal" class="hidden fixed inset-0 z-[150] items-center justify-center bg-slate-950/85 backdrop-blur-md opacity-0 transition-opacity duration-300">
+        <div id="settingsModalContent" class="glass-panel bg-slate-900 border-2 border-amber-500/60 rounded-3xl p-6 md:p-8 max-w-lg w-full shadow-2xl space-y-5 text-left relative pointer-events-auto select-text">
             <div class="flex justify-between items-center border-b border-slate-700 pb-3">
                 <h3 class="text-xl font-bold font-cinzel text-amber-300 flex items-center gap-2">
                     <i class="fa-solid fa-wand-magic"></i> 마술사 연출 및 예언 설정
                 </h3>
-                <button onclick="closeSettingsModal()" class="text-slate-400 hover:text-white text-lg"><i class="fa-solid fa-xmark"></i></button>
+                <button type="button" onclick="closeSettingsModal()" class="text-slate-400 hover:text-white text-lg p-2 transition cursor-pointer"><i class="fa-solid fa-xmark"></i></button>
             </div>
 
             <div class="space-y-4">
                 <div>
-                    <label class="block text-xs font-orbitron text-cyan-300 uppercase mb-1">최종 선택 타겟 번호 (패리티 홀수 전용)</label>
-                    <select id="settingTargetCell" class="w-full bg-slate-950 border border-purple-500/60 rounded-xl px-4 py-2.5 text-amber-300 font-orbitron font-bold text-lg focus:outline-none focus:border-amber-400">
+                    <label for="settingTargetCell" class="block text-xs font-orbitron text-cyan-300 uppercase mb-1">최종 선택 타겟 번호 (패리티 홀수 전용)</label>
+                    <select id="settingTargetCell" class="w-full bg-slate-950 border border-purple-500/60 rounded-xl px-4 py-2.5 text-amber-300 font-orbitron font-bold text-lg focus:outline-none focus:border-amber-400 cursor-pointer">
                         <option value="1">1번 칸</option>
                         <option value="3">3번 칸</option>
                         <option value="5">5번 칸</option>
@@ -213,19 +238,19 @@
                 </div>
 
                 <div>
-                    <label class="block text-xs font-orbitron text-cyan-300 uppercase mb-1">피날레 메인 텍스트 1 (예: 소속/기관/메시지 제목)</label>
-                    <input type="text" id="settingFinaleText1" value="방송통신대학교 교육학과" placeholder="예: 방송통신대학교 교육학과" class="w-full bg-slate-950 border border-purple-500/60 rounded-xl px-4 py-2.5 text-slate-100 font-sans focus:outline-none focus:border-amber-400">
+                    <label for="settingFinaleText1" class="block text-xs font-orbitron text-cyan-300 uppercase mb-1">피날레 메인 텍스트 1 (비어있을 경우 "[N]번 칸" 자동 표시)</label>
+                    <input type="text" id="settingFinaleText1" value="" placeholder="예: 방송통신대학교 교육학과 (비워두면 '[N]번 칸' 표시)" class="w-full bg-slate-950 border border-purple-500/60 rounded-xl px-4 py-2.5 text-slate-100 font-sans focus:outline-none focus:border-amber-400">
                 </div>
 
                 <div>
-                    <label class="block text-xs font-orbitron text-cyan-300 uppercase mb-1">피날레 감동 메시지 텍스트 2 (예: 최종 연출 멘트)</label>
-                    <textarea id="settingFinaleText2" rows="3" placeholder="예: 여러분은 이렇게 다양한 각자의 길을 걸어와서 이곳 교육학과에 모이게 되었습니다." class="w-full bg-slate-950 border border-purple-500/60 rounded-xl px-4 py-2.5 text-slate-100 font-sans focus:outline-none focus:border-amber-400">여러분은 이렇게 다양한 각자의 길을 걸어와서 이곳 교육학과에 모이게 되었습니다.</textarea>
+                    <label for="settingFinaleText2" class="block text-xs font-orbitron text-cyan-300 uppercase mb-1">피날레 감동 메시지 텍스트 2</label>
+                    <textarea id="settingFinaleText2" rows="3" placeholder="예: 수많은 자유 이동 속에서도 관객의 생각은 완벽히 예언되었습니다!" class="w-full bg-slate-950 border border-purple-500/60 rounded-xl px-4 py-2.5 text-slate-100 font-sans focus:outline-none focus:border-amber-400">수많은 자유 이동 속에서도 관객의 생각은 완벽히 예언되었습니다!</textarea>
                 </div>
             </div>
 
             <div class="flex justify-end gap-3 pt-3 border-t border-slate-800">
-                <button onclick="closeSettingsModal()" class="px-5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-bold">취소</button>
-                <button onclick="saveSettings()" class="px-6 py-2.5 rounded-xl bg-gradient-to-r from-amber-400 to-amber-600 hover:from-amber-300 hover:to-amber-500 text-slate-950 font-black text-sm shadow-lg shadow-amber-500/20">저장 및 마술 적용</button>
+                <button type="button" onclick="closeSettingsModal()" class="px-5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-bold transition cursor-pointer">취소</button>
+                <button type="button" onclick="saveSettings()" class="px-6 py-2.5 rounded-xl bg-gradient-to-r from-amber-400 to-amber-600 hover:from-amber-300 hover:to-amber-500 text-slate-950 font-black text-sm shadow-lg shadow-amber-500/20 transition cursor-pointer">저장 및 마술 적용</button>
             </div>
         </div>
     </div>
@@ -293,24 +318,35 @@
             <div id="gridContainer" class="grid grid-cols-5 gap-3 md:gap-4 p-5 md:p-6 glass-panel rounded-3xl w-full h-full max-h-[82vh] aspect-square shadow-2xl relative border-2 border-amber-500/40">
                 <!-- 25 Cells -->
             </div>
-
-            <!-- Reveal Overlay -->
-            <div id="bannerOverlay" class="absolute inset-0 flex items-center justify-center pointer-events-none opacity-0 transition-all duration-700 transform scale-90 z-50">
-                <div class="glass-panel bg-slate-950/95 border-4 border-amber-400 rounded-3xl p-8 md:p-12 text-center max-w-3xl shadow-2xl">
-                    <p class="text-cyan-400 font-orbitron text-sm md:text-base tracking-widest uppercase mb-2 animate-pulse">SURVIVOR LOCATION & FINAL PREDICTION REVEAL</p>
-                    <div id="winnerText" class="text-2xl md:text-3xl font-bold font-orbitron text-cyan-300/80 mb-4 tracking-wider">관객의 최종 선택: [13번 칸]</div>
-                    
-                    <div id="finaleMainText1" class="text-4xl md:text-5xl lg:text-6xl font-black font-cinzel gold-gradient-text my-4 drop-shadow-[0_0_35px_rgba(255,215,0,0.8)] leading-tight">
-                        방송통신대학교 교육학과
-                    </div>
-                    
-                    <div id="finaleMainText2" class="text-lg md:text-2xl text-slate-100 font-medium font-sans mt-6 p-4 rounded-2xl bg-purple-950/60 border border-purple-500/40 shadow-inner leading-relaxed">
-                        여러분은 이렇게 다양한 각자의 길을 걸어와서 이곳 교육학과에 모이게 되었습니다.
-                    </div>
-                </div>
-            </div>
         </section>
     </main>
+
+    <!-- Enhanced Dynamic Finale Reveal Overlay (Completely hidden when inactive) -->
+    <div id="bannerOverlay" class="hidden fixed inset-0 items-center justify-center z-[200] p-4 bg-slate-950/80 backdrop-blur-md opacity-0 transition-opacity duration-700">
+        <div id="bannerContent" class="glass-panel bg-slate-950/95 border-4 border-amber-400 rounded-3xl p-8 md:p-14 text-center w-[92%] md:w-[75%] lg:w-[70%] max-w-6xl shadow-[0_0_90px_rgba(255,215,0,0.6)] pointer-events-auto relative z-[210]">
+            <p class="text-cyan-400 font-orbitron text-base md:text-xl tracking-widest uppercase mb-3 animate-pulse font-bold">
+                ★ SURVIVOR LOCATION & FINAL PREDICTION REVEAL ★
+            </p>
+            
+            <div id="winnerText" class="text-lg md:text-xl font-bold font-orbitron text-cyan-300/90 mb-4 tracking-wider bg-slate-900/80 py-2 px-6 rounded-full inline-block border border-cyan-500/40 shadow-inner">
+                관객의 최종 선택: [13번 칸]
+            </div>
+            
+            <!-- Text 1: Fully visible with auto scaling font size -->
+            <div id="finaleMainText1" class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black font-cinzel gold-gradient-text my-4 drop-shadow-[0_0_40px_rgba(255,215,0,0.9)] leading-tight break-words max-w-full">
+                13번 칸
+            </div>
+            
+            <!-- Text 2: Expressive Paragraph -->
+            <div id="finaleMainText2" class="text-base md:text-xl lg:text-2xl text-slate-100 font-medium font-sans mt-6 p-5 md:p-8 rounded-2xl bg-purple-950/70 border border-purple-500/50 shadow-2xl leading-relaxed">
+                수많은 자유 이동 속에서도 관객의 생각은 완벽히 예언되었습니다!
+            </div>
+
+            <button type="button" onclick="resetTrick()" class="mt-8 px-8 py-3.5 rounded-xl bg-gradient-to-r from-amber-400 to-amber-600 hover:from-amber-300 hover:to-amber-500 text-slate-950 font-black text-lg transition shadow-2xl active:scale-95 cursor-pointer relative z-[220] pointer-events-auto">
+                <i class="fa-solid fa-rotate-right mr-2"></i> 마술 다시 시작하기
+            </button>
+        </div>
+    </div>
 
     <!-- Bottom Stage Controller Bar -->
     <footer class="relative z-10 w-full px-8 py-3.5 glass-panel border-t border-amber-500/30 flex items-center justify-between gap-4">
@@ -330,15 +366,15 @@
         </div>
 
         <div class="flex items-center space-x-4">
-            <button onclick="prevStep()" class="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 font-bold text-xs md:text-sm transition flex items-center gap-2 active:scale-95 shadow">
+            <button onclick="prevStep()" class="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 font-bold text-xs md:text-sm transition flex items-center gap-2 active:scale-95 shadow cursor-pointer">
                 <i class="fa-solid fa-chevron-left"></i> 이전 (←)
             </button>
             
-            <button onclick="resetTrick()" class="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-rose-300 border border-rose-900/60 font-bold text-xs md:text-sm transition flex items-center gap-2 active:scale-95 shadow" title="리셋 (R)">
+            <button onclick="resetTrick()" class="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-rose-300 border border-rose-900/60 font-bold text-xs md:text-sm transition flex items-center gap-2 active:scale-95 shadow cursor-pointer" title="리셋 (R)">
                 <i class="fa-solid fa-rotate-right"></i> 다시시작 (R)
             </button>
 
-            <button id="nextStepBtn" onclick="nextStep()" class="px-8 py-3 rounded-xl bg-gradient-to-r from-amber-400 to-amber-600 hover:from-amber-300 hover:to-amber-500 text-slate-950 font-black text-sm md:text-base tracking-wide transition flex items-center gap-3 shadow-xl shadow-amber-500/30 active:scale-95">
+            <button id="nextStepBtn" onclick="nextStep()" class="px-8 py-3 rounded-xl bg-gradient-to-r from-amber-400 to-amber-600 hover:from-amber-300 hover:to-amber-500 text-slate-950 font-black text-sm md:text-base tracking-wide transition flex items-center gap-3 shadow-xl shadow-amber-500/30 active:scale-95 cursor-pointer">
                 <span id="nextBtnText">시작하기 (Space)</span>
                 <i class="fa-solid fa-wand-magic-sparkles text-lg"></i>
             </button>
@@ -347,18 +383,57 @@
 
     <!-- MAIN JAVASCRIPT LOGIC -->
     <script>
-        /* ===================================================================
-           1. CONFIGURATION & PARITY LOGIC
-           =================================================================== */
-        const totalCells = 25;
+        // Global State
         let currentStep = 0;
-        let soundEnabled = true;
+        const totalCells = 25;
+        let forcedTargetCell = 13; // Default 13
+        let finaleText1 = "";
+        let finaleText2 = "수많은 자유 이동 속에서도 관객의 생각은 완벽히 예언되었습니다!";
         let isAnimating = false;
+        let soundEnabled = true;
+        let isModalOpen = false;
 
-        // Custom prediction settings
-        let forcedTargetCell = 13;
-        let finaleText1 = "방송통신대학교 교육학과";
-        let finaleText2 = "여러분은 이렇게 다양한 각자의 길을 걸어와서 이곳 교육학과에 모이게 되었습니다.";
+        function getEffectiveFinaleText1() {
+            return finaleText1.trim() !== "" ? finaleText1 : `${forcedTargetCell}번 칸`;
+        }
+
+        /* ===================================================================
+           1. SETTINGS MODAL CONTROLLER (Controlled via hidden class)
+           =================================================================== */
+        function openSettingsModal() {
+            isModalOpen = true;
+            document.getElementById('settingTargetCell').value = forcedTargetCell;
+            document.getElementById('settingFinaleText1').value = finaleText1;
+            document.getElementById('settingFinaleText2').value = finaleText2;
+
+            const modal = document.getElementById('settingsModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                modal.classList.add('opacity-100');
+            }, 10);
+        }
+
+        function closeSettingsModal() {
+            isModalOpen = false;
+            const modal = document.getElementById('settingsModal');
+            modal.classList.remove('opacity-100');
+            modal.classList.add('opacity-0');
+            setTimeout(() => {
+                modal.classList.remove('flex');
+                modal.classList.add('hidden');
+            }, 300);
+        }
+
+        function saveSettings() {
+            forcedTargetCell = parseInt(document.getElementById('settingTargetCell').value, 10);
+            finaleText1 = document.getElementById('settingFinaleText1').value.trim();
+            finaleText2 = document.getElementById('settingFinaleText2').value.trim() || "수많은 자유 이동 속에서도 관객의 생각은 완벽히 예언되었습니다!";
+
+            closeSettingsModal();
+            resetTrick();
+        }
 
         // Valid starting cells (all ODD parity: (r+c) is even)
         const validStartCells = [7, 9, 17, 19];
@@ -379,37 +454,8 @@
         let stageScripts = [];
 
         /* ===================================================================
-           SETTINGS MODAL CONTROLLER
-           =================================================================== */
-        function openSettingsModal() {
-            document.getElementById('settingTargetCell').value = forcedTargetCell;
-            document.getElementById('settingFinaleText1').value = finaleText1;
-            document.getElementById('settingFinaleText2').value = finaleText2;
-
-            const modal = document.getElementById('settingsModal');
-            modal.classList.remove('opacity-0', 'pointer-events-none');
-            modal.classList.add('opacity-100');
-        }
-
-        function closeSettingsModal() {
-            const modal = document.getElementById('settingsModal');
-            modal.classList.add('opacity-0', 'pointer-events-none');
-            modal.classList.remove('opacity-100');
-        }
-
-        function saveSettings() {
-            forcedTargetCell = parseInt(document.getElementById('settingTargetCell').value, 10);
-            finaleText1 = document.getElementById('settingFinaleText1').value.trim() || "방송통신대학교 교육학과";
-            finaleText2 = document.getElementById('settingFinaleText2').value.trim() || "여러분은 이렇게 다양한 각자의 길을 걸어와서 이곳 교육학과에 모이게 되었습니다.";
-
-            closeSettingsModal();
-            resetTrick();
-        }
-
-        /* ===================================================================
            2. REACHABILITY & SAFE ELIMINATION LOGIC
            =================================================================== */
-        // Board connectivity check
         function isBoardConnectedAfterRemoval(tempEliminated) {
             const activeCells = [];
             for (let i = 1; i <= totalCells; i++) {
@@ -436,9 +482,6 @@
             return visited.size === activeCells.length;
         }
 
-        /**
-         * Calculates all reachable positions after `steps` moves on current board
-         */
         function getReachablePositions(currentPositions, steps, eliminatedSet) {
             let currentSet = new Set(currentPositions);
 
@@ -453,124 +496,128 @@
                 }
                 currentSet = nextSet;
             }
-
             return currentSet;
         }
 
-        /* Build full sequence dynamically until ONLY the forcedTargetCell remains */
         function generateDynamicSequence() {
-            const sequence = [
-                {
-                    step: 0,
-                    title: "1. 이동 규칙 안내",
-                    script: "관객 여러분, 상하좌우로만 이동할 수 있습니다! 예: 7번 출발 시 7→2→7→2→1 (4칸) 또는 19번 출발 시 19→20→19→20→25 (4칸)처럼 자유롭게 왕복 가능합니다. (대각선 이동 금지!)",
-                    nextAction: "규칙 설명 완료 후 [Space]",
-                    btnText: "출발 위치 지정 (Space)",
-                    isDestroyStep: false
-                },
-                {
-                    step: 1,
-                    title: "2. 출발 위치 지정",
-                    script: "화면에 밝게 빛나는 [7, 9, 17, 19]번 칸 중 마음속으로 단 하나의 출발 위치를 선택하세요!",
-                    nextAction: "관객 출발위치 선택 후 [Space]",
-                    btnText: "전체 그리드 공개 (Space)",
-                    isDestroyStep: false
-                },
-                {
-                    step: 2,
-                    title: "3. 전체 판 공개",
-                    script: "모든 판이 공개되었습니다. 선택하신 출발 위치에 손가락이나 시선을 고정하세요.",
-                    nextAction: "1차 이동 안내 (Space)",
-                    btnText: "첫번째 4칸 이동 안내 (Space)",
-                    isDestroyStep: false
-                }
-            ];
-
-            let simEliminated = new Set();
-            let spectatorPositions = new Set(validStartCells);
-            let round = 1;
-
-            const movePattern = [4, 3, 5, 2, 3, 4, 1, 2, 3, 1, 2];
-            let moveIdx = 0;
-
-            while (simEliminated.size < totalCells - 1) {
-                let moveSteps = movePattern[moveIdx % movePattern.length];
-                moveIdx++;
-
-                let nextPositions = getReachablePositions(spectatorPositions, moveSteps, simEliminated);
-
-                const safeCandidates = [];
-                for (let i = 1; i <= totalCells; i++) {
-                    if (i === forcedTargetCell || simEliminated.has(i)) continue;
-                    if (!nextPositions.has(i)) {
-                        safeCandidates.push(i);
+            let attempts = 0;
+            while (attempts < 50) {
+                attempts++;
+                const sequence = [
+                    {
+                        step: 0,
+                        title: "1. 이동 규칙 안내",
+                        script: "관객 여러분, 상하좌우로만 이동할 수 있습니다! 예: 7번 출발 시 7→2→7→2→1 (4칸) 또는 19번 출발 시 19→20→19→20→25 (4칸)처럼 자유롭게 왕복 가능합니다. (대각선 이동 금지!)",
+                        nextAction: "규칙 설명 완료 후 [Space]",
+                        btnText: "출발 위치 지정 (Space)",
+                        isDestroyStep: false
+                    },
+                    {
+                        step: 1,
+                        title: "2. 출발 위치 지정",
+                        script: "화면에 밝게 빛나는 [7, 9, 17, 19]번 칸 중 마음속으로 단 하나의 출발 위치를 선택하세요!",
+                        nextAction: "관객 출발위치 선택 후 [Space]",
+                        btnText: "전체 그리드 공개 (Space)",
+                        isDestroyStep: false
+                    },
+                    {
+                        step: 2,
+                        title: "3. 전체 판 공개",
+                        script: "모든 판이 공개되었습니다. 선택하신 출발 위치에 손가락이나 시선을 고정하세요.",
+                        nextAction: "1차 이동 안내 (Space)",
+                        btnText: "첫번째 4칸 이동 안내 (Space)",
+                        isDestroyStep: false
                     }
-                }
+                ];
 
-                safeCandidates.sort(() => Math.random() - 0.5);
+                let simEliminated = new Set();
+                let spectatorPositions = new Set(validStartCells);
+                let round = 1;
 
-                const elims = [];
-                const tempElim = new Set(simEliminated);
+                const movePattern = [4, 3, 5, 2, 3, 4, 1, 2, 3, 1, 2];
+                let moveIdx = 0;
 
-                for (const cell of safeCandidates) {
-                    tempElim.add(cell);
-                    if (isBoardConnectedAfterRemoval(tempElim)) {
-                        elims.push(cell);
-                        if (elims.length >= Math.min(3, safeCandidates.length)) break;
-                    } else {
-                        tempElim.delete(cell);
+                while (simEliminated.size < totalCells - 1) {
+                    let moveSteps = movePattern[moveIdx % movePattern.length];
+                    moveIdx++;
+
+                    let nextPositions = getReachablePositions(spectatorPositions, moveSteps, simEliminated);
+
+                    const safeCandidates = [];
+                    for (let i = 1; i <= totalCells; i++) {
+                        if (i === forcedTargetCell || simEliminated.has(i)) continue;
+                        if (!nextPositions.has(i)) {
+                            safeCandidates.push(i);
+                        }
                     }
+
+                    safeCandidates.sort(() => Math.random() - 0.5);
+
+                    const elims = [];
+                    const tempElim = new Set(simEliminated);
+
+                    const targetElimCount = Math.min(4, Math.max(2, safeCandidates.length));
+                    for (const cell of safeCandidates) {
+                        tempElim.add(cell);
+                        if (isBoardConnectedAfterRemoval(tempElim)) {
+                            elims.push(cell);
+                            if (elims.length >= targetElimCount) break;
+                        } else {
+                            tempElim.delete(cell);
+                        }
+                    }
+
+                    if (elims.length === 0) continue;
+
+                    spectatorPositions = nextPositions;
+
+                    sequence.push({
+                        step: sequence.length,
+                        title: `${sequence.length + 1}. ${round}차 이동 가이드 (${moveSteps}칸)`,
+                        script: `현재 살아있는 구역을 따라 마음속으로 정확히 [${moveSteps}칸] 이동하세요! (왔던 길 왕복 가능)`,
+                        nextAction: "관객 이동 완료 후 [Space]",
+                        btnText: `불가능 구역 ${elims.length}개 파괴! (Space)`,
+                        isDestroyStep: false
+                    });
+
+                    elims.forEach(cell => simEliminated.add(cell));
+                    sequence.push({
+                        step: sequence.length,
+                        title: `${sequence.length + 1}. ${round}차 구역 파괴 (${elims.length}개 소멸)`,
+                        script: `콰쾅! 이동 결과 관객이 절대 위치할 수 없는 ${elims.length}개의 구역(${elims.sort((a,b)=>a-b).join(', ')}번)이 파괴되었습니다!`,
+                        nextAction: "다음 단계 진행 (Space)",
+                        btnText: "다음 이동 안내 (Space)",
+                        isDestroyStep: true,
+                        cellsToEliminate: elims
+                    });
+
+                    round++;
                 }
-
-                if (elims.length === 0) continue;
-
-                spectatorPositions = nextPositions;
 
                 sequence.push({
                     step: sequence.length,
-                    title: `${sequence.length + 1}. ${round}차 이동 가이드 (${moveSteps}칸)`,
-                    script: `현재 살아있는 구역을 따라 마음속으로 정확히 [${moveSteps}칸] 이동하세요! (왔던 길 왕복 가능)`,
-                    nextAction: "관객 이동 완료 후 [Space]",
-                    btnText: `불가능 구역 ${elims.length}개 파괴! (Space)`,
-                    isDestroyStep: false
+                    title: `${sequence.length + 1}. 최종 위치 확인`,
+                    script: `어? 그런데 여기 남은 ${forcedTargetCell}번 칸 아래에 아주 작게 뭐라고 써있네요? 한번 봐볼까요?`,
+                    nextAction: "숨겨진 메시지 공개! [Space]",
+                    btnText: "숨겨진 예언 공개! (Space)",
+                    isDestroyStep: false,
+                    isPreRevealStep: true
                 });
 
-                elims.forEach(cell => simEliminated.add(cell));
                 sequence.push({
                     step: sequence.length,
-                    title: `${sequence.length + 1}. ${round}차 구역 파괴 (${elims.length}개 소멸)`,
-                    script: `콰쾅! 이동 결과 관객이 절대 위치할 수 없는 ${elims.length}개의 구역(${elims.sort((a,b)=>a-b).join(', ')}번)이 파괴되었습니다!`,
-                    nextAction: "다음 단계 진행 (Space)",
-                    btnText: "다음 이동 안내 (Space)",
-                    isDestroyStep: true,
-                    cellsToEliminate: elims
+                    title: "★ 최종 예언 공개 ★",
+                    script: `수많은 자유 이동 속에서도 관객이 도착한 곳에는 마술사의 예언 메시지가 담겨있습니다!`,
+                    nextAction: "마술 성공!",
+                    btnText: "다시하기 (R)",
+                    isDestroyStep: false,
+                    isFinalStep: true
                 });
 
-                round++;
+                if (sequence.length <= 25) {
+                    return sequence;
+                }
             }
-
-            // Step before final reveal: Magician's teaser line
-            sequence.push({
-                step: sequence.length,
-                title: `${sequence.length + 1}. 최종 위치 확인`,
-                script: `어? 그런데 여기 남은 ${forcedTargetCell}번 칸 아래에 아주 작게 뭐라고 써있네요? 한번 봐볼까요?`,
-                nextAction: "숨겨진 메시지 공개! [Space]",
-                btnText: "숨겨진 예언 공개! (Space)",
-                isDestroyStep: false,
-                isPreRevealStep: true
-            });
-
-            // Final Reveal Step
-            sequence.push({
-                step: sequence.length,
-                title: "★ 최종 예언 공개 ★",
-                script: `수많은 자유 이동 속에서도 관객이 도착한 곳에는 마술사의 예언 메시지가 담겨있습니다!`,
-                nextAction: "마술 성공!",
-                btnText: "다시하기 (R)",
-                isDestroyStep: false,
-                isFinalStep: true
-            });
-
             return sequence;
         }
 
@@ -669,16 +716,16 @@
                 cell.className = `grid-card glass-panel rounded-2xl md:rounded-3xl flex flex-col items-center justify-center border-2 border-purple-500/40 relative overflow-hidden select-none p-2`;
                 
                 const numSpan = document.createElement('span');
-                numSpan.className = "text-3xl md:text-5xl lg:text-6xl font-black font-orbitron gold-gradient-text drop-shadow";
+                numSpan.className = "grid-card-num font-black font-orbitron gold-gradient-text drop-shadow";
                 numSpan.innerText = i;
 
                 cell.appendChild(numSpan);
 
-                // Add subtle tiny text under forcedTargetCell
                 if (i === forcedTargetCell) {
                     const tinyHint = document.createElement('span');
-                    tinyHint.className = "text-[9px] md:text-[11px] font-sans text-purple-300/35 tracking-tight font-light mt-1 text-center truncate w-full px-1 select-none pointer-events-none";
-                    tinyHint.innerText = finaleText1;
+                    tinyHint.id = "targetTinyHint";
+                    tinyHint.className = "text-[9px] md:text-[11px] lg:text-[12px] font-sans text-purple-300/40 tracking-tight font-medium mt-1 text-center truncate w-full px-1 select-none pointer-events-none whitespace-nowrap";
+                    tinyHint.innerText = getEffectiveFinaleText1();
                     cell.appendChild(tinyHint);
                 }
 
@@ -690,7 +737,7 @@
         }
 
         function nextStep() {
-            if (isAnimating) return;
+            if (isAnimating || isModalOpen) return;
             if (currentStep < stageScripts.length - 1) {
                 currentStep++;
                 sound.playMove();
@@ -701,7 +748,7 @@
         }
 
         function prevStep() {
-            if (isAnimating || currentStep <= 0) return;
+            if (isAnimating || isModalOpen || currentStep <= 0) return;
             currentStep--;
             sound.playMove();
             resetTrickToStep(currentStep);
@@ -712,9 +759,7 @@
 
             const info = stageScripts[currentStep];
             if (info.isDestroyStep && info.cellsToEliminate && info.cellsToEliminate.length > 0) {
-                animateEliminations(info.cellsToEliminate, () => {
-                    // elimination done
-                });
+                animateEliminations(info.cellsToEliminate, () => {});
             } else if (info.isFinalStep) {
                 triggerFinalReveal();
             }
@@ -737,7 +782,6 @@
                 clearSVGOverlay();
             }
 
-            // Cell Highlight logic for Step 1
             for (let i = 1; i <= totalCells; i++) {
                 const cell = document.getElementById(`cell-${i}`);
                 if (!cell) continue;
@@ -785,19 +829,25 @@
         function triggerFinalReveal() {
             sound.playVictoryFanfare();
             const target = document.getElementById(`cell-${forcedTargetCell}`);
+            
             if (target) {
-                target.classList.add('target-winner');
+                target.classList.add('target-winner', 'zoom-finale-active');
                 spawnConfettiAndFirework(forcedTargetCell);
             }
 
-            // Update reveal overlay content
             document.getElementById('winnerText').innerText = `관객의 최종 선택: [${forcedTargetCell}번 칸]`;
-            document.getElementById('finaleMainText1').innerText = finaleText1;
+            document.getElementById('finaleMainText1').innerText = getEffectiveFinaleText1();
             document.getElementById('finaleMainText2').innerText = finaleText2;
 
-            const banner = document.getElementById('bannerOverlay');
-            banner.classList.remove('opacity-0', 'scale-90');
-            banner.classList.add('opacity-100', 'scale-100');
+            setTimeout(() => {
+                const banner = document.getElementById('bannerOverlay');
+                banner.classList.remove('hidden');
+                banner.classList.add('flex');
+                setTimeout(() => {
+                    banner.classList.remove('opacity-0');
+                    banner.classList.add('opacity-100');
+                }, 10);
+            }, 550);
         }
 
         function resetTrick() {
@@ -805,8 +855,12 @@
             isAnimating = false;
 
             const banner = document.getElementById('bannerOverlay');
-            banner.classList.add('opacity-0', 'scale-90');
-            banner.classList.remove('opacity-100', 'scale-100');
+            banner.classList.remove('opacity-100');
+            banner.classList.add('opacity-0');
+            setTimeout(() => {
+                banner.classList.remove('flex');
+                banner.classList.add('hidden');
+            }, 300);
 
             initGrid();
         }
@@ -844,7 +898,6 @@
             clearSVGOverlay();
             const svg = document.getElementById('svgOverlay');
 
-            // Path 1 (Cyan): 7 -> 2 -> 7 -> 2 -> 1 (4 steps)
             const p1 = [7, 2, 7, 2, 1];
             let d1 = "";
             p1.forEach((num, idx) => {
@@ -861,7 +914,6 @@
             path1El.setAttribute('marker-end', 'url(#arrowCyan)');
             svg.appendChild(path1El);
 
-            // Path 2 (Yellow): 19 -> 20 -> 19 -> 20 -> 25 (4 steps)
             const p2 = [19, 20, 19, 20, 25];
             let d2 = "";
             p2.forEach((num, idx) => {
@@ -878,7 +930,6 @@
             path2El.setAttribute('marker-end', 'url(#arrowYellow)');
             svg.appendChild(path2El);
 
-            // Prohibited Diagonal Line (7 -> 13)
             const c7 = getCellCenter(7);
             const c13 = getCellCenter(13);
 
@@ -923,6 +974,7 @@
         }
 
         window.addEventListener('keydown', (e) => {
+            if (isModalOpen) return;
             if (e.code === 'Space' || e.code === 'ArrowRight') {
                 e.preventDefault();
                 nextStep();
