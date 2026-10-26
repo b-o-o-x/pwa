@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>프린세스 카드 마술 - Stage Edition</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;800;900&family=Pretendard:wght@400;600;800;900&display=swap" rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Pretendard', sans-serif;
+            background: radial-gradient(circle at center, #1e0b36 0%, #080210 100%);
+            color: #ffffff;
+            overflow-x: hidden;
+            user-select: none;
+        }
+
+        .font-cinzel {
+            font-family: 'Cinzel', serif;
+        }
+
+        /* 3D Card Flip Styling */
+        .perspective-1400 {
+            perspective: 1400px;
+        }
+
+        .card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transition: transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+            transform-style: preserve-3d;
+        }
+
+        .card-inner.is-flipped {
+            transform: rotateY(180deg);
+        }
+
+        .card-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: 1rem;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.7), 0 0 18px rgba(245, 158, 11, 0.25);
+        }
+
+        /* Front Face (Luxury Royal Gold Classic Trump Card) */
+        .card-front {
+            background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+            border: 3px solid #d97706;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 0.4rem 0.4rem;
+            color: #1a1a1a;
+            transform: rotateY(180deg);
+            overflow: hidden;
+        }
+
+        /* Red suits */
+        .suit-red {
+            color: #dc2626;
+        }
+        /* Black suits */
+        .suit-black {
+            color: #0f172a;
+        }
+
+        /* Back Face (Luxury Royal Gold Pattern) */
+        .card-back {
+            background: radial-gradient(circle, #2e1052 0%, #0f051d 100%);
+            border: 3px solid #f59e0b;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .card-back-pattern {
+            width: 90%;
+            height: 92%;
+            border: 2px dashed rgba(245, 158, 11, 0.5);
+            border-radius: 0.75rem;
+            background: 
+                radial-gradient(circle, rgba(245, 158, 11, 0.2) 1.5px, transparent 1.5px) 0 0/16px 16px,
+                linear-gradient(45deg, rgba(236, 72, 153, 0.08) 25%, transparent 25%, transparent 75%, rgba(236, 72, 153, 0.08) 75%),
+                linear-gradient(45deg, rgba(236, 72, 153, 0.08) 25%, transparent 25%, transparent 75%, rgba(236, 72, 153, 0.08) 75%) 8px 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: inset 0 0 12px rgba(0,0,0,0.8);
+        }
+
+        /* Fixed Aspect Ratio for Playing Cards (5:7 ratio) & Clipping Protection */
+        .card-container-item {
+            aspect-ratio: 5 / 7.2;
+            width: 100%;
+            max-width: 180px;
+            max-height: 270px;
+            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.6s ease;
+            position: relative;
+        }
+
+        /* Dynamic Grid Layout container */
+        .cards-stage {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0.75rem;
+            width: 100%;
+            max-width: 100%;
+            padding: 0.5rem;
+        }
+
+        /* Vanish Animations */
+        .vanish {
+            animation: vanishAnim 0.7s forwards ease-in-out;
+        }
+
+        @keyframes vanishAnim {
+            0% {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+                filter: brightness(1);
+            }
+            50% {
+                opacity: 0.8;
+                transform: scale(1.25) translateY(-40px);
+                filter: brightness(2.5) drop-shadow(0 0 30px #f59e0b);
+            }
+            100% {
+                opacity: 0;
+                transform: scale(0) translateY(-120px);
+                filter: brightness(4);
+                visibility: hidden;
+            }
+        }
+
+        /* Real Dynamic Card Positional Dynamic Swap Animations (1, 2, 3, 4, 5th position exchanges) */
+        @keyframes shuffleCross0 {
+            0% { transform: translate(0, 0) scale(1) rotate(0deg); z-index: 10; }
+            50% { transform: translate(220%, -60px) scale(1.15) rotate(18deg); z-index: 50; }
+            100% { transform: translate(0, 0) scale(1) rotate(0deg); z-index: 10; }
+        }
+
+        @keyframes shuffleCross1 {
+            0% { transform: translate(0, 0) scale(1) rotate(0deg); z-index: 10; }
+            50% { transform: translate(-140%, 60px) scale(0.9) rotate(-15deg); z-index: 15; }
+            100% { transform: translate(0, 0) scale(1) rotate(0deg); z-index: 10; }
+        }
+
+        @keyframes shuffleCross2 {
+            0% { transform: translate(0, 0) scale(1) rotate(0deg); z-index: 10; }
+            50% { transform: translate(160%, 50px) scale(1.1) rotate(20deg); z-index: 40; }
+            100% { transform: translate(0, 0) scale(1) rotate(0deg); z-index: 10; }
+        }
+
+        @keyframes shuffleCross3 {
+            0% { transform: translate(0, 0) scale(1) rotate(0deg); z-index: 10; }
+            50% { transform: translate(-240%, -50px) scale(0.95) rotate(-18deg); z-index: 20; }
+            100% { transform: translate(0, 0) scale(1) rotate(0deg); z-index: 10; }
+        }
+
+        @keyframes shuffleCross4 {
+            0% { transform: translate(0, 0) scale(1) rotate(0deg); z-index: 10; }
+            50% { transform: translate(-180%, 40px) scale(1.12) rotate(12deg); z-index: 45; }
+            100% { transform: translate(0, 0) scale(1) rotate(0deg); z-index: 10; }
+        }
+
+        .shuffle-swap-0 { animation: shuffleCross0 0.95s cubic-bezier(0.45, 0.05, 0.55, 0.95); }
+        .shuffle-swap-1 { animation: shuffleCross1 0.95s cubic-bezier(0.45, 0.05, 0.55, 0.95); }
+        .shuffle-swap-2 { animation: shuffleCross2 0.95s cubic-bezier(0.45, 0.05, 0.55, 0.95); }
+        .shuffle-swap-3 { animation: shuffleCross3 0.95s cubic-bezier(0.45, 0.05, 0.55, 0.95); }
+        .shuffle-swap-4 { animation: shuffleCross4 0.95s cubic-bezier(0.45, 0.05, 0.55, 0.95); }
+
+        /* Neon Glow Effect */
+        .glow-text {
+            text-shadow: 0 0 12px rgba(245, 158, 11, 0.6), 0 0 24px rgba(245, 158, 11, 0.4);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between p-2 md:p-4 relative overflow-hidden">
+
+    <!-- Background Particle Canvas -->
+    <canvas id="bgCanvas" class="absolute inset-0 pointer-events-none z-0"></canvas>
+
+    <!-- Header Section -->
+    <header class="relative z-10 text-center my-1">
+        <div class="inline-flex items-center justify-center gap-3 flex-wrap">
+            <h1 class="text-2xl sm:text-4xl md:text-5xl font-extrabold font-cinzel text-amber-400 glow-text tracking-wider">
+                PRINCESS CARD MAGIC
+            </h1>
+            <span id="versionBadge" class="px-2.5 py-1 text-xs font-mono font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 rounded-full shadow-lg">
+                V20261026-1430
+            </span>
+        </div>
+        <p id="stageGuide" class="mt-2 text-base sm:text-xl md:text-2xl text-amber-100 font-bold h-8 transition-all duration-300 drop-shadow-md">
+            시작하기 버튼을 눌러 마술을 시작하세요.
+        </p>
+    </header>
+
+    <!-- Main Card Stage Area -->
+    <main class="relative z-10 flex-1 flex items-center justify-center my-1 w-full max-w-7xl mx-auto min-h-[42vh]">
+        <!-- Initial Start Screen Overlay -->
+        <div id="startOverlay" class="text-center p-6 bg-slate-900/80 backdrop-blur-md rounded-2xl border border-amber-500/30 max-w-lg shadow-2xl">
+            <div class="text-5xl mb-3">🪄✨</div>
+            <h2 class="text-2xl font-bold text-amber-300 mb-2">프린세스 카드 마술에 오신 것을 환영합니다</h2>
+            <p class="text-slate-300 text-sm md:text-base mb-6 leading-relaxed">
+                관객의 마음속 생각을 정밀하게 읽어내는 신기한 마술 연출입니다.<br>
+                화면 아래 버튼이나 <span class="text-amber-400 font-bold">Spacebar</span>를 눌러 마술을 진행해 주세요.
+            </p>
+            <button onclick="startMagic()" class="px-8 py-3.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xl rounded-xl shadow-xl transition transform hover:scale-105 cursor-pointer">
+                🎩 마술 시작하기 (Space)
+            </button>
+        </div>
+
+        <!-- 6 Card Dynamic Container -->
+        <div id="cardContainer" class="cards-stage hidden">
+            <!-- 6 Card Elements dynamically rendered here -->
+        </div>
+    </main>
+
+    <!-- Footer & Presenter Controls -->
+    <footer class="relative z-10 flex flex-col sm:flex-row items-center justify-between gap-4 max-w-7xl w-full mx-auto pt-3 border-t border-slate-800/80">
+        <div class="text-sm md:text-base text-slate-300 font-medium">
+            진행 단계를 키보드 <span class="px-3 py-1 bg-slate-800 border border-slate-600 rounded-lg text-amber-400 font-mono font-bold">SPACE BAR</span> 로 조작할 수 있습니다.
+        </div>
+        <div class="flex gap-4">
+            <button id="nextBtn" onclick="handleSpaceStep()" class="hidden px-7 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold text-lg rounded-xl shadow-lg transition transform hover:scale-105 cursor-pointer">
+                다음 단계 (Space) ➔
+            </button>
+            <button id="restartBtn" onclick="resetMagic()" class="hidden px-5 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-base rounded-xl border border-slate-700 transition cursor-pointer">
+                🔄 다시 시작
+            </button>
+        </div>
+    </footer>
+
+    <!-- Audio FX Engine (Web Audio API) -->
+    <script>
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playSound(type) {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            const now = audioCtx.currentTime;
+
+            if (type === 'flip') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(320, now);
+                osc.frequency.exponentialRampToValueAtTime(640, now + 0.15);
+                gain.gain.setValueAtTime(0.35, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+                osc.start(now);
+                osc.stop(now + 0.15);
+            } else if (type === 'shuffle') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(180, now);
+                osc.frequency.linearRampToValueAtTime(520, now + 0.22);
+                gain.gain.setValueAtTime(0.3, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.22);
+                osc.start(now);
+                osc.stop(now + 0.22);
+            } else if (type === 'vanish') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(850, now);
+                osc.frequency.exponentialRampToValueAtTime(120, now + 0.55);
+                gain.gain.setValueAtTime(0.5, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.55);
+                osc.start(now);
+                osc.stop(now + 0.55);
+            } else if (type === 'win') {
+                const notes = [440, 554.37, 659.25, 880];
+                notes.forEach((freq, idx) => {
+                    const o = audioCtx.createOscillator();
+                    const g = audioCtx.createGain();
+                    o.connect(g);
+                    g.connect(audioCtx.destination);
+                    o.frequency.setValueAtTime(freq, now + idx * 0.12);
+                    g.gain.setValueAtTime(0.35, now + idx * 0.12);
+                    g.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.12 + 0.45);
+                    o.start(now + idx * 0.12);
+                    o.stop(now + idx * 0.12 + 0.45);
+                });
+            }
+        }
+    </script>
+
+    <!-- Main Logic & SVG Royal Figures Script -->
+    <script>
+        function generateVersionString() {
+            const now = new Date();
+            const YYYY = now.getFullYear();
+            const MM = String(now.getMonth() + 1).padStart(2, '0');
+            const DD = String(now.getDate()).padStart(2, '0');
+            const HH = String(now.getHours()).padStart(2, '0');
+            const mm = String(now.getMinutes()).padStart(2, '0');
+            return `V${YYYY}${MM}${DD}-${HH}${mm}`;
+        }
+        document.getElementById('versionBadge').innerText = generateVersionString();
+
+        // High Quality SVG Vector Figures with Optimized Proportion to Avoid Bottom Clipping
+        function getRoyalIllustration(rank, suitSymbol, isRed) {
+            const primaryColor = isRed ? '#dc2626' : '#1e293b';
+            const goldColor = '#f59e0b';
+            const crownGold = '#fbbf24';
+
+            if (rank === 'K') {
+                return `
+                <svg viewBox="0 0 100 110" class="w-full h-full max-h-[105px] mx-auto filter drop-shadow">
+                    <rect x="5" y="5" width="90" height="100" rx="6" fill="none" stroke="${goldColor}" stroke-width="2" stroke-dasharray="3 2" />
+                    <rect x="8" y="8" width="84" height="94" rx="5" fill="${isRed ? '#fef2f2' : '#f8fafc'}" stroke="${primaryColor}" stroke-width="1.2"/>
+                    <path d="M 28 30 L 35 15 L 50 24 L 65 15 L 72 30 Z" fill="${crownGold}" stroke="${goldColor}" stroke-width="1.2"/>
+                    <circle cx="35" cy="14" r="2" fill="#ef4444"/>
+                    <circle cx="50" cy="22" r="2.5" fill="#3b82f6"/>
+                    <circle cx="65" cy="14" r="2" fill="#ef4444"/>
+                    <circle cx="50" cy="38" r="10" fill="#fde047" stroke="${primaryColor}" stroke-width="1.2"/>
+                    <path d="M 42 42 Q 50 54 58 42 Z" fill="${primaryColor}"/>
+                    <circle cx="46" cy="36" r="1" fill="#000"/>
+                    <circle cx="54" cy="36" r="1" fill="#000"/>
+                    <path d="M 43 40 Q 50 44 57 40" stroke="#000" stroke-width="1.2" fill="none"/>
+                    <path d="M 22 92 C 22 58 78 58 78 92 Z" fill="${primaryColor}"/>
+                    <path d="M 38 58 L 50 72 L 62 58 Z" fill="${goldColor}"/>
+                    <text x="50" y="88" font-size="22" font-weight="bold" fill="${goldColor}" text-anchor="middle" font-family="Cinzel">${suitSymbol}</text>
+                </svg>`;
+            } else if (rank === 'Q') {
+                return `
+                <svg viewBox="0 0 100 110" class="w-full h-full max-h-[105px] mx-auto filter drop-shadow">
+                    <rect x="5" y="5" width="90" height="100" rx="6" fill="none" stroke="${goldColor}" stroke-width="2" stroke-dasharray="3 2" />
+                    <rect x="8" y="8" width="84" height="94" rx="5" fill="${isRed ? '#fff1f2' : '#f8fafc'}" stroke="${primaryColor}" stroke-width="1.2"/>
+                    <path d="M 32 28 L 41 16 L 50 24 L 59 16 L 68 28 Z" fill="${crownGold}" stroke="${goldColor}" stroke-width="1.2"/>
+                    <circle cx="50" cy="13" r="2.5" fill="#ec4899"/>
+                    <path d="M 35 36 Q 25 60 35 75 M 65 36 Q 75 60 65 75" stroke="${goldColor}" stroke-width="3" fill="none"/>
+                    <circle cx="50" cy="38" r="10" fill="#fef08a" stroke="${primaryColor}" stroke-width="1.2"/>
+                    <circle cx="46" cy="36" r="1" fill="#000"/>
+                    <circle cx="54" cy="36" r="1" fill="#000"/>
+                    <path d="M 46 43 Q 50 46 54 43" stroke="#dc2626" stroke-width="1.2" fill="none"/>
+                    <path d="M 25 92 Q 50 52 75 92 Z" fill="${isRed ? '#be123c' : '#334155'}"/>
+                    <path d="M 40 62 L 50 76 L 60 62 Z" fill="${goldColor}"/>
+                    <text x="50" y="88" font-size="20" font-weight="bold" fill="${goldColor}" text-anchor="middle" font-family="Cinzel">${suitSymbol}</text>
+                </svg>`;
+            } else { // Jack (Prince)
+                return `
+                <svg viewBox="0 0 100 110" class="w-full h-full max-h-[105px] mx-auto filter drop-shadow">
+                    <rect x="5" y="5" width="90" height="100" rx="6" fill="none" stroke="${goldColor}" stroke-width="2" stroke-dasharray="3 2" />
+                    <rect x="8" y="8" width="84" height="94" rx="5" fill="${isRed ? '#fef2f2' : '#f8fafc'}" stroke="${primaryColor}" stroke-width="1.2"/>
+                    <path d="M 30 30 Q 50 15 70 30 Z" fill="${primaryColor}"/>
+                    <path d="M 50 15 L 65 6 L 60 17 Z" fill="${goldColor}"/>
+                    <circle cx="50" cy="39" r="10" fill="#fef08a" stroke="${primaryColor}" stroke-width="1.2"/>
+                    <circle cx="46" cy="37" r="1" fill="#000"/>
+                    <circle cx="54" cy="37" r="1" fill="#000"/>
+                    <path d="M 46 44 Q 50 47 54 44" stroke="#000" stroke-width="1" fill="none"/>
+                    <path d="M 24 92 L 35 58 L 65 58 L 76 92 Z" fill="${goldColor}"/>
+                    <path d="M 32 62 L 50 80 L 68 62 Z" fill="${primaryColor}"/>
+                    <text x="50" y="88" font-size="20" font-weight="bold" fill="#ffffff" text-anchor="middle" font-family="Cinzel">${suitSymbol}</text>
+                </svg>`;
+            }
+        }
+
+        // Card Deck Data
+        const SUITS = [
+            { name: 'spade', symbol: '♠', color: 'suit-black', isRed: false },
+            { name: 'heart', symbol: '♥', color: 'suit-red', isRed: true },
+            { name: 'diamond', symbol: '♦', color: 'suit-red', isRed: true },
+            { name: 'club', symbol: '♣', color: 'suit-black', isRed: false }
+        ];
+
+        const RANKS = [
+            { name: 'J', val: 'J' },
+            { name: 'Q', val: 'Q' },
+            { name: 'K', val: 'K' }
+        ];
+
+        // Global State Variables
+        let currentStep = 0; // 0:Start, 1:Backs, 2:Fronts, 3:Backs, 4:Vanish, 5:Shuffle, 6:Reveal 5
+        let initialCards = [];
+        let finalFiveCards = [];
+        let vanishIndex = -1;
+
+        // Stage Prompt Guides
+        const STEP_GUIDES = [
+            "시작하기 버튼을 눌러 마술을 시작하세요.",
+            "준비된 6장의 카드입니다. (Space를 눌러 앞면을 확인하세요)",
+            "카드를 확인하고 마음속으로 단 1장의 카드를 깊이 기억하세요! (Space 키를 눌러 뒤집기)",
+            "관객님의 마음을 스캔하고 있습니다... (Space 키를 눌러 선택된 카드 삭제)",
+            "수리수리 마수리! 관객님이 선택한 1장의 카드가 흔적도 없이 사라졌습니다! (Space 키를 눌러 셔플)",
+            "수리수리 마수리! 남은 5장의 카드가 dynamic 3D 궤도로 섞이고 있습니다... (Space 키를 눌러 남은 카드 공개)",
+            "짜잔! 관객님이 마음속으로 고른 카드가 완벽히 사라지고 5장의 카드만 남았습니다! ✨"
+        ];
+
+        // Random Picker
+        function getRandomCards(count, excludeList = []) {
+            let deck = [];
+            SUITS.forEach(suit => {
+                RANKS.forEach(rank => {
+                    const id = `${rank.val}-${suit.name}`;
+                    if (!excludeList.includes(id)) {
+                        deck.push({ 
+                            rank: rank.val, 
+                            suit: suit.symbol, 
+                            color: suit.color, 
+                            isRed: suit.isRed,
+                            id: id 
+                        });
+                    }
+                });
+            });
+            deck.sort(() => Math.random() - 0.5);
+            return deck.slice(0, count);
+        }
+
+        function generateAlteredFiveCards(first6Cards) {
+            const firstIds = first6Cards.map(c => c.id);
+            return getRandomCards(5, firstIds);
+        }
+
+        function initCardSet() {
+            initialCards = getRandomCards(6);
+            finalFiveCards = generateAlteredFiveCards(initialCards);
+            vanishIndex = Math.floor(Math.random() * 6);
+        }
+
+        function renderCards() {
+            const container = document.getElementById('cardContainer');
+            container.innerHTML = '';
+
+            initialCards.forEach((card, idx) => {
+                const cardWrapper = document.createElement('div');
+                cardWrapper.id = `card-wrapper-${idx}`;
+                cardWrapper.className = 'card-container-item perspective-1400 flex items-center justify-center';
+
+                const royalSvg = getRoyalIllustration(card.rank, card.suit, card.isRed);
+
+                cardWrapper.innerHTML = `
+                    <div id="card-inner-${idx}" class="card-inner">
+                        <!-- Back Face -->
+                        <div class="card-face card-back">
+                            <div class="card-back-pattern">
+                                <span class="text-3xl md:text-4xl text-amber-400/70 font-cinzel">♠</span>
+                            </div>
+                        </div>
+                        <!-- Front Face -->
+                        <div id="card-front-${idx}" class="card-face card-front ${card.color}">
+                            <!-- Top Rank/Suit -->
+                            <div class="flex justify-between items-start font-black leading-tight">
+                                <div class="text-lg sm:text-xl md:text-2xl">${card.rank}<br><span class="text-sm sm:text-lg md:text-xl">${card.suit}</span></div>
+                                <div class="text-lg sm:text-xl md:text-2xl">${card.suit}</div>
+                            </div>
+                            <!-- Middle Royal Art Illustration -->
+                            <div class="my-auto w-full px-0.5">
+                                ${royalSvg}
+                            </div>
+                            <!-- Bottom Inverted Rank/Suit -->
+                            <div class="flex justify-between items-end font-black leading-tight transform rotate-180">
+                                <div class="text-lg sm:text-xl md:text-2xl">${card.rank}<br><span class="text-sm sm:text-lg md:text-xl">${card.suit}</span></div>
+                                <div class="text-lg sm:text-xl md:text-2xl">${card.suit}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(cardWrapper);
+            });
+        }
+
+        function updateStageUI() {
+            const guide = document.getElementById('stageGuide');
+            guide.innerText = STEP_GUIDES[currentStep];
+        }
+
+        function startMagic() {
+            initCardSet();
+            renderCards();
+
+            document.getElementById('startOverlay').classList.add('hidden');
+            document.getElementById('cardContainer').classList.remove('hidden');
+            document.getElementById('nextBtn').classList.remove('hidden');
+            document.getElementById('restartBtn').classList.remove('hidden');
+
+            currentStep = 1;
+            updateStageUI();
+        }
+
+        function handleSpaceStep() {
+            if (currentStep === 0) {
+                startMagic();
+                return;
+            }
+
+            if (currentStep === 1) {
+                // Step 1 -> 2: Flip cards to FRONT
+                for (let i = 0; i < 6; i++) {
+                    setTimeout(() => {
+                        document.getElementById(`card-inner-${i}`).classList.add('is-flipped');
+                        playSound('flip');
+                    }, i * 100);
+                }
+                currentStep = 2;
+            } 
+            else if (currentStep === 2) {
+                // Step 2 -> 3: Flip cards back to BACK
+                for (let i = 0; i < 6; i++) {
+                    setTimeout(() => {
+                        document.getElementById(`card-inner-${i}`).classList.remove('is-flipped');
+                        playSound('flip');
+                    }, i * 80);
+                }
+                currentStep = 3;
+            } 
+            else if (currentStep === 3) {
+                // Step 3 -> 4: 1 Card Vanishes
+                const vanishCard = document.getElementById(`card-wrapper-${vanishIndex}`);
+                vanishCard.classList.add('vanish');
+                playSound('vanish');
+
+                setTimeout(() => {
+                    vanishCard.style.display = 'none';
+                }, 650);
+
+                currentStep = 4;
+            } 
+            else if (currentStep === 4) {
+                // Step 4 -> 5: True Dynamic Positional Swap Shuffle Animation
+                let activeCount = 0;
+                for (let i = 0; i < 6; i++) {
+                    if (i === vanishIndex) continue;
+                    const cardWrap = document.getElementById(`card-wrapper-${i}`);
+                    const animClass = `shuffle-swap-${activeCount % 5}`;
+                    cardWrap.classList.add(animClass);
+                    playSound('shuffle');
+                    setTimeout(() => cardWrap.classList.remove(animClass), 950);
+                    activeCount++;
+                }
+
+                currentStep = 5;
+            }
+            else if (currentStep === 5) {
+                // Step 5 -> 6: Replace remaining 5 cards with new altered cards & FLIP FRONT
+                let altIdx = 0;
+                for (let i = 0; i < 6; i++) {
+                    if (i === vanishIndex) continue;
+
+                    const frontElem = document.getElementById(`card-front-${i}`);
+                    const newCard = finalFiveCards[altIdx++];
+                    const royalSvg = getRoyalIllustration(newCard.rank, newCard.suit, newCard.isRed);
+
+                    frontElem.className = `card-face card-front ${newCard.color}`;
+                    frontElem.innerHTML = `
+                        <div class="flex justify-between items-start font-black leading-tight">
+                            <div class="text-lg sm:text-xl md:text-2xl">${newCard.rank}<br><span class="text-sm sm:text-lg md:text-xl">${newCard.suit}</span></div>
+                            <div class="text-lg sm:text-xl md:text-2xl">${newCard.suit}</div>
+                        </div>
+                        <div class="my-auto w-full px-0.5">
+                            ${royalSvg}
+                        </div>
+                        <div class="flex justify-between items-end font-black leading-tight transform rotate-180">
+                            <div class="text-lg sm:text-xl md:text-2xl">${newCard.rank}<br><span class="text-sm sm:text-lg md:text-xl">${newCard.suit}</span></div>
+                            <div class="text-lg sm:text-xl md:text-2xl">${newCard.suit}</div>
+                        </div>
+                    `;
+
+                    setTimeout(() => {
+                        document.getElementById(`card-inner-${i}`).classList.add('is-flipped');
+                        playSound('flip');
+                    }, altIdx * 120);
+                }
+
+                setTimeout(() => playSound('win'), 700);
+                currentStep = 6;
+                document.getElementById('nextBtn').classList.add('hidden');
+            }
+
+            updateStageUI();
+        }
+
+        function resetMagic() {
+            currentStep = 0;
+            document.getElementById('cardContainer').classList.add('hidden');
+            document.getElementById('startOverlay').classList.remove('hidden');
+            document.getElementById('nextBtn').classList.add('hidden');
+            document.getElementById('restartBtn').classList.add('hidden');
+            updateStageUI();
+        }
+
+        window.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                handleSpaceStep();
+            }
+        });
+
+        // Background Particle Animation
+        const canvas = document.getElementById('bgCanvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+
+        class Particle {
+            constructor() {
+                this.reset();
+            }
+            reset() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.size = Math.random() * 2.5 + 0.5;
+                this.speedY = -(Math.random() * 0.5 + 0.2);
+                this.alpha = Math.random() * 0.6 + 0.2;
+            }
+            update() {
+                this.y += this.speedY;
+                if (this.y < 0) this.reset();
+            }
+            draw() {
+                ctx.fillStyle = `rgba(245, 158, 11, ${this.alpha})`;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        function initParticles() {
+            resizeCanvas();
+            particles = [];
+            for (let i = 0; i < 70; i++) {
+                particles.push(new Particle());
+            }
+        }
+
+        function animateParticles() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach(p => {
+                p.update();
+                p.draw();
+            });
+            requestAnimationFrame(animateParticles);
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+        window.onload = () => {
+            initParticles();
+            animateParticles();
+        };
+    </script>
+</body>
+</html>
