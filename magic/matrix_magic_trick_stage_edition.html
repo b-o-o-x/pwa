@@ -1,0 +1,966 @@
+<!DOCTYPE html>
+<html lang="ko" class="h-full bg-slate-950">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>마인드 리딩 메트릭스 마술 (Stage Edition)</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Noto+Sans+KR:wght@300;500;700;900&family=Orbitron:wght@600;900&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        cinzel: ['"Cinzel Decorative"', 'serif'],
+                        orbitron: ['Orbitron', 'sans-serif'],
+                        sans: ['"Noto Sans KR"', 'sans-serif'],
+                    },
+                    colors: {
+                        magic: {
+                            gold: '#ffd700',
+                            purple: '#8b5cf6',
+                            cyan: '#06b6d4',
+                            dark: '#090d16',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            overflow: hidden;
+            user-select: none;
+            background: radial-gradient(circle at center, #1a0b2e 0%, #080311 70%, #020105 100%);
+        }
+
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1.5px solid rgba(255, 215, 0, 0.3);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7), inset 0 0 20px rgba(139, 92, 246, 0.2);
+        }
+
+        .gold-gradient-text {
+            background: linear-gradient(135deg, #FFF5C0 0%, #FFD700 50%, #B8860B 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .grid-card {
+            transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+            transform-style: preserve-3d;
+        }
+
+        .grid-card.dimmed {
+            opacity: 0.15;
+            filter: blur(2px) grayscale(90%);
+            transform: scale(0.92);
+        }
+
+        .grid-card.valid-start {
+            box-shadow: 0 0 35px rgba(6, 182, 212, 1), inset 0 0 25px rgba(6, 182, 212, 0.8);
+            border-color: #38bdf8;
+            transform: scale(1.06);
+            animation: startPulse 1.5s infinite alternate;
+        }
+
+        @keyframes startPulse {
+            0% { border-color: #38bdf8; box-shadow: 0 0 25px rgba(6, 182, 212, 0.8); }
+            100% { border-color: #ffd700; box-shadow: 0 0 45px rgba(255, 215, 0, 1); }
+        }
+
+        .grid-card.eliminated {
+            opacity: 0;
+            transform: scale(0.05) rotate3d(1, 1, 0, 120deg);
+            pointer-events: none;
+            filter: brightness(0.1) blur(8px);
+        }
+
+        .grid-card.target-winner {
+            animation: winnerPulse 1.5s infinite alternate;
+            border-color: #ffd700;
+            background: radial-gradient(circle, rgba(255,215,0,0.6) 0%, rgba(139,92,246,0.8) 100%);
+        }
+
+        @keyframes winnerPulse {
+            0% { transform: scale(1.1); box-shadow: 0 0 50px #ffd700, inset 0 0 30px #ffd700; }
+            100% { transform: scale(1.25); box-shadow: 0 0 100px #ffd700, 0 0 50px #06b6d4, inset 0 0 50px #ffd700; }
+        }
+
+        #svgOverlay {
+            pointer-events: none;
+            z-index: 30;
+        }
+
+        .arrow-path-1 {
+            stroke: #06b6d4;
+            stroke-dasharray: 8, 8;
+            animation: dash 1.5s linear infinite;
+        }
+
+        .arrow-path-2 {
+            stroke: #eab308;
+            stroke-dasharray: 8, 8;
+            animation: dash 1.5s linear infinite reverse;
+        }
+
+        .no-diagonal-line {
+            stroke: #ef4444;
+            stroke-dasharray: 6, 6;
+        }
+
+        @keyframes dash {
+            to { stroke-dashoffset: -32; }
+        }
+
+        .shake-screen {
+            animation: screenShake 0.4s cubic-bezier(.36,.07,.19,.97) both;
+        }
+
+        @keyframes screenShake {
+            10%, 90% { transform: translate3d(-1px, 0, 0); }
+            20%, 80% { transform: translate3d(2px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+            40%, 60% { transform: translate3d(4px, 0, 0); }
+        }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); }
+        ::-webkit-scrollbar-thumb { background: rgba(255,215,0,0.3); border-radius: 3px; }
+    </style>
+</head>
+<body id="appBody" class="h-full text-slate-100 font-sans flex flex-col justify-between relative overflow-hidden select-none">
+
+    <!-- Canvas Background & Effects -->
+    <canvas id="bgCanvas" class="absolute inset-0 pointer-events-none z-0"></canvas>
+    <canvas id="fxCanvas" class="absolute inset-0 pointer-events-none z-40"></canvas>
+
+    <!-- Top Header Stage Bar -->
+    <header class="relative z-10 w-full px-8 py-4 flex justify-between items-center glass-panel border-b border-amber-500/30">
+        <div class="flex items-center space-x-4">
+            <div class="w-12 h-12 rounded-full bg-gradient-to-tr from-amber-500 to-purple-600 flex items-center justify-center shadow-lg shadow-amber-500/30 border border-amber-300">
+                <span class="font-cinzel text-2xl text-slate-950">🔮</span>
+            </div>
+            <div>
+                <h1 class="text-2xl md:text-3xl lg:text-4xl font-cinzel font-black tracking-wider gold-gradient-text">
+                    5x5 MATRIX MAGIC <span class="text-sm md:text-base font-orbitron text-cyan-400 tracking-widest uppercase ml-3">Stage Edition</span>
+                </h1>
+                <p class="text-xs md:text-sm text-slate-300 font-medium">관객 참여형 패리티 마인드 리딩 스테이지 마술</p>
+            </div>
+        </div>
+
+        <div class="flex items-center space-x-4">
+            <div id="stepBadge" class="px-5 py-2 rounded-full bg-purple-950/90 border border-purple-400/50 text-sm md:text-base font-orbitron text-purple-200 flex items-center space-x-3 shadow-lg">
+                <span class="w-3 h-3 rounded-full bg-cyan-400 animate-ping"></span>
+                <span id="stepBadgeText" class="font-bold">STEP 1 / 11</span>
+            </div>
+
+            <button onclick="toggleSound()" class="px-4 py-2 rounded-xl bg-slate-800/90 text-amber-400 border border-slate-700 text-sm flex items-center gap-2 hover:bg-slate-700 font-semibold">
+                <i class="fa-solid fa-volume-high text-base" id="soundIcon"></i>
+                <span id="soundText" class="hidden sm:inline">사운드 ON</span>
+            </button>
+
+            <button onclick="toggleFullScreen()" class="p-2.5 rounded-xl bg-slate-800/90 text-slate-200 border border-slate-700 text-sm hover:bg-slate-700" title="전체화면 (F)">
+                <i class="fa-solid fa-expand text-lg"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Stage Container -->
+    <main class="relative z-10 flex-1 flex flex-col md:flex-row items-stretch justify-center p-4 md:p-8 gap-6 lg:gap-8 max-w-[1800px] mx-auto w-full h-[calc(100vh-140px)]">
+        
+        <!-- Script / Presenter Panel -->
+        <aside id="scriptPanel" class="w-full md:w-[420px] lg:w-[480px] glass-panel rounded-3xl p-6 border border-purple-500/40 flex flex-col justify-between shadow-2xl shrink-0">
+            <div>
+                <div class="flex justify-between items-center mb-4 pb-3 border-b border-purple-500/30">
+                    <span class="text-sm md:text-base font-orbitron text-amber-400 tracking-wider font-bold flex items-center gap-2">
+                        <i class="fa-solid fa-microphone-lines text-lg"></i> 마술사 멘트 가이드
+                    </span>
+                    <span class="text-xs text-slate-400 font-mono">Space / ← →</span>
+                </div>
+                
+                <h2 id="stageTitle" class="text-xl md:text-2xl font-bold text-cyan-300 mb-3">1. 이동 규칙 안내</h2>
+                
+                <div id="stageScript" class="text-slate-100 text-base md:text-lg lg:text-xl leading-relaxed font-sans bg-slate-900/80 p-5 rounded-2xl border border-slate-700/80 min-h-[220px] flex items-center shadow-inner">
+                    <!-- Dynamic script -->
+                </div>
+            </div>
+
+            <!-- Visual Legend & Actions -->
+            <div class="mt-4 pt-4 border-t border-slate-800 space-y-3">
+                <div id="tutorialLegend" class="text-xs md:text-sm space-y-2 text-slate-200 bg-slate-950/60 p-3.5 rounded-xl border border-slate-800">
+                    <div class="flex items-center gap-2.5">
+                        <span class="w-3.5 h-3.5 rounded bg-cyan-400 inline-block shrink-0"></span>
+                        <span id="legendLine1">예시A: 7 → 2 → 7 → 2 → 1 (4칸)</span>
+                    </div>
+                    <div class="flex items-center gap-2.5">
+                        <span class="w-3.5 h-3.5 rounded bg-yellow-400 inline-block shrink-0"></span>
+                        <span id="legendLine2">예시B: 19 → 20 → 19 → 20 → 25 (4칸)</span>
+                    </div>
+                    <div class="flex items-center gap-2 text-rose-400 font-bold">
+                        <i class="fa-solid fa-ban text-base"></i>
+                        <span>대각선 이동 절대 불가 ❌</span>
+                    </div>
+                </div>
+
+                <div class="flex justify-between items-center text-xs md:text-sm text-slate-300 pt-1">
+                    <div>다음 진행: <span id="nextActionText" class="text-amber-300 font-bold">Space를 누르세요</span></div>
+                    <span class="px-3 py-1 rounded-lg bg-slate-800 border border-slate-600 font-mono text-xs text-amber-300 font-bold shadow">Space</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Grid Board -->
+        <section class="flex-1 flex flex-col items-center justify-center w-full relative h-full min-h-0">
+            
+            <!-- SVG Arrow Canvas Overlay -->
+            <svg id="svgOverlay" class="absolute inset-0 w-full h-full">
+                <defs>
+                    <marker id="arrowCyan" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                        <path d="M 0 0 L 10 5 L 0 10 z" fill="#06b6d4" />
+                    </marker>
+                    <marker id="arrowYellow" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                        <path d="M 0 0 L 10 5 L 0 10 z" fill="#eab308" />
+                    </marker>
+                </defs>
+            </svg>
+
+            <!-- Expanded Dynamic 5x5 Grid Container -->
+            <div id="gridContainer" class="grid grid-cols-5 gap-3 md:gap-4 p-5 md:p-6 glass-panel rounded-3xl w-full h-full max-h-[82vh] aspect-square shadow-2xl relative border-2 border-amber-500/40">
+                <!-- 25 Cells -->
+            </div>
+
+            <!-- Reveal Overlay -->
+            <div id="bannerOverlay" class="absolute inset-0 flex items-center justify-center pointer-events-none opacity-0 transition-all duration-700 transform scale-90 z-50">
+                <div class="glass-panel bg-slate-950/95 border-4 border-amber-400 rounded-3xl p-10 text-center max-w-2xl shadow-2xl">
+                    <p class="text-cyan-400 font-orbitron text-sm md:text-base tracking-widest uppercase mb-2 animate-pulse">SURVIVOR LOCATION REVEAL</p>
+                    <h2 class="text-4xl md:text-5xl font-black font-cinzel gold-gradient-text mb-4">관객의 최종 선택 위치!</h2>
+                    <div id="winnerText" class="text-7xl md:text-8xl font-black font-orbitron text-cyan-300 my-6 drop-shadow-[0_0_35px_rgba(6,182,212,1)]">13번 칸</div>
+                    <p class="text-base md:text-lg text-slate-200 font-sans">수많은 자유 이동 속에서도 관객의 생각은 완벽히 예언되었습니다!</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Bottom Stage Controller Bar -->
+    <footer class="relative z-10 w-full px-8 py-3.5 glass-panel border-t border-amber-500/30 flex items-center justify-between gap-4">
+        <div class="flex items-center space-x-6 text-xs md:text-sm text-slate-300">
+            <div class="flex items-center gap-2">
+                <span class="w-3.5 h-3.5 rounded bg-cyan-400 inline-block shadow"></span>
+                <span>출발 가능 위치</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <span class="w-3.5 h-3.5 rounded bg-slate-800 border border-slate-600 inline-block"></span>
+                <span>생존 안전 구역</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <span class="w-3.5 h-3.5 rounded bg-rose-950 border border-rose-500 inline-block"></span>
+                <span>파괴된 구역</span>
+            </div>
+        </div>
+
+        <div class="flex items-center space-x-4">
+            <button onclick="prevStep()" class="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 font-bold text-xs md:text-sm transition flex items-center gap-2 active:scale-95 shadow">
+                <i class="fa-solid fa-chevron-left"></i> 이전 (←)
+            </button>
+            
+            <button onclick="resetTrick()" class="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-rose-300 border border-rose-900/60 font-bold text-xs md:text-sm transition flex items-center gap-2 active:scale-95 shadow" title="리셋 (R)">
+                <i class="fa-solid fa-rotate-right"></i> 다시시작 (R)
+            </button>
+
+            <button id="nextStepBtn" onclick="nextStep()" class="px-8 py-3 rounded-xl bg-gradient-to-r from-amber-400 to-amber-600 hover:from-amber-300 hover:to-amber-500 text-slate-950 font-black text-sm md:text-base tracking-wide transition flex items-center gap-3 shadow-xl shadow-amber-500/30 active:scale-95">
+                <span id="nextBtnText">시작하기 (Space)</span>
+                <i class="fa-solid fa-wand-magic-sparkles text-lg"></i>
+            </button>
+        </div>
+    </footer>
+
+    <!-- MAIN JAVASCRIPT LOGIC -->
+    <script>
+        /* ===================================================================
+           1. CONFIGURATION & PARITY LOGIC
+           =================================================================== */
+        const totalCells = 25;
+        let currentStep = 0;
+        let soundEnabled = true;
+        let isAnimating = false;
+
+        // Valid starting cells (all ODD parity: (r+c) is even)
+        const validStartCells = [7, 9, 17, 19];
+        const forcedTargetCell = 13; // (3,3) -> Target Cell
+
+        // Build 5x5 adjacency grid
+        const gridGraph = {};
+        for (let i = 1; i <= 25; i++) {
+            gridGraph[i] = [];
+            const r = Math.floor((i - 1) / 5);
+            const c = (i - 1) % 5;
+            if (r > 0) gridGraph[i].push(i - 5);
+            if (r < 4) gridGraph[i].push(i + 5);
+            if (c > 0) gridGraph[i].push(i - 1);
+            if (c < 4) gridGraph[i].push(i + 1);
+        }
+
+        let activeEliminated = new Set();
+        let stageScripts = [];
+
+        /* ===================================================================
+           2. REACHABILITY & SAFE ELIMINATION LOGIC
+           =================================================================== */
+        // Board connectivity check
+        function isBoardConnectedAfterRemoval(tempEliminated) {
+            const activeCells = [];
+            for (let i = 1; i <= totalCells; i++) {
+                if (!tempEliminated.has(i)) activeCells.push(i);
+            }
+
+            if (activeCells.length === 0) return false;
+            if (!activeCells.includes(forcedTargetCell)) return false;
+
+            const visited = new Set();
+            const queue = [forcedTargetCell];
+            visited.add(forcedTargetCell);
+
+            while (queue.length > 0) {
+                const curr = queue.shift();
+                for (const neighbor of gridGraph[curr]) {
+                    if (!tempEliminated.has(neighbor) && !visited.has(neighbor)) {
+                        visited.add(neighbor);
+                        queue.push(neighbor);
+                    }
+                }
+            }
+
+            return visited.size === activeCells.length;
+        }
+
+        /**
+         * Calculates all reachable positions after `steps` moves on current board
+         * @param {Set<number>} currentPositions - Current set of possible spectator locations
+         * @param {number} steps - Number of steps to move
+         * @param {Set<number>} eliminatedSet - Currently eliminated cells
+         * @returns {Set<number>} All reachable cells
+         */
+        function getReachablePositions(currentPositions, steps, eliminatedSet) {
+            let currentSet = new Set(currentPositions);
+
+            for (let s = 0; s < steps; s++) {
+                const nextSet = new Set();
+                for (const pos of currentSet) {
+                    for (const neighbor of gridGraph[pos]) {
+                        if (!eliminatedSet.has(neighbor)) {
+                            nextSet.add(neighbor);
+                        }
+                    }
+                }
+                currentSet = nextSet;
+            }
+
+            return currentSet;
+        }
+
+        /* Build full sequence dynamically until ONLY cell 13 remains */
+        function generateDynamicSequence() {
+            const sequence = [
+                {
+                    step: 0,
+                    title: "1. 이동 규칙 안내",
+                    script: "관객 여러분, 상하좌우로만 이동할 수 있습니다! 예: 7번 출발 시 7→2→7→2→1 (4칸) 또는 19번 출발 시 19→20→19→20→25 (4칸)처럼 자유롭게 왕복 가능합니다. (대각선 이동 금지!)",
+                    nextAction: "규칙 설명 완료 후 [Space]",
+                    btnText: "출발 위치 지정 (Space)",
+                    isDestroyStep: false
+                },
+                {
+                    step: 1,
+                    title: "2. 출발 위치 지정",
+                    script: "화면에 밝게 빛나는 [7, 9, 17, 19]번 칸 중 마음속으로 단 하나의 출발 위치를 선택하세요!",
+                    nextAction: "관객 출발위치 선택 후 [Space]",
+                    btnText: "전체 그리드 공개 (Space)",
+                    isDestroyStep: false
+                },
+                {
+                    step: 2,
+                    title: "3. 전체 판 공개",
+                    script: "모든 판이 공개되었습니다. 선택하신 출발 위치에 손가락이나 시선을 고정하세요.",
+                    nextAction: "1차 이동 안내 (Space)",
+                    btnText: "첫번째 4칸 이동 안내 (Space)",
+                    isDestroyStep: false
+                }
+            ];
+
+            let simEliminated = new Set();
+            let spectatorPositions = new Set(validStartCells);
+            let round = 1;
+
+            // Step movement patterns
+            const movePattern = [4, 5, 4, 3, 3, 2, 1, 2, 1];
+            let moveIdx = 0;
+
+            while (simEliminated.size < totalCells - 1) {
+                let moveSteps = movePattern[moveIdx] || (Math.floor(Math.random() * 2) === 0 ? 3 : 2);
+                moveIdx++;
+
+                // 1. 관객의 실시간 이동 시뮬레이션
+                spectatorPositions = getReachablePositions(spectatorPositions, moveSteps, simEliminated);
+
+                // 2. 제거 가능 후보군 선정 (관객이 절대 존재할 수 없는 위치 & 13번 제외)
+                const safeCandidates = [];
+                for (let i = 1; i <= totalCells; i++) {
+                    if (i === forcedTargetCell || simEliminated.has(i)) continue;
+                    if (!spectatorPositions.has(i)) {
+                        safeCandidates.push(i);
+                    }
+                }
+
+                // Shuffle candidates for dynamic presentation
+                safeCandidates.sort(() => Math.random() - 0.5);
+
+                // 3. 연결성 유지 가능한 셀 선택
+                const elims = [];
+                const tempElim = new Set(simEliminated);
+
+                for (const cell of safeCandidates) {
+                    tempElim.add(cell);
+                    if (isBoardConnectedAfterRemoval(tempElim)) {
+                        elims.push(cell);
+                        // 한 번에 너무 많이 파괴되지 않도록 제어 (1~3개)
+                        if (elims.length >= Math.min(3, safeCandidates.length)) break;
+                    } else {
+                        tempElim.delete(cell);
+                    }
+                }
+
+                // 만약 현재 단계에서 제거할 수 있는 셀이 없다면 이동 단계를 건너뜀
+                if (elims.length === 0) {
+                    continue;
+                }
+
+                // 이동 가이드 단계 추가
+                sequence.push({
+                    step: sequence.length,
+                    title: `${sequence.length + 1}. ${round}차 이동 가이드 (${moveSteps}칸)`,
+                    script: `현재 살아있는 구역을 따라 마음속으로 정확히 [${moveSteps}칸] 이동하세요! (왔던 길 왕복 가능)`,
+                    nextAction: "관객 이동 완료 후 [Space]",
+                    btnText: `불가능 구역 ${elims.length}개 파괴! (Space)`,
+                    isDestroyStep: false
+                });
+
+                // 구역 파괴 단계 추가
+                elims.forEach(cell => simEliminated.add(cell));
+                sequence.push({
+                    step: sequence.length,
+                    title: `${sequence.length + 1}. ${round}차 구역 파괴 (${elims.length}개 소멸)`,
+                    script: `콰쾅! 이동 결과 관객이 절대 위치할 수 없는 ${elims.length}개의 구역(${elims.sort((a,b)=>a-b).join(', ')}번)이 파괴되었습니다!`,
+                    nextAction: "다음 단계 진행 (Space)",
+                    btnText: "다음 이동 안내 (Space)",
+                    isDestroyStep: true,
+                    cellsToEliminate: elims
+                });
+
+                round++;
+            }
+
+            // 오직 13번만 남았을 때 최종 연출
+            sequence.push({
+                step: sequence.length,
+                title: "★ 최종 예언 공개 ★",
+                script: "모든 칸이 파괴되고, 수많은 자유로운 이동 속에서도 당신은 마술사가 미리 예언한 중앙 [13번] 단 하나의 방에 최종 도착했습니다!",
+                nextAction: "마술 성공!",
+                btnText: "다시하기 (R)",
+                isDestroyStep: true,
+                isFinalStep: true,
+                cellsToEliminate: []
+            });
+
+            return sequence;
+        }
+
+        /* ===================================================================
+           3. AUDIO ENGINE
+           =================================================================== */
+        class MagicSoundEngine {
+            constructor() { this.ctx = null; }
+            init() {
+                if (!this.ctx) {
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    this.ctx = new AudioContext();
+                }
+                if (this.ctx.state === 'suspended') this.ctx.resume();
+            }
+
+            playMove() {
+                if (!soundEnabled) return;
+                this.init();
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(220, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(700, this.ctx.currentTime + 0.12);
+                gain.gain.setValueAtTime(0.2, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.12);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.12);
+            }
+
+            playExplosion() {
+                if (!soundEnabled) return;
+                this.init();
+                const bufferSize = this.ctx.sampleRate * 0.3;
+                const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+
+                const noise = this.ctx.createBufferSource();
+                noise.buffer = buffer;
+                const filter = this.ctx.createBiquadFilter();
+                filter.type = 'lowpass';
+                filter.frequency.value = 600;
+
+                const gain = this.ctx.createGain();
+                gain.gain.setValueAtTime(0.6, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.3);
+
+                noise.connect(filter);
+                filter.connect(gain);
+                gain.connect(this.ctx.destination);
+                noise.start();
+            }
+
+            playVictoryFanfare() {
+                if (!soundEnabled) return;
+                this.init();
+                const notes = [
+                    { f: 440.00, t: 0, d: 0.3 },
+                    { f: 554.37, t: 0.15, d: 0.3 },
+                    { f: 659.25, t: 0.3, d: 0.3 },
+                    { f: 880.00, t: 0.5, d: 1.2 }
+                ];
+                notes.forEach(n => {
+                    setTimeout(() => {
+                        const osc = this.ctx.createOscillator();
+                        const gain = this.ctx.createGain();
+                        osc.type = 'sawtooth';
+                        osc.frequency.value = n.f;
+                        gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
+                        gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + n.d);
+                        osc.connect(gain);
+                        gain.connect(this.ctx.destination);
+                        osc.start();
+                        osc.stop(this.ctx.currentTime + n.d);
+                    }, n.t * 1000);
+                });
+            }
+        }
+
+        const sound = new MagicSoundEngine();
+
+        /* ===================================================================
+           4. STEP CONTROLLER & RENDERING
+           =================================================================== */
+        function initGrid() {
+            const container = document.getElementById('gridContainer');
+            container.innerHTML = '';
+            activeEliminated.clear();
+
+            for (let i = 1; i <= totalCells; i++) {
+                const cell = document.createElement('div');
+                cell.id = `cell-${i}`;
+                cell.className = `grid-card glass-panel rounded-2xl md:rounded-3xl flex flex-col items-center justify-center border-2 border-purple-500/40 relative overflow-hidden select-none`;
+                
+                const numSpan = document.createElement('span');
+                numSpan.className = "text-3xl md:text-5xl lg:text-6xl font-black font-orbitron gold-gradient-text drop-shadow";
+                numSpan.innerText = i;
+
+                cell.appendChild(numSpan);
+                container.appendChild(cell);
+            }
+
+            stageScripts = generateDynamicSequence();
+            renderStepUI();
+        }
+
+        function nextStep() {
+            if (isAnimating) return;
+            if (currentStep < stageScripts.length - 1) {
+                currentStep++;
+                sound.playMove();
+                processCurrentStep();
+            } else {
+                resetTrick();
+            }
+        }
+
+        function prevStep() {
+            if (isAnimating || currentStep <= 0) return;
+            currentStep--;
+            sound.playMove();
+            resetTrickToStep(currentStep);
+        }
+
+        function processCurrentStep() {
+            renderStepUI();
+
+            const info = stageScripts[currentStep];
+            if (info.isDestroyStep && info.cellsToEliminate && info.cellsToEliminate.length > 0) {
+                animateEliminations(info.cellsToEliminate, () => {
+                    if (info.isFinalStep) {
+                        triggerFinalReveal();
+                    }
+                });
+            } else if (info.isFinalStep) {
+                triggerFinalReveal();
+            }
+        }
+
+        function renderStepUI() {
+            const info = stageScripts[currentStep];
+            document.getElementById('stageTitle').innerText = info.title;
+            document.getElementById('stageScript').innerText = `"${info.script}"`;
+            document.getElementById('nextActionText').innerText = info.nextAction;
+            document.getElementById('nextBtnText').innerText = info.btnText;
+            document.getElementById('stepBadgeText').innerText = `STEP ${currentStep + 1} / ${stageScripts.length}`;
+
+            const tutorialLegend = document.getElementById('tutorialLegend');
+            if (currentStep === 0) {
+                tutorialLegend.classList.remove('hidden');
+                drawTutorialArrows();
+            } else {
+                tutorialLegend.classList.add('hidden');
+                clearSVGOverlay();
+            }
+
+            // Cell Highlight logic for Step 1
+            for (let i = 1; i <= totalCells; i++) {
+                const cell = document.getElementById(`cell-${i}`);
+                if (!cell) continue;
+
+                if (currentStep === 1) {
+                    if (validStartCells.includes(i)) {
+                        cell.classList.add('valid-start');
+                        cell.classList.remove('dimmed');
+                    } else {
+                        cell.classList.add('dimmed');
+                        cell.classList.remove('valid-start');
+                    }
+                } else {
+                    cell.classList.remove('dimmed', 'valid-start');
+                }
+            }
+        }
+
+        function animateEliminations(cellNumbers, callback) {
+            isAnimating = true;
+
+            document.getElementById('appBody').classList.add('shake-screen');
+            setTimeout(() => {
+                document.getElementById('appBody').classList.remove('shake-screen');
+            }, 400);
+
+            cellNumbers.forEach((num, idx) => {
+                setTimeout(() => {
+                    const cell = document.getElementById(`cell-${num}`);
+                    if (cell && !cell.classList.contains('eliminated')) {
+                        cell.classList.add('eliminated');
+                        sound.playExplosion();
+                        spawnParticleBurstAtCell(num, '#f43f5e');
+                        activeEliminated.add(num);
+                    }
+
+                    if (idx === cellNumbers.length - 1) {
+                        isAnimating = false;
+                        if (callback) callback();
+                    }
+                }, idx * 160);
+            });
+        }
+
+        function triggerFinalReveal() {
+            sound.playVictoryFanfare();
+            const target = document.getElementById(`cell-${forcedTargetCell}`);
+            if (target) {
+                target.classList.add('target-winner');
+                spawnConfettiAndFirework(forcedTargetCell);
+            }
+
+            const banner = document.getElementById('bannerOverlay');
+            banner.classList.remove('opacity-0', 'scale-90');
+            banner.classList.add('opacity-100', 'scale-100');
+        }
+
+        function resetTrick() {
+            currentStep = 0;
+            isAnimating = false;
+
+            const banner = document.getElementById('bannerOverlay');
+            banner.classList.add('opacity-0', 'scale-90');
+            banner.classList.remove('opacity-100', 'scale-100');
+
+            initGrid();
+        }
+
+        function resetTrickToStep(targetStep) {
+            const savedScripts = [...stageScripts];
+            resetTrick();
+            stageScripts = savedScripts;
+            for (let s = 1; s <= targetStep; s++) {
+                currentStep = s;
+                processCurrentStep();
+            }
+        }
+
+        /* ===================================================================
+           5. SVG TUTORIAL ARROWS
+           =================================================================== */
+        function getCellCenter(num) {
+            const cell = document.getElementById(`cell-${num}`);
+            if (!cell) return { x: 0, y: 0 };
+            const rect = cell.getBoundingClientRect();
+            const containerRect = document.getElementById('gridContainer').getBoundingClientRect();
+            return {
+                x: rect.left - containerRect.left + rect.width / 2,
+                y: rect.top - containerRect.top + rect.height / 2
+            };
+        }
+
+        function clearSVGOverlay() {
+            const svg = document.getElementById('svgOverlay');
+            svg.querySelectorAll('.dynamic-draw').forEach(e => e.remove());
+        }
+
+        function drawTutorialArrows() {
+            clearSVGOverlay();
+            const svg = document.getElementById('svgOverlay');
+
+            // Path 1 (Cyan): 7 -> 2 -> 7 -> 2 -> 1 (4 steps)
+            const p1 = [7, 2, 7, 2, 1];
+            let d1 = "";
+            p1.forEach((num, idx) => {
+                const pt = getCellCenter(num);
+                if (idx === 0) d1 += `M ${pt.x} ${pt.y} `;
+                else d1 += `L ${pt.x} ${pt.y} `;
+            });
+
+            const path1El = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            path1El.setAttribute('d', d1);
+            path1El.setAttribute('class', 'arrow-path-1 dynamic-draw');
+            path1El.setAttribute('stroke-width', '5');
+            path1El.setAttribute('fill', 'none');
+            path1El.setAttribute('marker-end', 'url(#arrowCyan)');
+            svg.appendChild(path1El);
+
+            // Path 2 (Yellow): 19 -> 20 -> 19 -> 20 -> 25 (4 steps)
+            const p2 = [19, 20, 19, 20, 25];
+            let d2 = "";
+            p2.forEach((num, idx) => {
+                const pt = getCellCenter(num);
+                if (idx === 0) d2 += `M ${pt.x} ${pt.y} `;
+                else d2 += `L ${pt.x} ${pt.y} `;
+            });
+
+            const path2El = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            path2El.setAttribute('d', d2);
+            path2El.setAttribute('class', 'arrow-path-2 dynamic-draw');
+            path2El.setAttribute('stroke-width', '5');
+            path2El.setAttribute('fill', 'none');
+            path2El.setAttribute('marker-end', 'url(#arrowYellow)');
+            svg.appendChild(path2El);
+
+            // Prohibited Diagonal Line (7 -> 13)
+            const c7 = getCellCenter(7);
+            const c13 = getCellCenter(13);
+
+            const diagLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            diagLine.setAttribute('x1', c7.x);
+            diagLine.setAttribute('y1', c7.y);
+            diagLine.setAttribute('x2', c13.x);
+            diagLine.setAttribute('y2', c13.y);
+            diagLine.setAttribute('class', 'no-diagonal-line dynamic-draw');
+            diagLine.setAttribute('stroke-width', '4');
+            svg.appendChild(diagLine);
+
+            const midX = (c7.x + c13.x) / 2;
+            const midY = (c7.y + c13.y) / 2;
+            const textX = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            textX.setAttribute('x', midX);
+            textX.setAttribute('y', midY + 6);
+            textX.setAttribute('fill', '#ef4444');
+            textX.setAttribute('font-size', '20');
+            textX.setAttribute('font-weight', 'bold');
+            textX.setAttribute('text-anchor', 'middle');
+            textX.setAttribute('class', 'dynamic-draw');
+            textX.textContent = '❌ 대각선 이동 불가';
+            svg.appendChild(textX);
+        }
+
+        /* ===================================================================
+           6. AUDIO & FULLSCREEN CONTROLLER
+           =================================================================== */
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            document.getElementById('soundIcon').className = soundEnabled ? "fa-solid fa-volume-high text-base" : "fa-solid fa-volume-xmark text-base";
+            document.getElementById('soundText').innerText = soundEnabled ? "사운드 ON" : "사운드 OFF";
+        }
+
+        function toggleFullScreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(() => {});
+            } else {
+                if (document.exitFullscreen) document.exitFullscreen();
+            }
+        }
+
+        window.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' || e.code === 'ArrowRight') {
+                e.preventDefault();
+                nextStep();
+            } else if (e.code === 'ArrowLeft') {
+                e.preventDefault();
+                prevStep();
+            } else if (e.code === 'KeyR') {
+                e.preventDefault();
+                resetTrick();
+            } else if (e.code === 'KeyF') {
+                toggleFullScreen();
+            }
+        });
+
+        /* ===================================================================
+           7. CANVAS PARTICLE EFFECTS
+           =================================================================== */
+        const bgCanvas = document.getElementById('bgCanvas');
+        const bgCtx = bgCanvas.getContext('2d');
+        const fxCanvas = document.getElementById('fxCanvas');
+        const fxCtx = fxCanvas.getContext('2d');
+
+        let bgParticles = [];
+        let fxParticles = [];
+
+        function resizeCanvases() {
+            bgCanvas.width = fxCanvas.width = window.innerWidth;
+            bgCanvas.height = fxCanvas.height = window.innerHeight;
+            if (currentStep === 0) setTimeout(drawTutorialArrows, 100);
+        }
+        window.addEventListener('resize', resizeCanvases);
+
+        function initBgParticles() {
+            bgParticles = [];
+            for (let i = 0; i < 70; i++) {
+                bgParticles.push({
+                    x: Math.random() * bgCanvas.width,
+                    y: Math.random() * bgCanvas.height,
+                    radius: Math.random() * 2.5 + 0.5,
+                    color: Math.random() > 0.5 ? '#ffd700' : '#8b5cf6',
+                    alpha: Math.random(),
+                    speed: Math.random() * 0.4 + 0.2
+                });
+            }
+        }
+
+        function drawBgParticles() {
+            bgCtx.clearRect(0, 0, bgCanvas.width, bgCanvas.height);
+            bgParticles.forEach(p => {
+                p.y -= p.speed;
+                if (p.y < 0) p.y = bgCanvas.height;
+                bgCtx.beginPath();
+                bgCtx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                bgCtx.fillStyle = p.color;
+                bgCtx.globalAlpha = p.alpha;
+                bgCtx.fill();
+            });
+            requestAnimationFrame(drawBgParticles);
+        }
+
+        function spawnParticleBurstAtCell(cellNum, color) {
+            const cell = document.getElementById(`cell-${cellNum}`);
+            if (!cell) return;
+            const rect = cell.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+
+            for (let i = 0; i < 35; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const speed = Math.random() * 8 + 2;
+                fxParticles.push({
+                    x: centerX,
+                    y: centerY,
+                    vx: Math.cos(angle) * speed,
+                    vy: Math.sin(angle) * speed,
+                    radius: Math.random() * 4 + 2,
+                    color: color,
+                    life: 1,
+                    decay: Math.random() * 0.03 + 0.02
+                });
+            }
+        }
+
+        function spawnConfettiAndFirework(cellNum) {
+            const cell = document.getElementById(`cell-${cellNum}`);
+            if (!cell) return;
+            const rect = cell.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+
+            const colors = ['#ffd700', '#06b6d4', '#ec4899', '#3b82f6', '#ffffff'];
+
+            for (let i = 0; i < 150; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const speed = Math.random() * 14 + 3;
+                fxParticles.push({
+                    x: centerX,
+                    y: centerY,
+                    vx: Math.cos(angle) * speed,
+                    vy: Math.sin(angle) * speed - 2,
+                    radius: Math.random() * 5 + 2,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    life: 1,
+                    decay: Math.random() * 0.015 + 0.01
+                });
+            }
+        }
+
+        function drawFxParticles() {
+            fxCtx.clearRect(0, 0, fxCanvas.width, fxCanvas.height);
+            for (let i = fxParticles.length - 1; i >= 0; i--) {
+                const p = fxParticles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.vy += 0.1;
+                p.life -= p.decay;
+
+                if (p.life <= 0) {
+                    fxParticles.splice(i, 1);
+                    continue;
+                }
+
+                fxCtx.beginPath();
+                fxCtx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                fxCtx.fillStyle = p.color;
+                fxCtx.globalAlpha = p.life;
+                fxCtx.fill();
+            }
+            requestAnimationFrame(drawFxParticles);
+        }
+
+        /* Initialize */
+        window.onload = function() {
+            resizeCanvases();
+            initBgParticles();
+            drawBgParticles();
+            drawFxParticles();
+            initGrid();
+        };
+    </script>
+</body>
+</html>
