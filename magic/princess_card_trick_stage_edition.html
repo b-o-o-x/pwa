@@ -47,148 +47,199 @@
             width: 100%;
             height: 100%;
             backface-visibility: hidden;
-            border-radius: 1rem;
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.7), 0 0 18px rgba(245, 158, 11, 0.25);
+            border-radius: 0.8rem;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.8), 0 0 20px rgba(245, 158, 11, 0.25);
         }
 
-        /* Front Face (Luxury Royal Gold Classic Trump Card) */
+        /* Front Face Base */
         .card-front {
-            background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
-            border: 3px solid #d97706;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            padding: 0.4rem 0.4rem;
-            color: #1a1a1a;
+            padding: 0.5rem;
             transform: rotateY(180deg);
+            overflow: hidden;
+            background: #ffffff;
+        }
+
+        /* Style 1: Classic Realistic Trump (Court Card Only) */
+        .style-classic {
+            background: #ffffff;
+            border: 3px solid #cbd5e1;
+            box-shadow: 0 12px 28px rgba(0,0,0,0.5);
+        }
+
+        /* Style 2: Deluxe Royal */
+        .style-royal {
+            background: #fffdfa;
+            border: 4px solid #d97706;
+        }
+
+        /* Style 3: Fancy Celestial Arcana */
+        .style-fancy {
+            background: linear-gradient(135deg, #18092c 0%, #080313 100%);
+            border: 4px solid #e879f9;
+            box-shadow: 0 0 25px rgba(217, 70, 239, 0.6), inset 0 0 20px rgba(168, 85, 247, 0.4);
+        }
+
+        /* Suit Colors */
+        .suit-red { color: #dc2626; }
+        .suit-black { color: #0f172a; }
+        .suit-fancy-red { color: #f43f5e; text-shadow: 0 0 10px rgba(244, 63, 94, 0.6); }
+        .suit-fancy-black { color: #38bdf8; text-shadow: 0 0 10px rgba(56, 189, 248, 0.6); }
+
+        /* Back Face - Classic Blue Diamond/Lattice Pattern */
+        .card-back {
+            background: #1e3a8a;
+            border: 4px solid #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 0.8rem;
             overflow: hidden;
         }
 
-        /* Red suits */
-        .suit-red {
-            color: #dc2626;
-        }
-        /* Black suits */
-        .suit-black {
-            color: #0f172a;
-        }
-
-        /* Back Face (Luxury Royal Gold Pattern) */
-        .card-back {
-            background: radial-gradient(circle, #2e1052 0%, #0f051d 100%);
-            border: 3px solid #f59e0b;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
         .card-back-pattern {
-            width: 90%;
-            height: 92%;
-            border: 2px dashed rgba(245, 158, 11, 0.5);
-            border-radius: 0.75rem;
-            background: 
-                radial-gradient(circle, rgba(245, 158, 11, 0.2) 1.5px, transparent 1.5px) 0 0/16px 16px,
-                linear-gradient(45deg, rgba(236, 72, 153, 0.08) 25%, transparent 25%, transparent 75%, rgba(236, 72, 153, 0.08) 75%),
-                linear-gradient(45deg, rgba(236, 72, 153, 0.08) 25%, transparent 25%, transparent 75%, rgba(236, 72, 153, 0.08) 75%) 8px 8px;
+            width: 93%;
+            height: 95%;
+            border: 2px solid #ffffff;
+            border-radius: 0.5rem;
+            background-color: #1d4ed8;
+            background-image: 
+                radial-gradient(circle, #ffffff 1.5px, transparent 1.5px),
+                linear-gradient(45deg, rgba(255, 255, 255, 0.15) 25%, transparent 25%, transparent 75%, rgba(255, 255, 255, 0.15) 75%),
+                linear-gradient(45deg, rgba(255, 255, 255, 0.15) 25%, transparent 25%, transparent 75%, rgba(255, 255, 255, 0.15) 75%);
+            background-size: 14px 14px, 18px 18px, 18px 18px;
+            background-position: 0 0, 0 0, 9px 9px;
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: inset 0 0 12px rgba(0,0,0,0.8);
+            box-shadow: inset 0 0 15px rgba(0,0,0,0.7);
         }
 
-        /* Fixed Aspect Ratio for Playing Cards (5:7 ratio) & Clipping Protection */
+        /* Scaled Large Card Aspect Ratio for Stage Presence */
         .card-container-item {
             aspect-ratio: 5 / 7.2;
             width: 100%;
-            max-width: 180px;
-            max-height: 270px;
-            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.6s ease;
+            max-width: 210px;
+            transition: transform 0.8s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.6s ease;
             position: relative;
         }
 
-        /* Dynamic Grid Layout container */
+        /* Responsive Stage Area */
         .cards-stage {
             display: flex;
             justify-content: center;
             align-items: center;
-            gap: 0.75rem;
+            gap: 1rem;
             width: 100%;
             max-width: 100%;
             padding: 0.5rem;
         }
 
-        /* Vanish Animations */
+        /* Vanish Animation */
         .vanish {
-            animation: vanishAnim 0.7s forwards ease-in-out;
+            animation: vanishAnim 0.75s forwards ease-in-out;
         }
 
         @keyframes vanishAnim {
-            0% {
-                opacity: 1;
-                transform: scale(1) translateY(0);
-                filter: brightness(1);
-            }
-            50% {
-                opacity: 0.8;
-                transform: scale(1.25) translateY(-40px);
-                filter: brightness(2.5) drop-shadow(0 0 30px #f59e0b);
-            }
-            100% {
-                opacity: 0;
-                transform: scale(0) translateY(-120px);
-                filter: brightness(4);
-                visibility: hidden;
-            }
+            0% { opacity: 1; transform: scale(1) translateY(0); filter: brightness(1); }
+            50% { opacity: 0.8; transform: scale(1.3) translateY(-50px); filter: brightness(3) drop-shadow(0 0 40px #f59e0b); }
+            100% { opacity: 0; transform: scale(0) translateY(-140px); filter: brightness(5); visibility: hidden; }
         }
 
-        /* Real Dynamic Card Positional Dynamic Swap Animations (1, 2, 3, 4, 5th position exchanges) */
-        @keyframes shuffleCross0 {
-            0% { transform: translate(0, 0) scale(1) rotate(0deg); z-index: 10; }
-            50% { transform: translate(220%, -60px) scale(1.15) rotate(18deg); z-index: 50; }
-            100% { transform: translate(0, 0) scale(1) rotate(0deg); z-index: 10; }
-        }
-
-        @keyframes shuffleCross1 {
-            0% { transform: translate(0, 0) scale(1) rotate(0deg); z-index: 10; }
-            50% { transform: translate(-140%, 60px) scale(0.9) rotate(-15deg); z-index: 15; }
-            100% { transform: translate(0, 0) scale(1) rotate(0deg); z-index: 10; }
-        }
-
-        @keyframes shuffleCross2 {
-            0% { transform: translate(0, 0) scale(1) rotate(0deg); z-index: 10; }
-            50% { transform: translate(160%, 50px) scale(1.1) rotate(20deg); z-index: 40; }
-            100% { transform: translate(0, 0) scale(1) rotate(0deg); z-index: 10; }
-        }
-
-        @keyframes shuffleCross3 {
-            0% { transform: translate(0, 0) scale(1) rotate(0deg); z-index: 10; }
-            50% { transform: translate(-240%, -50px) scale(0.95) rotate(-18deg); z-index: 20; }
-            100% { transform: translate(0, 0) scale(1) rotate(0deg); z-index: 10; }
-        }
-
-        @keyframes shuffleCross4 {
-            0% { transform: translate(0, 0) scale(1) rotate(0deg); z-index: 10; }
-            50% { transform: translate(-180%, 40px) scale(1.12) rotate(12deg); z-index: 45; }
-            100% { transform: translate(0, 0) scale(1) rotate(0deg); z-index: 10; }
-        }
-
-        .shuffle-swap-0 { animation: shuffleCross0 0.95s cubic-bezier(0.45, 0.05, 0.55, 0.95); }
-        .shuffle-swap-1 { animation: shuffleCross1 0.95s cubic-bezier(0.45, 0.05, 0.55, 0.95); }
-        .shuffle-swap-2 { animation: shuffleCross2 0.95s cubic-bezier(0.45, 0.05, 0.55, 0.95); }
-        .shuffle-swap-3 { animation: shuffleCross3 0.95s cubic-bezier(0.45, 0.05, 0.55, 0.95); }
-        .shuffle-swap-4 { animation: shuffleCross4 0.95s cubic-bezier(0.45, 0.05, 0.55, 0.95); }
-
-        /* Neon Glow Effect */
         .glow-text {
             text-shadow: 0 0 12px rgba(245, 158, 11, 0.6), 0 0 24px rgba(245, 158, 11, 0.4);
         }
     </style>
 </head>
-<body class="min-h-screen flex flex-col justify-between p-2 md:p-4 relative overflow-hidden">
+<body class="min-h-screen flex flex-col justify-between p-3 md:p-6 relative overflow-hidden">
 
-    <!-- Background Particle Canvas -->
+    <!-- Background Canvas -->
     <canvas id="bgCanvas" class="absolute inset-0 pointer-events-none z-0"></canvas>
+
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-amber-500/40 rounded-2xl p-6 max-w-md w-full shadow-2xl relative">
+            <h3 class="text-xl font-bold text-amber-400 mb-4 flex items-center gap-2">
+                ⚙️ 마술 연출 설정
+            </h3>
+            
+            <!-- Card Design Selection -->
+            <div class="space-y-3 mb-5">
+                <div class="text-sm font-bold text-slate-300 mb-1">🎴 카드 디자인 테마</div>
+                <label class="block cursor-pointer">
+                    <input type="radio" name="cardTheme" value="classic" checked class="peer hidden" onchange="changeTheme('classic')">
+                    <div class="p-3 border-2 border-slate-700 peer-checked:border-amber-400 peer-checked:bg-amber-500/10 rounded-xl transition flex items-center justify-between">
+                        <div>
+                            <div class="font-bold text-amber-200">1. 리얼 카지노 정품 트럼프</div>
+                            <div class="text-xs text-slate-400">실제 카지노 덱의 정밀 세공 상하 대칭 인물 일러스트</div>
+                        </div>
+                        <span class="text-xl">👑</span>
+                    </div>
+                </label>
+                <label class="block cursor-pointer">
+                    <input type="radio" name="cardTheme" value="royal" class="peer hidden" onchange="changeTheme('royal')">
+                    <div class="p-3 border-2 border-slate-700 peer-checked:border-amber-400 peer-checked:bg-amber-500/10 rounded-xl transition flex items-center justify-between">
+                        <div>
+                            <div class="font-bold text-amber-200">2. 디럭스 골드 로열</div>
+                            <div class="text-xs text-slate-400">골드 테두리의 화려한 왕실 카탈로그 스타일</div>
+                        </div>
+                        <span class="text-xl">⚔️</span>
+                    </div>
+                </label>
+                <label class="block cursor-pointer">
+                    <input type="radio" name="cardTheme" value="fancy" class="peer hidden" onchange="changeTheme('fancy')">
+                    <div class="p-3 border-2 border-slate-700 peer-checked:border-amber-400 peer-checked:bg-amber-500/10 rounded-xl transition flex items-center justify-between">
+                        <div>
+                            <div class="font-bold text-amber-200">3. 네온 판타지 아르카나</div>
+                            <div class="text-xs text-slate-400">네온 오라가 감도는 아케인 스타일 아트 카드</div>
+                        </div>
+                        <span class="text-xl">✨</span>
+                    </div>
+                </label>
+            </div>
+
+            <!-- Shuffle Mode Selection -->
+            <div class="space-y-3 mb-5">
+                <div class="text-sm font-bold text-slate-300 mb-1">🔀 셔플 모드 연출 선택</div>
+                <label class="block cursor-pointer">
+                    <input type="radio" name="shuffleStyle" value="orbit" checked class="peer hidden" onchange="changeShuffleMode('orbit')">
+                    <div class="p-2.5 border-2 border-slate-700 peer-checked:border-amber-400 peer-checked:bg-amber-500/10 rounded-xl transition flex items-center justify-between">
+                        <div>
+                            <div class="font-bold text-amber-200 text-sm">1. 크로스 궤도 셔플 (Cross Orbit)</div>
+                            <div class="text-xs text-slate-400">상하 곡선 궤도를 그리며 위아래 교차 이동</div>
+                        </div>
+                        <span class="text-lg">🪐</span>
+                    </div>
+                </label>
+                <label class="block cursor-pointer">
+                    <input type="radio" name="shuffleStyle" value="riffle" class="peer hidden" onchange="changeShuffleMode('riffle')">
+                    <div class="p-2.5 border-2 border-slate-700 peer-checked:border-amber-400 peer-checked:bg-amber-500/10 rounded-xl transition flex items-center justify-between">
+                        <div>
+                            <div class="font-bold text-amber-200 text-sm">2. 리플 카스케이드 셔플 (Riffle Split)</div>
+                            <div class="text-xs text-slate-400">양갈래로 갈라진 후 번갈아 교차 침투</div>
+                        </div>
+                        <span class="text-lg">🃁</span>
+                    </div>
+                </label>
+                <label class="block cursor-pointer">
+                    <input type="radio" name="shuffleStyle" value="fan" class="peer hidden" onchange="changeShuffleMode('fan')">
+                    <div class="p-2.5 border-2 border-slate-700 peer-checked:border-amber-400 peer-checked:bg-amber-500/10 rounded-xl transition flex items-center justify-between">
+                        <div>
+                            <div class="font-bold text-amber-200 text-sm">3. 3D 부채꼴 폭발 셔플 (3D Fan Burst)</div>
+                            <div class="text-xs text-slate-400">부채꼴 확산 후 회전하며 재조합</div>
+                        </div>
+                        <span class="text-lg">🎴</span>
+                    </div>
+                </label>
+            </div>
+
+            <button onclick="toggleSettings()" class="w-full py-3 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl transition cursor-pointer">
+                설정 저장 및 닫기
+            </button>
+        </div>
+    </div>
 
     <!-- Header Section -->
     <header class="relative z-10 text-center my-1">
@@ -197,8 +248,11 @@
                 PRINCESS CARD MAGIC
             </h1>
             <span id="versionBadge" class="px-2.5 py-1 text-xs font-mono font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 rounded-full shadow-lg">
-                V20261026-1430
+                V20261026-1700
             </span>
+            <button onclick="toggleSettings()" class="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 border border-amber-500/40 text-amber-300 rounded-full text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-md">
+                ⚙️ 설정
+            </button>
         </div>
         <p id="stageGuide" class="mt-2 text-base sm:text-xl md:text-2xl text-amber-100 font-bold h-8 transition-all duration-300 drop-shadow-md">
             시작하기 버튼을 눌러 마술을 시작하세요.
@@ -206,27 +260,27 @@
     </header>
 
     <!-- Main Card Stage Area -->
-    <main class="relative z-10 flex-1 flex items-center justify-center my-1 w-full max-w-7xl mx-auto min-h-[42vh]">
+    <main class="relative z-10 flex-1 flex items-center justify-center my-2 w-full max-w-7xl mx-auto min-h-[50vh]">
         <!-- Initial Start Screen Overlay -->
-        <div id="startOverlay" class="text-center p-6 bg-slate-900/80 backdrop-blur-md rounded-2xl border border-amber-500/30 max-w-lg shadow-2xl">
-            <div class="text-5xl mb-3">🪄✨</div>
-            <h2 class="text-2xl font-bold text-amber-300 mb-2">프린세스 카드 마술에 오신 것을 환영합니다</h2>
-            <p class="text-slate-300 text-sm md:text-base mb-6 leading-relaxed">
+        <div id="startOverlay" class="text-center p-8 bg-slate-900/85 backdrop-blur-md rounded-2xl border border-amber-500/30 max-w-lg shadow-2xl">
+            <div class="text-6xl mb-4">🪄✨</div>
+            <h2 class="text-3xl font-bold text-amber-300 mb-3">프린세스 카드 마술 Stage</h2>
+            <p class="text-slate-300 text-base mb-6 leading-relaxed">
                 관객의 마음속 생각을 정밀하게 읽어내는 신기한 마술 연출입니다.<br>
                 화면 아래 버튼이나 <span class="text-amber-400 font-bold">Spacebar</span>를 눌러 마술을 진행해 주세요.
             </p>
-            <button onclick="startMagic()" class="px-8 py-3.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xl rounded-xl shadow-xl transition transform hover:scale-105 cursor-pointer">
+            <button onclick="startMagic()" class="px-9 py-4 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xl rounded-xl shadow-xl transition transform hover:scale-105 cursor-pointer">
                 🎩 마술 시작하기 (Space)
             </button>
         </div>
 
-        <!-- 6 Card Dynamic Container -->
+        <!-- Dynamic Card Container -->
         <div id="cardContainer" class="cards-stage hidden">
-            <!-- 6 Card Elements dynamically rendered here -->
+            <!-- Cards generated dynamically -->
         </div>
     </main>
 
-    <!-- Footer & Presenter Controls -->
+    <!-- Footer Controls -->
     <footer class="relative z-10 flex flex-col sm:flex-row items-center justify-between gap-4 max-w-7xl w-full mx-auto pt-3 border-t border-slate-800/80">
         <div class="text-sm md:text-base text-slate-300 font-medium">
             진행 단계를 키보드 <span class="px-3 py-1 bg-slate-800 border border-slate-600 rounded-lg text-amber-400 font-mono font-bold">SPACE BAR</span> 로 조작할 수 있습니다.
@@ -241,7 +295,7 @@
         </div>
     </footer>
 
-    <!-- Audio FX Engine (Web Audio API) -->
+    <!-- Web Audio Engine -->
     <script>
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
@@ -265,12 +319,12 @@
                 osc.stop(now + 0.15);
             } else if (type === 'shuffle') {
                 osc.type = 'triangle';
-                osc.frequency.setValueAtTime(180, now);
-                osc.frequency.linearRampToValueAtTime(520, now + 0.22);
-                gain.gain.setValueAtTime(0.3, now);
-                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.22);
+                osc.frequency.setValueAtTime(220, now);
+                osc.frequency.linearRampToValueAtTime(550, now + 0.3);
+                gain.gain.setValueAtTime(0.35, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
                 osc.start(now);
-                osc.stop(now + 0.22);
+                osc.stop(now + 0.3);
             } else if (type === 'vanish') {
                 osc.type = 'triangle';
                 osc.frequency.setValueAtTime(850, now);
@@ -296,78 +350,142 @@
         }
     </script>
 
-    <!-- Main Logic & SVG Royal Figures Script -->
+    <!-- Main Logic & Rendering Script -->
     <script>
-        function generateVersionString() {
-            const now = new Date();
-            const YYYY = now.getFullYear();
-            const MM = String(now.getMonth() + 1).padStart(2, '0');
-            const DD = String(now.getDate()).padStart(2, '0');
-            const HH = String(now.getHours()).padStart(2, '0');
-            const mm = String(now.getMinutes()).padStart(2, '0');
-            return `V${YYYY}${MM}${DD}-${HH}${mm}`;
+        document.getElementById('versionBadge').innerText = `V${new Date().toISOString().replace(/[-T:]/g, '').slice(0, 8)}-1700`;
+
+        let selectedTheme = 'classic';
+        let selectedShuffle = 'orbit';
+
+        function toggleSettings() {
+            const modal = document.getElementById('settingsModal');
+            modal.classList.toggle('hidden');
         }
-        document.getElementById('versionBadge').innerText = generateVersionString();
 
-        // High Quality SVG Vector Figures with Optimized Proportion to Avoid Bottom Clipping
-        function getRoyalIllustration(rank, suitSymbol, isRed) {
-            const primaryColor = isRed ? '#dc2626' : '#1e293b';
-            const goldColor = '#f59e0b';
-            const crownGold = '#fbbf24';
-
-            if (rank === 'K') {
-                return `
-                <svg viewBox="0 0 100 110" class="w-full h-full max-h-[105px] mx-auto filter drop-shadow">
-                    <rect x="5" y="5" width="90" height="100" rx="6" fill="none" stroke="${goldColor}" stroke-width="2" stroke-dasharray="3 2" />
-                    <rect x="8" y="8" width="84" height="94" rx="5" fill="${isRed ? '#fef2f2' : '#f8fafc'}" stroke="${primaryColor}" stroke-width="1.2"/>
-                    <path d="M 28 30 L 35 15 L 50 24 L 65 15 L 72 30 Z" fill="${crownGold}" stroke="${goldColor}" stroke-width="1.2"/>
-                    <circle cx="35" cy="14" r="2" fill="#ef4444"/>
-                    <circle cx="50" cy="22" r="2.5" fill="#3b82f6"/>
-                    <circle cx="65" cy="14" r="2" fill="#ef4444"/>
-                    <circle cx="50" cy="38" r="10" fill="#fde047" stroke="${primaryColor}" stroke-width="1.2"/>
-                    <path d="M 42 42 Q 50 54 58 42 Z" fill="${primaryColor}"/>
-                    <circle cx="46" cy="36" r="1" fill="#000"/>
-                    <circle cx="54" cy="36" r="1" fill="#000"/>
-                    <path d="M 43 40 Q 50 44 57 40" stroke="#000" stroke-width="1.2" fill="none"/>
-                    <path d="M 22 92 C 22 58 78 58 78 92 Z" fill="${primaryColor}"/>
-                    <path d="M 38 58 L 50 72 L 62 58 Z" fill="${goldColor}"/>
-                    <text x="50" y="88" font-size="22" font-weight="bold" fill="${goldColor}" text-anchor="middle" font-family="Cinzel">${suitSymbol}</text>
-                </svg>`;
-            } else if (rank === 'Q') {
-                return `
-                <svg viewBox="0 0 100 110" class="w-full h-full max-h-[105px] mx-auto filter drop-shadow">
-                    <rect x="5" y="5" width="90" height="100" rx="6" fill="none" stroke="${goldColor}" stroke-width="2" stroke-dasharray="3 2" />
-                    <rect x="8" y="8" width="84" height="94" rx="5" fill="${isRed ? '#fff1f2' : '#f8fafc'}" stroke="${primaryColor}" stroke-width="1.2"/>
-                    <path d="M 32 28 L 41 16 L 50 24 L 59 16 L 68 28 Z" fill="${crownGold}" stroke="${goldColor}" stroke-width="1.2"/>
-                    <circle cx="50" cy="13" r="2.5" fill="#ec4899"/>
-                    <path d="M 35 36 Q 25 60 35 75 M 65 36 Q 75 60 65 75" stroke="${goldColor}" stroke-width="3" fill="none"/>
-                    <circle cx="50" cy="38" r="10" fill="#fef08a" stroke="${primaryColor}" stroke-width="1.2"/>
-                    <circle cx="46" cy="36" r="1" fill="#000"/>
-                    <circle cx="54" cy="36" r="1" fill="#000"/>
-                    <path d="M 46 43 Q 50 46 54 43" stroke="#dc2626" stroke-width="1.2" fill="none"/>
-                    <path d="M 25 92 Q 50 52 75 92 Z" fill="${isRed ? '#be123c' : '#334155'}"/>
-                    <path d="M 40 62 L 50 76 L 60 62 Z" fill="${goldColor}"/>
-                    <text x="50" y="88" font-size="20" font-weight="bold" fill="${goldColor}" text-anchor="middle" font-family="Cinzel">${suitSymbol}</text>
-                </svg>`;
-            } else { // Jack (Prince)
-                return `
-                <svg viewBox="0 0 100 110" class="w-full h-full max-h-[105px] mx-auto filter drop-shadow">
-                    <rect x="5" y="5" width="90" height="100" rx="6" fill="none" stroke="${goldColor}" stroke-width="2" stroke-dasharray="3 2" />
-                    <rect x="8" y="8" width="84" height="94" rx="5" fill="${isRed ? '#fef2f2' : '#f8fafc'}" stroke="${primaryColor}" stroke-width="1.2"/>
-                    <path d="M 30 30 Q 50 15 70 30 Z" fill="${primaryColor}"/>
-                    <path d="M 50 15 L 65 6 L 60 17 Z" fill="${goldColor}"/>
-                    <circle cx="50" cy="39" r="10" fill="#fef08a" stroke="${primaryColor}" stroke-width="1.2"/>
-                    <circle cx="46" cy="37" r="1" fill="#000"/>
-                    <circle cx="54" cy="37" r="1" fill="#000"/>
-                    <path d="M 46 44 Q 50 47 54 44" stroke="#000" stroke-width="1" fill="none"/>
-                    <path d="M 24 92 L 35 58 L 65 58 L 76 92 Z" fill="${goldColor}"/>
-                    <path d="M 32 62 L 50 80 L 68 62 Z" fill="${primaryColor}"/>
-                    <text x="50" y="88" font-size="20" font-weight="bold" fill="#ffffff" text-anchor="middle" font-family="Cinzel">${suitSymbol}</text>
-                </svg>`;
+        function changeTheme(theme) {
+            selectedTheme = theme;
+            if (currentStep > 0) {
+                renderCards();
+                if (currentStep >= 2) {
+                    for (let i = 0; i < currentCards.length; i++) {
+                        document.getElementById(`card-inner-${i}`)?.classList.add('is-flipped');
+                    }
+                }
             }
         }
 
-        // Card Deck Data
+        function changeShuffleMode(mode) {
+            selectedShuffle = mode;
+        }
+
+        // Real Classic Trump Court Graphics (Authentic Symmetrical Court Art SVG)
+        function getClassicCourtSvg(rank, suitSymbol, isRed) {
+            const primaryColor = isRed ? '#dc2626' : '#0f172a';
+            const faceBg = '#ffffff';
+            const goldAcc = '#d97706';
+            const crownColor = '#f59e0b';
+
+            let headGraphic = '';
+            if (rank === 'K') {
+                headGraphic = `
+                    <path d="M32 30 L38 15 L50 22 L62 15 L68 30 Z" fill="${crownColor}" stroke="${goldAcc}" stroke-width="1.5"/>
+                    <circle cx="50" cy="18" r="2.5" fill="#ef4444"/>
+                    <circle cx="50" cy="38" r="12" fill="#fed7aa" stroke="${primaryColor}" stroke-width="1.5"/>
+                    <path d="M40 33 Q50 28 60 33 Q60 43 40 43 Z" fill="#b45309"/>
+                    <path d="M40 44 Q50 58 60 44 Q50 52 40 44 Z" fill="#78350f"/>
+                    <path d="M22 65 L34 46 L66 46 L78 65 Z" fill="${primaryColor}"/>
+                    <path d="M44 46 L56 46 L56 65 L44 65 Z" fill="${goldAcc}"/>
+                    <line x1="72" y1="30" x2="72" y2="60" stroke="${goldAcc}" stroke-width="3"/>
+                    <polygon points="72,25 67,33 77,33" fill="${goldAcc}"/>
+                `;
+            } else if (rank === 'Q') {
+                headGraphic = `
+                    <path d="M36 26 L43 17 L50 22 L57 17 L64 26 Z" fill="${crownColor}" stroke="${goldAcc}" stroke-width="1.5"/>
+                    <path d="M36 30 C32 50 68 50 64 30 Z" fill="#f59e0b"/>
+                    <circle cx="50" cy="36" r="10.5" fill="#fed7aa" stroke="${primaryColor}" stroke-width="1.5"/>
+                    <path d="M26 65 Q50 50 74 65 Z" fill="${primaryColor}"/>
+                    <circle cx="30" cy="40" r="3.5" fill="${goldAcc}"/>
+                    <line x1="30" y1="40" x2="30" y2="65" stroke="${goldAcc}" stroke-width="2"/>
+                `;
+            } else { // Jack
+                headGraphic = `
+                    <path d="M34 26 C34 16 66 16 66 26 Z" fill="${primaryColor}"/>
+                    <path d="M30 26 L70 26 L65 31 L35 31 Z" fill="${goldAcc}"/>
+                    <circle cx="50" cy="38" r="10.5" fill="#fed7aa" stroke="${primaryColor}" stroke-width="1.5"/>
+                    <path d="M38 33 Q34 43 38 45" stroke="#b45309" stroke-width="2" fill="none"/>
+                    <path d="M24 65 L36 46 L64 46 L76 65 Z" fill="${primaryColor}"/>
+                    <line x1="50" y1="46" x2="50" y2="65" stroke="${goldAcc}" stroke-width="2.5"/>
+                `;
+            }
+
+            return `<svg viewBox="0 0 100 130" class="w-full h-full max-h-[150px] mx-auto filter drop-shadow-sm">
+                <rect x="2" y="2" width="96" height="126" rx="4" fill="${faceBg}" stroke="${primaryColor}" stroke-width="1.5"/>
+                <rect x="6" y="6" width="88" height="118" rx="2" fill="none" stroke="${goldAcc}" stroke-width="1" stroke-dasharray="2 1"/>
+                
+                <g>${headGraphic}</g>
+                <line x1="10" y1="65" x2="90" y2="65" stroke="${primaryColor}" stroke-width="1" stroke-dasharray="3 2"/>
+                <g transform="rotate(180 50 65)">${headGraphic}</g>
+            </svg>`;
+        }
+
+        // Royal Deluxe Svg
+        function getRoyalSvg(rank, suitSymbol, isRed) {
+            const suitColor = isRed ? '#dc2626' : '#0f172a';
+            const primaryGold = '#d97706';
+            const accentGold = '#f59e0b';
+            const bgFill = isRed ? '#fff5f5' : '#f8fafc';
+
+            return `<svg viewBox="0 0 100 125" class="w-full h-full max-h-[140px] mx-auto filter drop-shadow-sm">
+                <rect x="3" y="3" width="94" height="119" rx="5" fill="${bgFill}" stroke="${primaryGold}" stroke-width="2"/>
+                <rect x="7" y="7" width="86" height="111" rx="3" fill="none" stroke="${suitColor}" stroke-width="1" stroke-dasharray="3 2"/>
+                <path d="M 28 35 L 34 18 L 50 28 L 66 18 L 72 35 Z" fill="${accentGold}" stroke="${primaryGold}" stroke-width="1"/>
+                <circle cx="50" cy="26" r="3.5" fill="#ef4444"/>
+                <circle cx="50" cy="46" r="14" fill="#fef08a" stroke="${suitColor}" stroke-width="1.5"/>
+                <text x="50" y="52" font-size="18" font-weight="bold" fill="${suitColor}" text-anchor="middle">${rank}</text>
+                <path d="M 20 108 C 20 70 80 70 80 108 Z" fill="${suitColor}"/>
+                <text x="50" y="100" font-size="26" font-weight="900" fill="${accentGold}" text-anchor="middle" font-family="Cinzel">${suitSymbol}</text>
+            </svg>`;
+        }
+
+        // Fancy Celestial Arcana Svg
+        function getFancySvg(rank, suitSymbol, isRed) {
+            const suitColor = isRed ? '#f43f5e' : '#38bdf8';
+            return `<svg viewBox="0 0 100 125" class="w-full h-full max-h-[140px] mx-auto">
+                <defs>
+                    <linearGradient id="grad-${rank}-${suitSymbol}" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#c084fc"/>
+                        <stop offset="100%" stop-color="#e879f9"/>
+                    </linearGradient>
+                </defs>
+                <rect x="3" y="3" width="94" height="119" rx="7" fill="rgba(15, 23, 42, 0.85)" stroke="url(#grad-${rank}-${suitSymbol})" stroke-width="2.5"/>
+                <circle cx="50" cy="62" r="36" fill="none" stroke="${suitColor}" stroke-width="1.2" stroke-dasharray="4 3"/>
+                <polygon points="50,20 58,50 88,62 58,74 50,104 42,74 12,62 42,50" fill="none" stroke="#f59e0b" stroke-width="1.5" opacity="0.7"/>
+                <text x="50" y="72" font-size="38" font-weight="900" fill="${suitColor}" text-anchor="middle" font-family="Cinzel" filter="drop-shadow(0 0 8px ${suitColor})">${rank}</text>
+            </svg>`;
+        }
+
+        function getCardContent(card) {
+            let svgArt = '';
+            let faceStyleClass = '';
+            let suitColorClass = card.color;
+
+            if (selectedTheme === 'royal') {
+                svgArt = getRoyalSvg(card.rank, card.suit, card.isRed);
+                faceStyleClass = 'style-royal';
+                suitColorClass = card.isRed ? 'suit-red' : 'suit-black';
+            } else if (selectedTheme === 'fancy') {
+                svgArt = getFancySvg(card.rank, card.suit, card.isRed);
+                faceStyleClass = 'style-fancy';
+                suitColorClass = card.isRed ? 'suit-fancy-red' : 'suit-fancy-black';
+            } else { // Classic Trump Court J, Q, K
+                svgArt = getClassicCourtSvg(card.rank, card.suit, card.isRed);
+                faceStyleClass = 'style-classic';
+                suitColorClass = card.isRed ? 'suit-red' : 'suit-black';
+            }
+
+            return { svgArt, faceStyleClass, suitColorClass };
+        }
+
         const SUITS = [
             { name: 'spade', symbol: '♠', color: 'suit-black', isRed: false },
             { name: 'heart', symbol: '♥', color: 'suit-red', isRed: true },
@@ -375,34 +493,31 @@
             { name: 'club', symbol: '♣', color: 'suit-black', isRed: false }
         ];
 
-        const RANKS = [
+        const COURT_RANKS = [
             { name: 'J', val: 'J' },
             { name: 'Q', val: 'Q' },
             { name: 'K', val: 'K' }
         ];
 
-        // Global State Variables
-        let currentStep = 0; // 0:Start, 1:Backs, 2:Fronts, 3:Backs, 4:Vanish, 5:Shuffle, 6:Reveal 5
-        let initialCards = [];
+        let currentStep = 0;
+        let currentCards = [];
         let finalFiveCards = [];
         let vanishIndex = -1;
 
-        // Stage Prompt Guides
         const STEP_GUIDES = [
             "시작하기 버튼을 눌러 마술을 시작하세요.",
-            "준비된 6장의 카드입니다. (Space를 눌러 앞면을 확인하세요)",
+            "준비된 6장의 J, Q, K 그림 카드입니다. (Space를 눌러 앞면을 확인하세요)",
             "카드를 확인하고 마음속으로 단 1장의 카드를 깊이 기억하세요! (Space 키를 눌러 뒤집기)",
             "관객님의 마음을 스캔하고 있습니다... (Space 키를 눌러 선택된 카드 삭제)",
-            "수리수리 마수리! 관객님이 선택한 1장의 카드가 흔적도 없이 사라졌습니다! (Space 키를 눌러 셔플)",
-            "수리수리 마수리! 남은 5장의 카드가 dynamic 3D 궤도로 섞이고 있습니다... (Space 키를 눌러 남은 카드 공개)",
+            "수리수리 마수리! 관객님이 선택한 1장의 카드가 흔적도 없이 사라졌습니다! (Space 키를 눌러 셔플 연출)",
+            "카드가 정교하게 섞이며 새로운 위치로 이동합니다... (Space 키를 눌러 남은 카드 공개)",
             "짜잔! 관객님이 마음속으로 고른 카드가 완벽히 사라지고 5장의 카드만 남았습니다! ✨"
         ];
 
-        // Random Picker
-        function getRandomCards(count, excludeList = []) {
+        function getRandomCourtCards(count, excludeList = []) {
             let deck = [];
             SUITS.forEach(suit => {
-                RANKS.forEach(rank => {
+                COURT_RANKS.forEach(rank => {
                     const id = `${rank.val}-${suit.name}`;
                     if (!excludeList.includes(id)) {
                         deck.push({ 
@@ -421,12 +536,12 @@
 
         function generateAlteredFiveCards(first6Cards) {
             const firstIds = first6Cards.map(c => c.id);
-            return getRandomCards(5, firstIds);
+            return getRandomCourtCards(5, firstIds);
         }
 
         function initCardSet() {
-            initialCards = getRandomCards(6);
-            finalFiveCards = generateAlteredFiveCards(initialCards);
+            currentCards = getRandomCourtCards(6);
+            finalFiveCards = generateAlteredFiveCards(currentCards);
             vanishIndex = Math.floor(Math.random() * 6);
         }
 
@@ -434,36 +549,36 @@
             const container = document.getElementById('cardContainer');
             container.innerHTML = '';
 
-            initialCards.forEach((card, idx) => {
+            currentCards.forEach((card, idx) => {
                 const cardWrapper = document.createElement('div');
                 cardWrapper.id = `card-wrapper-${idx}`;
                 cardWrapper.className = 'card-container-item perspective-1400 flex items-center justify-center';
 
-                const royalSvg = getRoyalIllustration(card.rank, card.suit, card.isRed);
+                const { svgArt, faceStyleClass, suitColorClass } = getCardContent(card);
 
                 cardWrapper.innerHTML = `
                     <div id="card-inner-${idx}" class="card-inner">
                         <!-- Back Face -->
                         <div class="card-face card-back">
                             <div class="card-back-pattern">
-                                <span class="text-3xl md:text-4xl text-amber-400/70 font-cinzel">♠</span>
+                                <span class="text-4xl text-white font-cinzel font-bold">♠</span>
                             </div>
                         </div>
                         <!-- Front Face -->
-                        <div id="card-front-${idx}" class="card-face card-front ${card.color}">
-                            <!-- Top Rank/Suit -->
-                            <div class="flex justify-between items-start font-black leading-tight">
-                                <div class="text-lg sm:text-xl md:text-2xl">${card.rank}<br><span class="text-sm sm:text-lg md:text-xl">${card.suit}</span></div>
-                                <div class="text-lg sm:text-xl md:text-2xl">${card.suit}</div>
+                        <div id="card-front-${idx}" class="card-face card-front ${faceStyleClass} ${suitColorClass}">
+                            <!-- Top Corner -->
+                            <div class="flex flex-col items-start font-black leading-none pl-1 pt-1">
+                                <div class="text-2xl sm:text-3xl font-cinzel">${card.rank}</div>
+                                <div class="text-base sm:text-lg">${card.suit}</div>
                             </div>
-                            <!-- Middle Royal Art Illustration -->
+                            <!-- Middle Art Illustration -->
                             <div class="my-auto w-full px-0.5">
-                                ${royalSvg}
+                                ${svgArt}
                             </div>
-                            <!-- Bottom Inverted Rank/Suit -->
-                            <div class="flex justify-between items-end font-black leading-tight transform rotate-180">
-                                <div class="text-lg sm:text-xl md:text-2xl">${card.rank}<br><span class="text-sm sm:text-lg md:text-xl">${card.suit}</span></div>
-                                <div class="text-lg sm:text-xl md:text-2xl">${card.suit}</div>
+                            <!-- Bottom Inverted Corner -->
+                            <div class="flex flex-col items-end font-black leading-none transform rotate-180 pr-1 pb-1">
+                                <div class="text-2xl sm:text-3xl font-cinzel">${card.rank}</div>
+                                <div class="text-base sm:text-lg">${card.suit}</div>
                             </div>
                         </div>
                     </div>
@@ -473,8 +588,7 @@
         }
 
         function updateStageUI() {
-            const guide = document.getElementById('stageGuide');
-            guide.innerText = STEP_GUIDES[currentStep];
+            document.getElementById('stageGuide').innerText = STEP_GUIDES[currentStep];
         }
 
         function startMagic() {
@@ -490,6 +604,187 @@
             updateStageUI();
         }
 
+        /* -------------------------------------------------------------
+           3 Stage Shuffle Engines (Orbit, Riffle, Fan)
+        ------------------------------------------------------------- */
+        function executeShuffleAnimation(onComplete) {
+            if (selectedShuffle === 'riffle') {
+                executeRiffleCascadeShuffle(onComplete);
+            } else if (selectedShuffle === 'fan') {
+                execute3DFanBurstShuffle(onComplete);
+            } else {
+                executeTrueOrbitCrossShuffle(onComplete);
+            }
+        }
+
+        // 1. Orbit Cross Shuffle (Cross Orbit)
+        function executeTrueOrbitCrossShuffle(onComplete) {
+            const activeWrappers = [];
+            const activeIndices = [];
+
+            for (let i = 0; i < currentCards.length; i++) {
+                if (i === vanishIndex) continue;
+                activeWrappers.push(document.getElementById(`card-wrapper-${i}`));
+                activeIndices.push(i);
+            }
+
+            const initialRects = activeWrappers.map(el => el.getBoundingClientRect());
+            let permutedIndices = [...Array(activeWrappers.length).keys()];
+            do {
+                permutedIndices.sort(() => Math.random() - 0.5);
+            } while (permutedIndices.some((target, orig) => target === orig));
+
+            activeWrappers.forEach((el, origIdx) => {
+                const targetIdx = permutedIndices[origIdx];
+                const deltaX = initialRects[targetIdx].left - initialRects[origIdx].left;
+                const deltaY = initialRects[targetIdx].top - initialRects[origIdx].top;
+                const arcHeight = (origIdx % 2 === 0) ? -75 : 75;
+                const rotation = (origIdx % 2 === 0) ? 18 : -18;
+
+                el.style.zIndex = '50';
+                el.style.transition = 'transform 0.85s cubic-bezier(0.4, 0, 0.2, 1)';
+                el.style.transform = `translate(${deltaX}px, ${deltaY + arcHeight}px) scale(1.12) rotate(${rotation}deg)`;
+
+                setTimeout(() => {
+                    el.style.transform = `translate(${deltaX}px, ${deltaY}px) scale(1) rotate(0deg)`;
+                }, 450);
+            });
+
+            playSound('shuffle');
+
+            setTimeout(() => {
+                const newCardsArray = [...currentCards];
+                const activeCardData = activeIndices.map(idx => currentCards[idx]);
+                
+                activeIndices.forEach((origPosIndex, i) => {
+                    const targetPosIndex = activeIndices[permutedIndices[i]];
+                    newCardsArray[targetPosIndex] = activeCardData[i];
+                });
+
+                currentCards = newCardsArray;
+                renderCards();
+                
+                const vanishCardEl = document.getElementById(`card-wrapper-${vanishIndex}`);
+                if (vanishCardEl) vanishCardEl.style.display = 'none';
+
+                if (onComplete) onComplete();
+            }, 900);
+        }
+
+        // 2. Riffle Split Cascade Shuffle
+        function executeRiffleCascadeShuffle(onComplete) {
+            const activeWrappers = [];
+            const activeIndices = [];
+
+            for (let i = 0; i < currentCards.length; i++) {
+                if (i === vanishIndex) continue;
+                activeWrappers.push(document.getElementById(`card-wrapper-${i}`));
+                activeIndices.push(i);
+            }
+
+            const initialRects = activeWrappers.map(el => el.getBoundingClientRect());
+            let permutedIndices = [...Array(activeWrappers.length).keys()];
+            do {
+                permutedIndices.sort(() => Math.random() - 0.5);
+            } while (permutedIndices.some((target, orig) => target === orig));
+
+            activeWrappers.forEach((el, origIdx) => {
+                const isLeft = origIdx < activeWrappers.length / 2;
+                const splitY = isLeft ? -90 : 90;
+                const splitX = isLeft ? -40 : 40;
+
+                el.style.zIndex = '50';
+                el.style.transition = 'transform 0.45s cubic-bezier(0.25, 1, 0.5, 1)';
+                el.style.transform = `translate(${splitX}px, ${splitY}px) rotate(${isLeft ? -12 : 12}deg)`;
+
+                setTimeout(() => {
+                    const targetIdx = permutedIndices[origIdx];
+                    const deltaX = initialRects[targetIdx].left - initialRects[origIdx].left;
+                    const deltaY = initialRects[targetIdx].top - initialRects[origIdx].top;
+
+                    el.style.transition = 'transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)';
+                    el.style.transform = `translate(${deltaX}px, ${deltaY}px) scale(1) rotate(0deg)`;
+                }, 400);
+            });
+
+            playSound('shuffle');
+
+            setTimeout(() => {
+                const newCardsArray = [...currentCards];
+                const activeCardData = activeIndices.map(idx => currentCards[idx]);
+                
+                activeIndices.forEach((origPosIndex, i) => {
+                    const targetPosIndex = activeIndices[permutedIndices[i]];
+                    newCardsArray[targetPosIndex] = activeCardData[i];
+                });
+
+                currentCards = newCardsArray;
+                renderCards();
+                
+                const vanishCardEl = document.getElementById(`card-wrapper-${vanishIndex}`);
+                if (vanishCardEl) vanishCardEl.style.display = 'none';
+
+                if (onComplete) onComplete();
+            }, 950);
+        }
+
+        // 3. 3D Fan Burst Shuffle
+        function execute3DFanBurstShuffle(onComplete) {
+            const activeWrappers = [];
+            const activeIndices = [];
+
+            for (let i = 0; i < currentCards.length; i++) {
+                if (i === vanishIndex) continue;
+                activeWrappers.push(document.getElementById(`card-wrapper-${i}`));
+                activeIndices.push(i);
+            }
+
+            const initialRects = activeWrappers.map(el => el.getBoundingClientRect());
+            let permutedIndices = [...Array(activeWrappers.length).keys()];
+            do {
+                permutedIndices.sort(() => Math.random() - 0.5);
+            } while (permutedIndices.some((target, orig) => target === orig));
+
+            const total = activeWrappers.length;
+
+            activeWrappers.forEach((el, origIdx) => {
+                const angle = ((origIdx - (total - 1) / 2) / total) * 45;
+
+                el.style.zIndex = '50';
+                el.style.transition = 'transform 0.45s ease-out';
+                el.style.transform = `translateY(-60px) rotate(${angle}deg) scale(1.1)`;
+
+                setTimeout(() => {
+                    const targetIdx = permutedIndices[origIdx];
+                    const deltaX = initialRects[targetIdx].left - initialRects[origIdx].left;
+                    const deltaY = initialRects[targetIdx].top - initialRects[origIdx].top;
+
+                    el.style.transition = 'transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+                    el.style.transform = `translate(${deltaX}px, ${deltaY}px) rotate(0deg) scale(1)`;
+                }, 450);
+            });
+
+            playSound('shuffle');
+
+            setTimeout(() => {
+                const newCardsArray = [...currentCards];
+                const activeCardData = activeIndices.map(idx => currentCards[idx]);
+                
+                activeIndices.forEach((origPosIndex, i) => {
+                    const targetPosIndex = activeIndices[permutedIndices[i]];
+                    newCardsArray[targetPosIndex] = activeCardData[i];
+                });
+
+                currentCards = newCardsArray;
+                renderCards();
+                
+                const vanishCardEl = document.getElementById(`card-wrapper-${vanishIndex}`);
+                if (vanishCardEl) vanishCardEl.style.display = 'none';
+
+                if (onComplete) onComplete();
+            }, 1000);
+        }
+
         function handleSpaceStep() {
             if (currentStep === 0) {
                 startMagic();
@@ -497,79 +792,67 @@
             }
 
             if (currentStep === 1) {
-                // Step 1 -> 2: Flip cards to FRONT
-                for (let i = 0; i < 6; i++) {
+                // Step 1 -> 2: Flip FRONT
+                for (let i = 0; i < currentCards.length; i++) {
                     setTimeout(() => {
-                        document.getElementById(`card-inner-${i}`).classList.add('is-flipped');
+                        document.getElementById(`card-inner-${i}`)?.classList.add('is-flipped');
                         playSound('flip');
                     }, i * 100);
                 }
                 currentStep = 2;
             } 
             else if (currentStep === 2) {
-                // Step 2 -> 3: Flip cards back to BACK
-                for (let i = 0; i < 6; i++) {
+                // Step 2 -> 3: Flip BACK
+                for (let i = 0; i < currentCards.length; i++) {
                     setTimeout(() => {
-                        document.getElementById(`card-inner-${i}`).classList.remove('is-flipped');
+                        document.getElementById(`card-inner-${i}`)?.classList.remove('is-flipped');
                         playSound('flip');
                     }, i * 80);
                 }
                 currentStep = 3;
             } 
             else if (currentStep === 3) {
-                // Step 3 -> 4: 1 Card Vanishes
+                // Step 3 -> 4: 1 Card Vanish
                 const vanishCard = document.getElementById(`card-wrapper-${vanishIndex}`);
-                vanishCard.classList.add('vanish');
-                playSound('vanish');
-
-                setTimeout(() => {
-                    vanishCard.style.display = 'none';
-                }, 650);
-
+                if (vanishCard) {
+                    vanishCard.classList.add('vanish');
+                    playSound('vanish');
+                    setTimeout(() => { vanishCard.style.display = 'none'; }, 700);
+                }
                 currentStep = 4;
             } 
             else if (currentStep === 4) {
-                // Step 4 -> 5: True Dynamic Positional Swap Shuffle Animation
-                let activeCount = 0;
-                for (let i = 0; i < 6; i++) {
-                    if (i === vanishIndex) continue;
-                    const cardWrap = document.getElementById(`card-wrapper-${i}`);
-                    const animClass = `shuffle-swap-${activeCount % 5}`;
-                    cardWrap.classList.add(animClass);
-                    playSound('shuffle');
-                    setTimeout(() => cardWrap.classList.remove(animClass), 950);
-                    activeCount++;
-                }
-
+                // Step 4 -> 5: Selected Shuffle Execution
+                executeShuffleAnimation();
                 currentStep = 5;
             }
             else if (currentStep === 5) {
-                // Step 5 -> 6: Replace remaining 5 cards with new altered cards & FLIP FRONT
+                // Step 5 -> 6: FLIP FRONT & Show final 5 cards
                 let altIdx = 0;
-                for (let i = 0; i < 6; i++) {
+                for (let i = 0; i < currentCards.length; i++) {
                     if (i === vanishIndex) continue;
 
                     const frontElem = document.getElementById(`card-front-${i}`);
                     const newCard = finalFiveCards[altIdx++];
-                    const royalSvg = getRoyalIllustration(newCard.rank, newCard.suit, newCard.isRed);
+                    const { svgArt, faceStyleClass, suitColorClass } = getCardContent(newCard);
 
-                    frontElem.className = `card-face card-front ${newCard.color}`;
+                    frontElem.className = `card-face card-front ${faceStyleClass} ${suitColorClass}`;
                     frontElem.innerHTML = `
-                        <div class="flex justify-between items-start font-black leading-tight">
-                            <div class="text-lg sm:text-xl md:text-2xl">${newCard.rank}<br><span class="text-sm sm:text-lg md:text-xl">${newCard.suit}</span></div>
-                            <div class="text-lg sm:text-xl md:text-2xl">${newCard.suit}</div>
+                        <div class="flex flex-col items-start font-black leading-none pl-1 pt-1">
+                            <div class="text-2xl sm:text-3xl font-cinzel">${newCard.rank}</div>
+                            <div class="text-base sm:text-lg">${newCard.suit}</div>
                         </div>
                         <div class="my-auto w-full px-0.5">
-                            ${royalSvg}
+                            ${svgArt}
                         </div>
-                        <div class="flex justify-between items-end font-black leading-tight transform rotate-180">
-                            <div class="text-lg sm:text-xl md:text-2xl">${newCard.rank}<br><span class="text-sm sm:text-lg md:text-xl">${newCard.suit}</span></div>
-                            <div class="text-lg sm:text-xl md:text-2xl">${newCard.suit}</div>
+                        <div class="flex flex-col items-end font-black leading-none transform rotate-180 pr-1 pb-1">
+                            <div class="text-2xl sm:text-3xl font-cinzel">${newCard.rank}</div>
+                            <div class="text-base sm:text-lg">${newCard.suit}</div>
                         </div>
                     `;
 
                     setTimeout(() => {
-                        document.getElementById(`card-inner-${i}`).classList.add('is-flipped');
+                        document.getElementById(`card-inner-${i}`)?.classList.add('is-flipped');
                         playSound('flip');
                     }, altIdx * 120);
                 }
@@ -609,9 +892,7 @@
         }
 
         class Particle {
-            constructor() {
-                this.reset();
-            }
+            constructor() { this.reset(); }
             reset() {
                 this.x = Math.random() * canvas.width;
                 this.y = Math.random() * canvas.height;
