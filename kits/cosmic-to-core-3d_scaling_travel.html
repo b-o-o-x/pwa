@@ -209,7 +209,7 @@ const STAGES = [
     title: "우리 은하계 (Milky Way Galaxy)",
     altitude: "+10만 광년",
     badge: "SPACE · LEVEL +6",
-    desc: "약 2,000억~4,000억 개의 별들이 소용돌이치는 막대나선은하입니다. 은하 중심에서 약 2만 6천 광년 떨어진 오리온 팔에 우리의 태양이 자리하고 있습니다.",
+    desc: "약 2,000억~4,000억 개의 별들이 소용돌이치는 막대나선은하입니다. 은하 중심에서 약 2만 6천 광년 떨어진 오리온 팔에 우리의 태양이 자리하고 있습니다. 순우리말 '미리내'라고도 합니다.",
     bgColor: 0x030510,
     fogColor: 0x030510,
     fogDensity: 0.008,
@@ -310,7 +310,7 @@ const STAGES = [
   {
     level: -2,
     shortName: "땅속 뿌리·벌레",
-    title: "표토층: 나무뿌리와 땅속 생물 (Soil & Roots)",
+    title: "지각 상부 표토층: 나무뿌리와 땅속 생물 (Soil & Roots)",
     altitude: "-2 m",
     badge: "SOIL · LEVEL -2",
     desc: "어둡고 비옥한 흙과 자갈, 돌멩이 사이로 거대한 나무뿌리가 뻗어 있습니다. 땅속 굴에서는 개미와 애벌레, 지렁이가 부지런히 움직입니다.",
@@ -688,7 +688,7 @@ function initThree() {
 }
 
 // ----------------------------------------------------------------------------
-// LEVEL 0: THE HORIZON (지평선 위의 나 - 절반 하늘, 절반 땅 + 강아지, 고양이, 잠자리, 새, 벌)
+// LEVEL 0: THE HORIZON (지평선 위의 나 - 절반 하늘, 절반 땅 + 강아지, 고양이, 나비, 잠자리, 새, 벌)
 // ----------------------------------------------------------------------------
 function buildLevel0_Horizon(group) {
   // Sky dome gradient
@@ -752,7 +752,6 @@ function buildLevel0_Horizon(group) {
   const skinMat = new THREE.MeshStandardMaterial({ color: 0xfdba74 });
   const shirtMat = new THREE.MeshStandardMaterial({ color: 0x0284c7 });
   const pantsMat = new THREE.MeshStandardMaterial({ color: 0x1e293b });
-  const bodyMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.4 });
   const scarfMat = new THREE.MeshStandardMaterial({ color: 0xf43f5e, emissive: 0x881337, emissiveIntensity: 0.3 });
 
   // Legs
@@ -768,7 +767,6 @@ function buildLevel0_Horizon(group) {
 
   // Scarf fluttering slightly
   const scarf = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.12, 0.12), scarfMat);
-  //scarf.position.set(0.22, 1.56, -0.05);
 
   // Head
   const head = new THREE.Mesh(new THREE.SphereGeometry(0.21, 16, 16), skinMat);
@@ -840,6 +838,45 @@ function buildLevel0_Horizon(group) {
   cat.position.set(1.25, 0, 0.65);
   cat.rotation.y = -0.4;
   group.add(cat);
+
+  // Butterflies flying in the sky (몸통 관절 기준으로 위아래로 파닥파닥 날갯짓하는 나비)
+  const skyButterflies = [];
+  const bfWingColors = [0x38bdf8, 0xfbbf24, 0xf472b6];
+  for (let i = 0; i < 3; i++) {
+    const bf = new THREE.Group();
+    const bfBody = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.025, 0.02, 0.32, 8),
+      new THREE.MeshBasicMaterial({ color: 0x1e1b4b })
+    );
+    bfBody.rotation.x = Math.PI / 2;
+
+    const bfWingMat = new THREE.MeshBasicMaterial({ color: bfWingColors[i], side: THREE.DoubleSide });
+
+    // 왼쪽 날개 관절(Pivot)
+    const lPivot = new THREE.Group();
+    const lUpper = new THREE.Mesh(new THREE.CircleGeometry(0.18, 12), bfWingMat);
+    lUpper.rotation.x = -Math.PI / 2;
+    lUpper.position.set(-0.16, 0, 0.06);
+    const lLower = new THREE.Mesh(new THREE.CircleGeometry(0.13, 12), bfWingMat);
+    lLower.rotation.x = -Math.PI / 2;
+    lLower.position.set(-0.12, 0, -0.09);
+    lPivot.add(lUpper, lLower);
+
+    // 오른쪽 날개 관절(Pivot)
+    const rPivot = new THREE.Group();
+    const rUpper = new THREE.Mesh(new THREE.CircleGeometry(0.18, 12), bfWingMat);
+    rUpper.rotation.x = -Math.PI / 2;
+    rUpper.position.set(0.16, 0, 0.06);
+    const rLower = new THREE.Mesh(new THREE.CircleGeometry(0.13, 12), bfWingMat);
+    rLower.rotation.x = -Math.PI / 2;
+    rLower.position.set(0.12, 0, -0.09);
+    rPivot.add(rUpper, rLower);
+
+    bf.add(bfBody, lPivot, rPivot);
+    bf.position.set(-2.2 + i * 2.1, 1.75 + (i % 2) * 0.45, 2.0 + i * 0.6);
+    group.add(bf);
+    skyButterflies.push({ mesh: bf, lPivot, rPivot, base: bf.position.clone(), phase: i * 1.9 });
+  }
 
   // Birds flying across the sky (새 떼)
   const birds = [];
@@ -922,6 +959,18 @@ function buildLevel0_Horizon(group) {
 
     dogTail.rotation.x = Math.sin(t * 12) * 0.4;
     catTail.rotation.x = Math.sin(t * 3.5) * 0.25;
+
+    // 나비: 위아래로 펄럭펄럭 날갯짓 + 날갯짓 박자에 맞춘 가벼운 상하 부유
+    skyButterflies.forEach(b => {
+      const flap = Math.sin(t * 15 + b.phase);
+      b.lPivot.rotation.z = -flap * 0.95;
+      b.rPivot.rotation.z = flap * 0.95;
+
+      const nx = b.base.x + Math.sin(t * 1.3 + b.phase) * 1.35;
+      const ny = b.base.y + Math.cos(t * 2.1 + b.phase) * 0.28 - flap * 0.05;
+      b.mesh.rotation.y = Math.cos(t * 1.3 + b.phase) > 0 ? 0.5 : -0.5;
+      b.mesh.position.set(nx, ny, b.base.z + Math.sin(t * 0.9 + b.phase) * 0.4);
+    });
 
     birds.forEach(b => {
       b.mesh.position.x += 0.035;
@@ -1514,7 +1563,7 @@ function buildLevel7_Universe(group) {
 }
 
 // ----------------------------------------------------------------------------
-// LEVEL -1: GRASS & INSECTS (잔디와 곤충들: 나비, 무당벌레, 반딧불이 - 잠자리·벌 제거)
+// LEVEL -1: GRASS & INSECTS (잔디와 곤충들: 꽃 위에 앉아 몸통 기준으로 날개를 움직이는 나비, 무당벌레, 반딧불이)
 // ----------------------------------------------------------------------------
 function buildLevelM1_GrassInsects(group) {
   // Rich Soil Floor
@@ -1539,32 +1588,65 @@ function buildLevelM1_GrassInsects(group) {
     group.add(blade);
   }
 
-  // Wildflowers
+  // Wildflowers (0번 꽃은 나비가 앉을 지정 꽃으로 배치)
   const flowerColors = [0xfde047, 0xf472b6, 0xffffff, 0xc084fc];
+  const perchFlowerPos = { x: -1.35, y: 2.15, z: 2.35 };
+
   for (let i = 0; i < 14; i++) {
     const fGroup = new THREE.Group();
-    const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.05, 2.2, 6), new THREE.MeshLambertMaterial({ color: 0x15803d }));
-    stem.position.y = 1.1;
-    const head = new THREE.Mesh(new THREE.DodecahedronGeometry(0.32), new THREE.MeshLambertMaterial({ color: flowerColors[i % flowerColors.length] }));
-    head.position.y = 2.2;
+    const stemH = i === 0 ? perchFlowerPos.y : 2.2;
+    const stem = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.04, 0.05, stemH, 6),
+      new THREE.MeshLambertMaterial({ color: 0x15803d })
+    );
+    stem.position.y = stemH / 2;
+
+    const head = new THREE.Mesh(
+      new THREE.DodecahedronGeometry(i === 0 ? 0.38 : 0.32),
+      new THREE.MeshLambertMaterial({ color: flowerColors[i % flowerColors.length] })
+    );
+    head.scale.set(1.25, 0.55, 1.25);
+    head.position.y = stemH;
     fGroup.add(stem, head);
-    fGroup.position.set((Math.random() - 0.5) * 12, 0, (Math.random() - 0.5) * 8);
+
+    if (i === 0) {
+      fGroup.position.set(perchFlowerPos.x, 0, perchFlowerPos.z);
+    } else {
+      fGroup.position.set((Math.random() - 0.5) * 12, 0, (Math.random() - 0.5) * 8);
+    }
     group.add(fGroup);
   }
 
-  // 1) BUTTERFLY (나비 - flapping wings)
+  // 1) BUTTERFLY (꽃송이 위에 앉아 몸통 관절을 축으로 접힌 날개를 천천히 움직이는 나비)
   const butterfly = new THREE.Group();
-  const bfBody = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.04, 0.55, 8), new THREE.MeshBasicMaterial({ color: 0x1e1b4b }));
+  const bfBody = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.035, 0.025, 0.45, 8),
+    new THREE.MeshBasicMaterial({ color: 0x1e1b4b })
+  );
   bfBody.rotation.x = Math.PI / 2;
+
   const wingMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8, side: THREE.DoubleSide });
-  const leftWing = new THREE.Mesh(new THREE.CircleGeometry(0.45, 12), wingMat);
-  leftWing.position.set(-0.42, 0.05, 0);
-  leftWing.rotation.x = Math.PI / 2;
-  const rightWing = new THREE.Mesh(new THREE.CircleGeometry(0.45, 12), wingMat);
-  rightWing.position.set(0.42, 0.05, 0);
-  rightWing.rotation.x = Math.PI / 2;
-  butterfly.add(bfBody, leftWing, rightWing);
-  butterfly.position.set(-2.2, 2.2, 2.2);
+
+  // 왼쪽 날개 관절(Pivot): 몸통(x=0)에 위치
+  const leftWingPivot = new THREE.Group();
+  const leftWing = new THREE.Mesh(new THREE.CircleGeometry(0.38, 14), wingMat);
+  // 날개 뿌리가 몸통(0,0,0)에 닿도록 위쪽(+Y)으로 반지름만큼 오프셋
+  leftWing.position.set(0, 0.35, -0.02);
+  leftWing.rotation.y = Math.PI / 2;
+  leftWingPivot.add(leftWing);
+  leftWingPivot.rotation.z = 0.14; // 위로 접힌 기본 각도
+
+  // 오른쪽 날개 관절(Pivot): 몸통(x=0)에 위치
+  const rightWingPivot = new THREE.Group();
+  const rightWing = new THREE.Mesh(new THREE.CircleGeometry(0.38, 14), wingMat);
+  rightWing.position.set(0, 0.35, -0.02);
+  rightWing.rotation.y = Math.PI / 2;
+  rightWingPivot.add(rightWing);
+  rightWingPivot.rotation.z = -0.14; // 위로 접힌 기본 각도
+
+  butterfly.add(bfBody, leftWingPivot, rightWingPivot);
+  butterfly.position.set(perchFlowerPos.x, perchFlowerPos.y + 0.16, perchFlowerPos.z);
+  butterfly.rotation.y = 0.55;
   group.add(butterfly);
 
   // 2) LADYBUG (무당벌레 - red shell with black dots)
@@ -1607,12 +1689,11 @@ function buildLevelM1_GrassInsects(group) {
 
   animatables.push((t) => {
     if (!group.visible) return;
-    // Butterfly flap & flutter
-    leftWing.rotation.z = Math.sin(t * 14) * 0.75;
-    rightWing.rotation.z = -Math.sin(t * 14) * 0.75;
-    butterfly.position.x = -2.0 + Math.sin(t * 1.4) * 1.5;
-    butterfly.position.y = 2.1 + Math.cos(t * 2.2) * 0.4;
-    butterfly.rotation.y = Math.cos(t * 1.4) * 0.6;
+
+    // 꽃 위에 앉은 나비가 몸통(Pivot)을 기준으로 접힌 날개를 천천히 열었다 접음
+    const wingAngle = 0.12 + (Math.sin(t * 2.2) + 1) * 0.22; // 0.12 ~ 0.56 라디안 사이로 부드럽게 개폐
+    leftWingPivot.rotation.z = wingAngle;
+    rightWingPivot.rotation.z = -wingAngle;
 
     // Ladybug crawl
     ladybug.position.x = -0.6 + Math.sin(t * 0.6) * 1.2;
