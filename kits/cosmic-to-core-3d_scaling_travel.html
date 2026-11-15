@@ -97,12 +97,15 @@
     
     <!-- Stage Info Card -->
     <div class="glass-panel rounded-2xl p-4 sm:p-5 max-w-md w-full sm:w-auto pointer-events-auto transition-all duration-500">
-      <div class="flex items-center gap-2 mb-1">
+      <div class="flex flex-wrap items-center gap-2 mb-1">
         <span id="stage-badge" class="px-2.5 py-0.5 rounded-full text-xs font-bold tracking-wider uppercase bg-sky-500/25 text-sky-300 border border-sky-400/30">
           LEVEL 0 · 지평선
         </span>
         <span id="altitude-text" class="font-orbitron text-xs sm:text-sm text-amber-300 font-bold">
           0 m (해수면 기준)
+        </span>
+        <span class="font-orbitron text-[10px] text-slate-300/80 bg-white/10 px-2 py-0.5 rounded-md border border-white/10">
+          Cosmic-to-earth-3d V.261115-2159
         </span>
       </div>
       <h1 id="stage-title" class="text-xl sm:text-2xl font-black tracking-tight text-white mb-1.5">
@@ -271,7 +274,7 @@ const STAGES = [
     title: "하늘에서 내려다본 도시 (City Skyline)",
     altitude: "+350 m",
     badge: "SKY · LEVEL +1",
-    desc: "지평선에서 하늘로 떠오르자 수많은 건물과 도로, 강을 가로지르는 다리들이 어우러진 활기찬 도시의 풍경이 펼쳐집니다.",
+    desc: "지평선에서 하늘로 떠오르자 수많은 건물과 도로, 강을 가로지르는 다리들과 도심 속 공원이 어우러진 활기찬 도시의 풍경이 펼쳐집니다.",
     bgColor: 0x38bdf8,
     fogColor: 0x7dd3fc,
     fogDensity: 0.016,
@@ -284,7 +287,7 @@ const STAGES = [
     title: "지평선 위의 나 (The Horizon - You)",
     altitude: "0 m (기준점)",
     badge: "ORIGIN · LEVEL 0",
-    desc: "화면 절반 위로는 하늘이, 아래로는 땅이 보입니다. 광활한 우주와 깊은 지구 내부 사이, 지평선 위에 한 사람이 서 있습니다.",
+    desc: "화면 절반 위로는 하늘과 새·잠자리·벌이, 아래로는 잔디와 강아지·고양이가 보입니다. 광활한 우주와 깊은 지구 내부 사이, 지평선 위에 한 사람이 서 있습니다.",
     bgColor: 0x4da6ff,
     fogColor: 0x87ceeb,
     fogDensity: 0.012,
@@ -297,7 +300,7 @@ const STAGES = [
     title: "지표면 생태계: 잔디와 곤충들 (Surface Insects)",
     altitude: "-0.1 m (지표면)",
     badge: "SURFACE · LEVEL -1",
-    desc: "발밑의 작은 숲으로 내려왔습니다. 풀잎 사이로 나비와 잠자리가 날아다니고, 무당벌레, 말벌, 그리고 영롱하게 빛나는 반딧불이가 살아 숨 쉽니다.",
+    desc: "발밑의 작은 숲으로 내려왔습니다. 풀잎 사이로 나비가 날아다니고, 무당벌레, 그리고 영롱하게 빛나는 반딧불이가 살아 숨 쉽니다.",
     bgColor: 0x1a3a1a,
     fogColor: 0x1e3f20,
     fogDensity: 0.025,
@@ -323,7 +326,7 @@ const STAGES = [
     title: "지하 인공 구조물 (Underground City)",
     altitude: "-25 m",
     badge: "INFRASTRUCTURE · LEVEL -3",
-    desc: "인류가 땅속에 건설한 거대한 혈관입니다. 콘크리트 하수도와 상수도관, 맑은 지하수맥, 그리고 어둠을 가르며 달리는 지하철 터널이 보입니다.",
+    desc: "인류가 땅속에 건설한 거대한 혈관입니다. 콘크리트 하수도와 상수도관, 맑은 지하수맥, 그리고 어둠을 가르며 양방향으로 달리는 지하철 터널이 보입니다.",
     bgColor: 0x0f172a,
     fogColor: 0x0f172a,
     fogDensity: 0.025,
@@ -524,7 +527,7 @@ function createCircleGlowTexture(innerColor, outerColor, size = 128) {
 }
 
 function createEarthTexture() {
-  const w = 512, h = 256;
+  const w = 1024, h = 512;
   const canvas = document.createElement('canvas');
   canvas.width = w; canvas.height = h;
   const ctx = canvas.getContext('2d');
@@ -532,42 +535,91 @@ function createEarthTexture() {
   // Deep Ocean
   const oceanGrad = ctx.createLinearGradient(0, 0, 0, h);
   oceanGrad.addColorStop(0, '#1e3a8a');
+  oceanGrad.addColorStop(0.3, '#0369a1');
   oceanGrad.addColorStop(0.5, '#0284c7');
+  oceanGrad.addColorStop(0.7, '#0369a1');
   oceanGrad.addColorStop(1, '#1e3a8a');
   ctx.fillStyle = oceanGrad;
   ctx.fillRect(0, 0, w, h);
 
-  // Stylized Continents
-  ctx.fillStyle = '#15803d';
-  const continents = [
-    // Eurasia
-    { x: 310, y: 75, rx: 85, ry: 38 },
-    // Africa
-    { x: 275, y: 140, rx: 32, ry: 45 },
-    // North America
-    { x: 115, y: 80, rx: 50, ry: 35 },
-    // South America
-    { x: 155, y: 165, rx: 26, ry: 44 },
-    // Australia
-    { x: 410, y: 175, rx: 24, ry: 18 }
-  ];
-  continents.forEach(c => {
+  function drawLandmass(points, color) {
     ctx.beginPath();
-    ctx.ellipse(c.x, c.y, c.rx, c.ry, 0.15, 0, Math.PI * 2);
+    ctx.moveTo(points[0][0], points[0][1]);
+    for (let i = 1; i < points.length; i++) {
+      ctx.lineTo(points[i][0], points[i][1]);
+    }
+    ctx.closePath();
+    ctx.lineWidth = 6;
+    ctx.strokeStyle = 'rgba(56, 189, 248, 0.38)';
+    ctx.stroke();
+    ctx.fillStyle = color;
+    ctx.fill();
+  }
+
+  // North America
+  drawLandmass([
+    [115, 92], [168, 76], [238, 84], [298, 108], [308, 148],
+    [274, 188], [248, 224], [236, 258], [218, 248], [198, 212],
+    [174, 174], [142, 136]
+  ], '#16a34a');
+
+  // Greenland
+  drawLandmass([
+    [328, 46], [378, 42], [394, 74], [362, 104], [332, 90]
+  ], '#e2e8f0');
+
+  // South America
+  drawLandmass([
+    [260, 266], [308, 276], [348, 316], [338, 370],
+    [308, 428], [282, 462], [268, 414], [256, 342]
+  ], '#15803d');
+
+  // Europe
+  drawLandmass([
+    [468, 92], [520, 74], [568, 88], [574, 134],
+    [544, 158], [504, 166], [472, 152], [462, 122]
+  ], '#22c55e');
+
+  // Africa
+  drawLandmass([
+    [468, 178], [528, 176], [578, 206], [595, 256],
+    [572, 326], [542, 386], [512, 382], [492, 316], [458, 256]
+  ], '#16a34a');
+
+  // Eurasia / Asia
+  drawLandmass([
+    [572, 82], [668, 68], [778, 74], [878, 92], [916, 126],
+    [866, 158], [834, 188], [806, 226], [776, 258], [736, 246],
+    [706, 272], [672, 232], [636, 218], [588, 192], [572, 138]
+  ], '#15803d');
+
+  // Korean Peninsula & Japan
+  drawLandmass([[826, 166], [838, 166], [840, 192], [828, 194]], '#4ade80');
+  drawLandmass([[856, 164], [867, 172], [858, 202], [848, 198]], '#4ade80');
+
+  // Australia & New Zealand
+  drawLandmass([
+    [786, 318], [848, 308], [886, 338], [876, 382], [822, 392], [782, 368]
+  ], '#16a34a');
+  drawLandmass([[908, 396], [922, 406], [912, 428], [900, 422]], '#4ade80');
+
+  // Desert / Arid belts (Sahara, Arabia, Central Asia, Outback)
+  ctx.fillStyle = 'rgba(202, 138, 4, 0.72)';
+  [
+    [515, 206, 46, 20],
+    [594, 204, 24, 15],
+    [695, 148, 52, 20],
+    [832, 348, 30, 16]
+  ].forEach(([dx, dy, rx, ry]) => {
+    ctx.beginPath();
+    ctx.ellipse(dx, dy, rx, ry, 0, 0, Math.PI * 2);
     ctx.fill();
   });
 
-  // Desert / Mountain highlights
-  ctx.fillStyle = '#ca8a04';
-  ctx.beginPath();
-  ctx.ellipse(275, 118, 24, 12, 0, 0, Math.PI * 2);
-  ctx.ellipse(330, 82, 40, 14, 0, 0, Math.PI * 2);
-  ctx.fill();
-
   // Polar ice caps
   ctx.fillStyle = '#f8fafc';
-  ctx.fillRect(0, 0, w, 16);
-  ctx.fillRect(0, h - 16, w, 16);
+  ctx.fillRect(0, 0, w, 24);
+  ctx.fillRect(0, h - 24, w, 24);
 
   return new THREE.CanvasTexture(canvas);
 }
@@ -636,7 +688,7 @@ function initThree() {
 }
 
 // ----------------------------------------------------------------------------
-// LEVEL 0: THE HORIZON (지평선 위의 나 - 절반 하늘, 절반 땅)
+// LEVEL 0: THE HORIZON (지평선 위의 나 - 절반 하늘, 절반 땅 + 강아지, 고양이, 잠자리, 새, 벌)
 // ----------------------------------------------------------------------------
 function buildLevel0_Horizon(group) {
   // Sky dome gradient
@@ -672,7 +724,6 @@ function buildLevel0_Horizon(group) {
   }
 
   // Lower Half: Vast Green Meadow / Horizon Ground Plane
-  // Positioned so at camera y=1.35 looking at y=1.15, the horizon splits the screen cleanly!
   const groundGeo = new THREE.PlaneGeometry(240, 240, 32, 32);
   const groundMat = new THREE.MeshLambertMaterial({ color: 0x2e7d32 });
   const ground = new THREE.Mesh(groundGeo, groundMat);
@@ -698,34 +749,37 @@ function buildLevel0_Horizon(group) {
 
   // The Human Figure ("나" standing right on the Horizon Line)
   const human = new THREE.Group();
+  const skinMat = new THREE.MeshStandardMaterial({ color: 0xfdba74 });
+  const shirtMat = new THREE.MeshStandardMaterial({ color: 0x0284c7 });
+  const pantsMat = new THREE.MeshStandardMaterial({ color: 0x1e293b });
   const bodyMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.4 });
   const scarfMat = new THREE.MeshStandardMaterial({ color: 0xf43f5e, emissive: 0x881337, emissiveIntensity: 0.3 });
 
   // Legs
   const legGeo = new THREE.CylinderGeometry(0.11, 0.09, 0.85, 10);
-  const leftLeg = new THREE.Mesh(legGeo, bodyMat);
+  const leftLeg = new THREE.Mesh(legGeo, pantsMat);
   leftLeg.position.set(-0.14, 0.425, 0);
-  const rightLeg = new THREE.Mesh(legGeo, bodyMat);
+  const rightLeg = new THREE.Mesh(legGeo, pantsMat);
   rightLeg.position.set(0.14, 0.425, 0);
 
   // Torso
-  const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.17, 0.78, 12), bodyMat);
+  const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.17, 0.78, 12), shirtMat);
   torso.position.set(0, 1.22, 0);
 
   // Scarf fluttering slightly
   const scarf = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.12, 0.12), scarfMat);
-  scarf.position.set(0.22, 1.56, -0.05);
+  //scarf.position.set(0.22, 1.56, -0.05);
 
   // Head
-  const head = new THREE.Mesh(new THREE.SphereGeometry(0.21, 16, 16), bodyMat);
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.21, 16, 16), skinMat);
   head.position.set(0, 1.85, 0);
 
   // Arms
   const armGeo = new THREE.CylinderGeometry(0.07, 0.06, 0.68, 8);
-  const leftArm = new THREE.Mesh(armGeo, bodyMat);
+  const leftArm = new THREE.Mesh(armGeo, shirtMat);
   leftArm.position.set(-0.3, 1.2, 0);
   leftArm.rotation.z = 0.15;
-  const rightArm = new THREE.Mesh(armGeo, bodyMat);
+  const rightArm = new THREE.Mesh(armGeo, shirtMat);
   rightArm.position.set(0.3, 1.2, 0);
   rightArm.rotation.z = -0.15;
 
@@ -739,6 +793,112 @@ function buildLevel0_Horizon(group) {
   human.add(leftLeg, rightLeg, torso, scarf, head, leftArm, rightArm, ring);
   human.position.set(0, 0, 0);
   group.add(human);
+
+  // Dog (강아지) beside human on grass
+  const dog = new THREE.Group();
+  const dogMat = new THREE.MeshLambertMaterial({ color: 0xd97706 });
+  const dogEarMat = new THREE.MeshLambertMaterial({ color: 0x78350f });
+  const dogBody = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.22, 0.2), dogMat);
+  dogBody.position.y = 0.22;
+  const dogHead = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.2, 0.2), dogMat);
+  dogHead.position.set(0.24, 0.34, 0);
+  const dogEars = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.12, 0.23), dogEarMat);
+  dogEars.position.set(0.22, 0.42, 0);
+  const dogTail = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.03, 0.2, 8), dogMat);
+  dogTail.position.set(-0.25, 0.32, 0);
+  dogTail.rotation.z = 0.55;
+  dog.add(dogBody, dogHead, dogEars, dogTail);
+  [[-0.14, -0.06], [-0.14, 0.06], [0.14, -0.06], [0.14, 0.06]].forEach(([lx, lz]) => {
+    const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.028, 0.028, 0.15, 8), dogMat);
+    leg.position.set(lx, 0.075, lz);
+    dog.add(leg);
+  });
+  dog.position.set(-1.15, 0, 0.55);
+  dog.rotation.y = 0.35;
+  group.add(dog);
+
+  // Cat (고양이) on the right side of human
+  const cat = new THREE.Group();
+  const catMat = new THREE.MeshLambertMaterial({ color: 0xf8fafc });
+  const catBody = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.18, 0.16), catMat);
+  catBody.position.y = 0.18;
+  const catHead = new THREE.Mesh(new THREE.SphereGeometry(0.1, 12, 12), catMat);
+  catHead.position.set(-0.2, 0.29, 0);
+  const catEarL = new THREE.Mesh(new THREE.ConeGeometry(0.035, 0.08, 4), catMat);
+  catEarL.position.set(-0.2, 0.39, -0.045);
+  const catEarR = catEarL.clone();
+  catEarR.position.z = 0.045;
+  const catTail = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.022, 0.24, 8), catMat);
+  catTail.position.set(0.21, 0.29, 0);
+  catTail.rotation.z = -0.45;
+  cat.add(catBody, catHead, catEarL, catEarR, catTail);
+  [[-0.11, -0.05], [-0.11, 0.05], [0.11, -0.05], [0.11, 0.05]].forEach(([lx, lz]) => {
+    const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.13, 8), catMat);
+    leg.position.set(lx, 0.065, lz);
+    cat.add(leg);
+  });
+  cat.position.set(1.25, 0, 0.65);
+  cat.rotation.y = -0.4;
+  group.add(cat);
+
+  // Birds flying across the sky (새 떼)
+  const birds = [];
+  const birdMat = new THREE.MeshBasicMaterial({ color: 0x1e293b, side: THREE.DoubleSide });
+  for (let i = 0; i < 6; i++) {
+    const bird = new THREE.Group();
+    const wL = new THREE.Mesh(new THREE.PlaneGeometry(0.34, 0.11), birdMat);
+    wL.position.x = -0.17;
+    const wR = new THREE.Mesh(new THREE.PlaneGeometry(0.34, 0.11), birdMat);
+    wR.position.x = 0.17;
+    bird.add(wL, wR);
+    bird.position.set(-7 + i * 2.4, 3.6 + (i % 3) * 0.65, -8 - i * 1.4);
+    group.add(bird);
+    birds.push({ mesh: bird, wL, wR, phase: i * 1.2 });
+  }
+
+  // Dragonflies flying in the air (잠자리)
+  const skyDragonflies = [];
+  const wingTranslucentMat = new THREE.MeshBasicMaterial({ color: 0xe0f2fe, transparent: true, opacity: 0.78, side: THREE.DoubleSide });
+  for (let i = 0; i < 3; i++) {
+    const df = new THREE.Group();
+    const body = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.022, 0.014, 0.44, 8),
+      new THREE.MeshPhongMaterial({ color: 0x06b6d4 })
+    );
+    body.rotation.z = Math.PI / 2;
+    const w1 = new THREE.Mesh(new THREE.PlaneGeometry(0.32, 0.08), wingTranslucentMat);
+    w1.position.set(0.04, 0.03, 0.18);
+    const w2 = w1.clone();
+    w2.position.z = -0.18;
+    df.add(body, w1, w2);
+    df.position.set((i - 1) * 2.2, 1.55 + (i % 2) * 0.35, 2.2 + i * 0.5);
+    group.add(df);
+    skyDragonflies.push({ mesh: df, w1, w2, base: df.position.clone(), phase: i * 1.7 });
+  }
+
+  // Bees / Hornets flying near grass & flowers (벌)
+  const skyBees = [];
+  for (let i = 0; i < 3; i++) {
+    const bee = new THREE.Group();
+    const abd = new THREE.Mesh(
+      new THREE.SphereGeometry(0.075, 10, 10),
+      new THREE.MeshPhongMaterial({ color: 0xfacc15 })
+    );
+    abd.scale.set(1.5, 0.9, 0.9);
+    const stripe = new THREE.Mesh(
+      new THREE.TorusGeometry(0.062, 0.015, 8, 12),
+      new THREE.MeshBasicMaterial({ color: 0x09090b })
+    );
+    stripe.rotation.y = Math.PI / 2;
+    const bw1 = new THREE.Mesh(new THREE.PlaneGeometry(0.18, 0.07), wingTranslucentMat);
+    bw1.position.set(0, 0.06, 0.09);
+    const bw2 = bw1.clone();
+    bw2.position.z = -0.09;
+    bee.add(abd, stripe, bw1, bw2);
+    bee.position.set((i - 1) * 1.9, 0.95 + (i % 2) * 0.3, 2.8 + i * 0.4);
+    group.add(bee);
+    skyBees.push({ mesh: bee, bw1, bw2, base: bee.position.clone(), phase: i * 2.1 });
+  }
 
   // Foreground grass tufts & wildflowers
   const tuftMat = new THREE.MeshLambertMaterial({ color: 0x4caf50 });
@@ -759,11 +919,38 @@ function buildLevel0_Horizon(group) {
     scarf.rotation.z = Math.cos(t * 2.5) * 0.1;
     ring.scale.setScalar(1 + Math.sin(t * 2.5) * 0.08);
     human.position.y = Math.abs(Math.sin(t * 1.5)) * 0.02;
+
+    dogTail.rotation.x = Math.sin(t * 12) * 0.4;
+    catTail.rotation.x = Math.sin(t * 3.5) * 0.25;
+
+    birds.forEach(b => {
+      b.mesh.position.x += 0.035;
+      if (b.mesh.position.x > 16) b.mesh.position.x = -16;
+      const flap = Math.sin(t * 7 + b.phase) * 0.42;
+      b.wL.rotation.z = flap;
+      b.wR.rotation.z = -flap;
+    });
+
+    skyDragonflies.forEach(d => {
+      d.mesh.position.x = d.base.x + Math.sin(t * 1.6 + d.phase) * 1.4;
+      d.mesh.position.y = d.base.y + Math.cos(t * 2.5 + d.phase) * 0.25;
+      const flap = Math.sin(t * 34 + d.phase) * 0.35;
+      d.w1.rotation.x = flap;
+      d.w2.rotation.x = -flap;
+    });
+
+    skyBees.forEach(b => {
+      b.mesh.position.x = b.base.x + Math.cos(t * 2.4 + b.phase) * 0.9;
+      b.mesh.position.y = b.base.y + Math.sin(t * 3.2 + b.phase) * 0.2;
+      const flap = Math.sin(t * 42 + b.phase) * 0.45;
+      b.bw1.rotation.x = flap;
+      b.bw2.rotation.x = -flap;
+    });
   });
 }
 
 // ----------------------------------------------------------------------------
-// LEVEL +1: CITY SKYLINE (도시 상공)
+// LEVEL +1: CITY SKYLINE (도시 상공 - 다리 위 통행 차량 + 도심 속 작은 공원)
 // ----------------------------------------------------------------------------
 function buildLevel1_City(group) {
   // Base terrain + River (Han River style)
@@ -778,12 +965,42 @@ function buildLevel1_City(group) {
   group.add(river);
 
   // Bridges over river
+  const bridgeXs = [-12, 4, 18];
   const bridgeMat = new THREE.MeshBasicMaterial({ color: 0xfbbf24 });
-  [-12, 4, 18].forEach(bx => {
-    const bridge = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.3, 11.5), bridgeMat);
+  bridgeXs.forEach(bx => {
+    const bridge = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.3, 11.5), bridgeMat);
     bridge.position.set(bx, 0.3, 2 - bx * 0.25);
     group.add(bridge);
   });
+
+  // Small City Park (도심 속 작은 공원 - 다음 단계의 잔디밭·사람과 어울리는 녹지 공간)
+  const parkGroup = new THREE.Group();
+  const parkLawn = new THREE.Mesh(
+    new THREE.BoxGeometry(7.2, 0.14, 6.4),
+    new THREE.MeshLambertMaterial({ color: 0x22c55e })
+  );
+  parkLawn.position.set(0, 0.07, 0);
+  parkGroup.add(parkLawn);
+
+  const parkWalkway = new THREE.Mesh(
+    new THREE.BoxGeometry(0.75, 0.16, 6.2),
+    new THREE.MeshLambertMaterial({ color: 0xe2e8f0 })
+  );
+  parkWalkway.position.set(0, 0.08, 0);
+  parkGroup.add(parkWalkway);
+
+  const parkTreeMat = new THREE.MeshLambertMaterial({ color: 0x15803d });
+  const parkTreeOffsets = [
+    [-2.4, -2.0], [-1.8, 1.8], [-2.7, 0.2],
+    [1.9, -1.7], [2.5, 1.5], [1.6, 2.2]
+  ];
+  parkTreeOffsets.forEach(([tx, tz]) => {
+    const tree = new THREE.Mesh(new THREE.SphereGeometry(0.45, 10, 10), parkTreeMat);
+    tree.position.set(tx, 0.52, tz);
+    parkGroup.add(tree);
+  });
+  parkGroup.position.set(-2.5, 0, 10.5);
+  group.add(parkGroup);
 
   // Procedural 3D City Buildings
   const bldgColors = [0x334155, 0x475569, 0x1e3a8a, 0x0f172a, 0x64748b];
@@ -791,7 +1008,11 @@ function buildLevel1_City(group) {
     const x = (Math.random() - 0.5) * 56;
     const z = (Math.random() - 0.5) * 56;
     // Skip river zone
-    if (Math.abs(z - (2 - x * 0.25)) < 6.2) continue;
+    if (Math.abs(z - (2 - x * 0.25)) < 6.4) continue;
+    // Skip small city park zone
+    if (Math.abs(x - (-2.5)) < 4.8 && Math.abs(z - 10.5) < 4.4) continue;
+    // Skip bridge approach road axes
+    if (bridgeXs.some(bx => Math.abs(x - bx) < 1.3)) continue;
 
     const distFromCenter = Math.hypot(x, z);
     const maxH = Math.max(1.5, 11 - distFromCenter * 0.28);
@@ -809,26 +1030,50 @@ function buildLevel1_City(group) {
     group.add(bldg);
   }
 
-  // Moving traffic lights along roads
+  // Moving traffic lights: strictly along riverbank roads OR across the 3 bridges
   const cars = [];
-  for (let i = 0; i < 30; i++) {
+  // 1) Cars crossing over the 3 Han River bridges (along Z axis at bridgeXs)
+  bridgeXs.forEach(bx => {
+    for (let k = 0; k < 6; k++) {
+      const dir = k % 2 === 0 ? 1 : -1;
+      const car = new THREE.Mesh(
+        new THREE.SphereGeometry(0.18, 6, 6),
+        new THREE.MeshBasicMaterial({ color: dir > 0 ? 0xffffff : 0xf43f5e })
+      );
+      car.position.set(bx + (dir > 0 ? -0.25 : 0.25), 0.5, (Math.random() - 0.5) * 48);
+      group.add(car);
+      cars.push({ mesh: car, type: 'bridge', dir, speed: 0.12 + Math.random() * 0.08 });
+    }
+  });
+
+  // 2) Cars driving parallel to the river on north & south riverside roads (never crossing water)
+  for (let i = 0; i < 18; i++) {
+    const isNorth = i % 2 === 0;
+    const dir = isNorth ? 1 : -1;
+    const roadOffset = isNorth ? -6.2 : 6.2;
     const car = new THREE.Mesh(
       new THREE.SphereGeometry(0.18, 6, 6),
-      new THREE.MeshBasicMaterial({ color: i % 2 === 0 ? 0xffffff : 0xf43f5e })
+      new THREE.MeshBasicMaterial({ color: isNorth ? 0xffffff : 0xf43f5e })
     );
-    const axis = i % 2 === 0 ? 'x' : 'z';
-    const lane = (Math.floor(Math.random() * 7) - 3) * 7;
-    car.position.set(axis === 'x' ? (Math.random() - 0.5) * 50 : lane, 0.25, axis === 'z' ? (Math.random() - 0.5) * 50 : lane);
+    const startX = (Math.random() - 0.5) * 52;
+    car.position.set(startX, 0.25, 2 - startX * 0.25 + roadOffset);
     group.add(car);
-    cars.push({ mesh: car, axis, dir: i % 2 === 0 ? 1 : -1, speed: 0.12 + Math.random() * 0.1 });
+    cars.push({ mesh: car, type: 'riverside', roadOffset, dir, speed: 0.13 + Math.random() * 0.09 });
   }
 
   animatables.push(() => {
     if (!group.visible) return;
     cars.forEach(c => {
-      c.mesh.position[c.axis] += c.dir * c.speed;
-      if (c.mesh.position[c.axis] > 26) c.mesh.position[c.axis] = -26;
-      if (c.mesh.position[c.axis] < -26) c.mesh.position[c.axis] = 26;
+      if (c.type === 'bridge') {
+        c.mesh.position.z += c.dir * c.speed;
+        if (c.mesh.position.z > 26) c.mesh.position.z = -26;
+        if (c.mesh.position.z < -26) c.mesh.position.z = 26;
+      } else {
+        c.mesh.position.x += c.dir * c.speed;
+        if (c.mesh.position.x > 26) c.mesh.position.x = -26;
+        if (c.mesh.position.x < -26) c.mesh.position.x = 26;
+        c.mesh.position.z = 2 - c.mesh.position.x * 0.25 + c.roadOffset;
+      }
     });
   });
 }
@@ -976,7 +1221,7 @@ function buildLevel3_Clouds(group) {
 }
 
 // ----------------------------------------------------------------------------
-// LEVEL +4: PLANET EARTH (지구)
+// LEVEL +4: PLANET EARTH (지구 - 구름 제거 및 세계 지도형 대륙 표현)
 // ----------------------------------------------------------------------------
 function buildLevel4_Earth(group) {
   // Background Stars
@@ -992,25 +1237,8 @@ function buildLevel4_Earth(group) {
     new THREE.SphereGeometry(5.5, 48, 48),
     new THREE.MeshPhongMaterial({ map: earthTex, shininess: 25 })
   );
+  earthMesh.rotation.y = -2.25;
   group.add(earthMesh);
-
-  // Swirling Cloud Layer
-  const cloudSphere = new THREE.Mesh(
-    new THREE.SphereGeometry(5.65, 36, 36),
-    new THREE.MeshLambertMaterial({ color: 0xffffff, transparent: true, opacity: 0.25, wireframe: false })
-  );
-  // Add cloud patches
-  const patchMat = new THREE.MeshLambertMaterial({ color: 0xffffff, transparent: true, opacity: 0.75 });
-  for (let i = 0; i < 45; i++) {
-    const phi = Math.acos(-1 + (2 * i) / 45);
-    const theta = Math.sqrt(45 * Math.PI) * phi;
-    const p = new THREE.Mesh(new THREE.SphereGeometry(0.65 + Math.random() * 0.5, 8, 8), patchMat);
-    p.scale.set(1.8, 0.2, 1.1);
-    p.position.setFromSphericalCoords(5.62, phi, theta);
-    p.lookAt(0, 0, 0);
-    cloudSphere.add(p);
-  }
-  group.add(cloudSphere);
 
   // Atmospheric Halo Glow
   const atmoSprite = new THREE.Sprite(new THREE.SpriteMaterial({
@@ -1033,8 +1261,7 @@ function buildLevel4_Earth(group) {
 
   animatables.push((t) => {
     if (!group.visible) return;
-    earthMesh.rotation.y = t * 0.12;
-    cloudSphere.rotation.y = t * 0.16;
+    earthMesh.rotation.y = -2.25 + t * 0.12;
     moonPivot.rotation.y = t * 0.25;
   });
 }
@@ -1287,7 +1514,7 @@ function buildLevel7_Universe(group) {
 }
 
 // ----------------------------------------------------------------------------
-// LEVEL -1: GRASS & INSECTS (잔디와 곤충들: 나비, 잠자리, 무당벌레, 말벌, 반딧불이)
+// LEVEL -1: GRASS & INSECTS (잔디와 곤충들: 나비, 무당벌레, 반딧불이 - 잠자리·벌 제거)
 // ----------------------------------------------------------------------------
 function buildLevelM1_GrassInsects(group) {
   // Rich Soil Floor
@@ -1340,22 +1567,7 @@ function buildLevelM1_GrassInsects(group) {
   butterfly.position.set(-2.2, 2.2, 2.2);
   group.add(butterfly);
 
-  // 2) DRAGONFLY (잠자리 - 4 translucent wings + long tail)
-  const dragonfly = new THREE.Group();
-  const dfBody = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.025, 1.1, 8), new THREE.MeshPhongMaterial({ color: 0x10b981 }));
-  dfBody.rotation.x = Math.PI / 2;
-  const dfWingMat = new THREE.MeshBasicMaterial({ color: 0xe0f2fe, transparent: true, opacity: 0.75, side: THREE.DoubleSide });
-  const dfWing1 = new THREE.Mesh(new THREE.PlaneGeometry(1.3, 0.18), dfWingMat);
-  dfWing1.rotation.x = Math.PI / 2;
-  dfWing1.position.set(0, 0.05, -0.15);
-  const dfWing2 = new THREE.Mesh(new THREE.PlaneGeometry(1.1, 0.16), dfWingMat);
-  dfWing2.rotation.x = Math.PI / 2;
-  dfWing2.position.set(0, 0.05, 0.08);
-  dragonfly.add(dfBody, dfWing1, dfWing2);
-  dragonfly.position.set(2.0, 2.5, 1.8);
-  group.add(dragonfly);
-
-  // 3) LADYBUG (무당벌레 - red shell with black dots)
+  // 2) LADYBUG (무당벌레 - red shell with black dots)
   const ladybug = new THREE.Group();
   const lbShell = new THREE.Mesh(
     new THREE.SphereGeometry(0.35, 16, 12, 0, Math.PI * 2, 0, Math.PI / 2),
@@ -1373,23 +1585,7 @@ function buildLevelM1_GrassInsects(group) {
   ladybug.position.set(-0.6, 0.4, 3.6);
   group.add(ladybug);
 
-  // 4) HORNET / WASP (말벌 - yellow & black striped abdomen)
-  const hornet = new THREE.Group();
-  const hThorax = new THREE.Mesh(new THREE.SphereGeometry(0.18, 12, 12), new THREE.MeshBasicMaterial({ color: 0x18181b }));
-  const hAbdomen = new THREE.Mesh(new THREE.SphereGeometry(0.24, 14, 14), new THREE.MeshPhongMaterial({ color: 0xfacc15 }));
-  hAbdomen.scale.set(0.85, 0.85, 1.6);
-  hAbdomen.position.z = -0.35;
-  const stripe = new THREE.Mesh(new THREE.CylinderGeometry(0.21, 0.21, 0.15, 12), new THREE.MeshBasicMaterial({ color: 0x09090b }));
-  stripe.rotation.x = Math.PI / 2;
-  stripe.position.z = -0.35;
-  const hWings = new THREE.Mesh(new THREE.PlaneGeometry(0.95, 0.22), dfWingMat);
-  hWings.rotation.x = Math.PI / 2;
-  hWings.position.y = 0.16;
-  hornet.add(hThorax, hAbdomen, stripe, hWings);
-  hornet.position.set(0.8, 1.9, 2.8);
-  group.add(hornet);
-
-  // 5) FIREFLIES (반딧불이 - glowing bioluminescent abdomen)
+  // 3) FIREFLIES (반딧불이 - glowing bioluminescent abdomen)
   const fireflies = [];
   for (let i = 0; i < 16; i++) {
     const ff = new THREE.Group();
@@ -1418,20 +1614,9 @@ function buildLevelM1_GrassInsects(group) {
     butterfly.position.y = 2.1 + Math.cos(t * 2.2) * 0.4;
     butterfly.rotation.y = Math.cos(t * 1.4) * 0.6;
 
-    // Dragonfly dart & hover
-    dfWing1.rotation.z = Math.sin(t * 35) * 0.25;
-    dfWing2.rotation.z = -Math.sin(t * 35) * 0.25;
-    dragonfly.position.x = 1.8 + Math.cos(t * 1.8) * 1.4;
-    dragonfly.position.y = 2.5 + Math.sin(t * 3.1) * 0.25;
-
     // Ladybug crawl
     ladybug.position.x = -0.6 + Math.sin(t * 0.6) * 1.2;
     ladybug.rotation.y = Math.cos(t * 0.6) > 0 ? Math.PI / 2 : -Math.PI / 2;
-
-    // Hornet buzz
-    hWings.rotation.z = Math.sin(t * 42) * 0.35;
-    hornet.position.x = 0.6 + Math.sin(t * 2.7) * 1.1;
-    hornet.position.y = 1.85 + Math.cos(t * 3.4) * 0.35;
 
     // Fireflies pulse
     fireflies.forEach(f => {
@@ -1540,7 +1725,7 @@ function buildLevelM2_RootsSoil(group) {
 }
 
 // ----------------------------------------------------------------------------
-// LEVEL -3: UNDERGROUND INFRASTRUCTURE (하수도, 지하철, 지하수)
+// LEVEL -3: UNDERGROUND INFRASTRUCTURE (하수도, 양방향 지하철, 지하수)
 // ----------------------------------------------------------------------------
 function buildLevelM3_SubwaySewage(group) {
   // Earth / Concrete Cross-Section Backdrop
@@ -1563,9 +1748,9 @@ function buildLevelM3_SubwaySewage(group) {
   waterStream.position.set(0, 2.2, 0.1);
   group.add(waterStream);
 
-  // Middle: Subway Tunnel & Moving Train (지하철 터널과 전동차)
+  // Middle: Subway Tunnel & Dual-Direction Moving Trains (좌->우, 우->좌 양방향 지하철)
   const tunnelArch = new THREE.Mesh(
-    new THREE.CylinderGeometry(2.3, 2.3, 26, 24, 1, true, 0, Math.PI),
+    new THREE.CylinderGeometry(2.4, 2.4, 26, 24, 1, true, 0, Math.PI),
     new THREE.MeshStandardMaterial({ color: 0x334155, side: THREE.DoubleSide })
   );
   tunnelArch.rotation.z = Math.PI / 2;
@@ -1573,33 +1758,47 @@ function buildLevelM3_SubwaySewage(group) {
   tunnelArch.position.set(0, -1.6, -0.5);
   group.add(tunnelArch);
 
-  const trackBed = new THREE.Mesh(new THREE.BoxGeometry(26, 0.3, 4.4), new THREE.MeshLambertMaterial({ color: 0x0f172a }));
+  const trackBed = new THREE.Mesh(new THREE.BoxGeometry(26, 0.3, 4.8), new THREE.MeshLambertMaterial({ color: 0x0f172a }));
   trackBed.position.set(0, -1.75, 0);
   group.add(trackBed);
 
-  // Subway Train
-  const train = new THREE.Group();
-  const trainBody = new THREE.Mesh(
-    new THREE.BoxGeometry(7.2, 1.45, 1.5),
-    new THREE.MeshPhongMaterial({ color: 0xe2e8f0 })
-  );
-  const stripe = new THREE.Mesh(new THREE.BoxGeometry(7.25, 0.25, 1.54), new THREE.MeshBasicMaterial({ color: 0x2563eb }));
-  train.add(trainBody, stripe);
+  function createSubwayTrain(stripeColor, dir) {
+    const tGroup = new THREE.Group();
+    const tBody = new THREE.Mesh(
+      new THREE.BoxGeometry(7.2, 1.35, 1.35),
+      new THREE.MeshPhongMaterial({ color: 0xe2e8f0 })
+    );
+    const tStripe = new THREE.Mesh(
+      new THREE.BoxGeometry(7.25, 0.24, 1.39),
+      new THREE.MeshBasicMaterial({ color: stripeColor })
+    );
+    tGroup.add(tBody, tStripe);
 
-  // Lit Windows
-  const winMat = new THREE.MeshBasicMaterial({ color: 0xfef08a });
-  for (let w = -2.6; w <= 2.6; w += 1.05) {
-    const win = new THREE.Mesh(new THREE.BoxGeometry(0.65, 0.45, 1.55), winMat);
-    win.position.set(w, 0.2, 0);
-    train.add(win);
+    const winMat = new THREE.MeshBasicMaterial({ color: 0xfef08a });
+    for (let w = -2.6; w <= 2.6; w += 1.05) {
+      const win = new THREE.Mesh(new THREE.BoxGeometry(0.65, 0.42, 1.4), winMat);
+      win.position.set(w, 0.2, 0);
+      tGroup.add(win);
+    }
+
+    const headlight = new THREE.Mesh(
+      new THREE.SphereGeometry(0.15, 8, 8),
+      new THREE.MeshBasicMaterial({ color: 0xffffff })
+    );
+    headlight.position.set(dir > 0 ? 3.62 : -3.62, -0.22, 0.35);
+    tGroup.add(headlight);
+    return tGroup;
   }
-  // Headlight
-  const headlight = new THREE.Mesh(new THREE.SphereGeometry(0.16, 8, 8), new THREE.MeshBasicMaterial({ color: 0xffffff }));
-  headlight.position.set(3.62, -0.25, 0.4);
-  train.add(headlight);
 
-  train.position.set(-4, -0.85, 0.3);
-  group.add(train);
+  // Train 1: Left -> Right (앞쪽 선로)
+  const trainLR = createSubwayTrain(0x2563eb, 1);
+  trainLR.position.set(-5, -0.9, 0.85);
+  group.add(trainLR);
+
+  // Train 2: Right -> Left (뒤쪽 복선 선로)
+  const trainRL = createSubwayTrain(0x10b981, -1);
+  trainRL.position.set(6, -0.9, -0.85);
+  group.add(trainRL);
 
   // Lower: Natural Groundwater Aquifer (지하수맥)
   const aquifer = new THREE.Mesh(
@@ -1611,8 +1810,14 @@ function buildLevelM3_SubwaySewage(group) {
 
   animatables.push((t) => {
     if (!group.visible) return;
-    train.position.x += 0.08;
-    if (train.position.x > 13) train.position.x = -13;
+    // Left to Right
+    trainLR.position.x += 0.085;
+    if (trainLR.position.x > 13.5) trainLR.position.x = -13.5;
+
+    // Right to Left
+    trainRL.position.x -= 0.085;
+    if (trainRL.position.x < -13.5) trainRL.position.x = 13.5;
+
     aquifer.material.opacity = 0.65 + Math.sin(t * 2.5) * 0.12;
   });
 }
