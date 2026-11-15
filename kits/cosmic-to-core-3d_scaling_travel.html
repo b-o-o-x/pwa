@@ -220,7 +220,7 @@ const STAGES = [
     level: 5,
     shortName: "태양계",
     title: "태양계 행성 궤도 (Solar System)",
-    altitude: "+60억 km",
+    altitude: "+45억 km",
     badge: "SPACE · LEVEL +5",
     desc: "중심의 항성 태양을 둘러싸고 수성, 금성, 지구, 화성, 목성, 토성, 천왕성, 해왕성이 각자의 궤도를 따라 공전하고 있습니다.",
     bgColor: 0x02040c,
@@ -235,7 +235,7 @@ const STAGES = [
     title: "푸른 행성 지구 (Planet Earth)",
     altitude: "+12,000 km",
     badge: "ORBIT · LEVEL +4",
-    desc: "우주에서 바라본 생명의 행성 지구입니다. 푸른 바다와 대륙, 얇고 소중한 대기층, 그리고 밤하늘을 수놓는 인류의 불빛이 보입니다.",
+    desc: "우주에서 바라본 생명의 행성 지구입니다. 푸른 바다와 대륙, 얇고 소중한 대기층, 그리고 밤하늘을 수놓는 인류의 불빛이 보입니다. 지구 반지름 약 6,371km, 지구 둘레 약 40,075km(적도 한 바퀴)",
     bgColor: 0x030816,
     fogColor: 0x030816,
     fogDensity: 0.005,
@@ -244,11 +244,11 @@ const STAGES = [
   },
   {
     level: 3,
-    shortName: "구름층",
-    title: "뭉게구름과 성층권 (Cumulus Clouds)",
+    shortName: "대류권 상부",
+    title: "대류권 상부와 상층운 (Upper Troposphere)",
     altitude: "+8,000 m",
     badge: "SKY · LEVEL +3",
-    desc: "하늘 높이 피어오른 뭉게구름(적운) 위를 비행합니다. 수증기가 응결해 만든 거대한 구름 바다 아래로 지구의 곡선이 아스라이 펼쳐집니다.",
+    desc: "대류권의 맨 꼭대기인 대류권 상부입니다. 기온이 급격히 낮아지고 제트기류가 부는 이 곳에서는 얇고 성긴 상층운(권운)들이 바람결에 스쳐 지나갑니다.",
     bgColor: 0x1d4ed8,
     fogColor: 0x60a5fa,
     fogDensity: 0.015,
@@ -361,13 +361,13 @@ const STAGES = [
   },
   {
     level: -6,
-    shortName: "지각·마그마",
-    title: "지각 하부와 마그마 방 (Crust & Magma)",
+    shortName: "지각하부·모호면",
+    title: "지각 하부, 모호면과 지진 (Lower Crust & Moho)",
     altitude: "-35 km",
-    badge: "MAGMA · LEVEL -6",
-    desc: "지각의 바닥을 지나면 엄청난 열과 압력으로 암석이 녹아내린 붉은 마그마 방이 나타납니다. 뜨거운 용암 기둥이 끊임없이 일렁입니다.",
-    bgColor: 0x260802,
-    fogColor: 0x260802,
+    badge: "MANTLE · LEVEL -6",
+    desc: "지각의 최하부(파란색 암석층)와 맨틀(밤색 암석층)이 만나는 경계면인 '모호면'(녹색)입니다. 이 깊은 곳에서는 고체 맨틀의 느린 대류가 판에 힘을 가하고, 지각 하부 암석층에 응력이 누적되다 파괴될 때(빨간색 단층면) 지진(지진파)이 발생합니다. 모호면은 지구 전체를 둥글게 감싸는 전 지구적인 층 경계이고, 섭입대는 주로 해양판이 다른 판 아래로 비스듬하게 파고들어 맨틀 속으로 침강해 들어가는 거대한 지질 구조 지역을 말합니다. 이러한 섭입대나 지각 하부의 단층 파괴로 발생하는 지진파(P파, S파)를 전 세계의 관측소에서 수집하고 분석하여 지구 내부를 간접적으로 연구합니다.",
+    bgColor: 0x1e1b4b,
+    fogColor: 0x312e81,
     fogDensity: 0.024,
     camPos: [0, 0, 12],
     camTarget: [0, 0, 0]
@@ -378,7 +378,7 @@ const STAGES = [
     title: "거대한 맨틀 대류층 (The Mantle)",
     altitude: "-1,500 km",
     badge: "MANTLE · LEVEL -7",
-    desc: "지구 부피의 약 84%를 차지하는 거대한 규산염 암석층입니다. 수천 도의 고온 속에서 고체 암석이 아주 천천히 대류하며 대륙을 이동시킵니다.",
+    desc: "지구 부피의 약 84%를 차지하는 거대한 규산염 암석층입니다. 고체 암석이 수천 도의 초고온과 압력 속에서 점성을 가지고 아주 천천히 대류하며 대륙을 이동시킵니다. (원고리는 고온의 맨틀 물질이 상승 하강하는 맨틀 대류 순환 세포의 회전 궤도를 시각화한 것입니다)",
     bgColor: 0x3b0a04,
     fogColor: 0x3b0a04,
     fogDensity: 0.018,
@@ -391,7 +391,7 @@ const STAGES = [
     title: "외핵과 지구 중심 내핵 (Outer & Inner Core)",
     altitude: "-6,371 km (지구 중심)",
     badge: "CORE · LEVEL -8",
-    desc: "여행의 종착점, 지구의 심장입니다. 액체 철·니켈의 외핵이 소용돌이치며 지구 자기장을 만들고, 중심에는 태양 표면 온도에 맞먹는 5,400°C의 단단한 고체 내핵이 빛나고 있습니다.",
+    desc: "여행의 종착점, 지구의 심장입니다. 핵은 대부분 철·니켈로 구성되어 있습니다. 유일한 액체 상태인 외핵이 소용돌이치며(다이너모 효과) 지구 자기장을 만들고, 중심에는 태양 표면 온도에 맞먹는 5,400°C의 단단한 고체 내핵이 빛나고 있습니다.",
     bgColor: 0x1a0500,
     fogColor: 0x1a0500,
     fogDensity: 0.012,
@@ -1220,39 +1220,103 @@ function buildLevel2_KoreaMap(group) {
 }
 
 // ----------------------------------------------------------------------------
-// LEVEL +3: CUMULUS CLOUDS (뭉게구름)
+// LEVEL +3: UPPER TROPOSPHERE & HIGH CLOUDS WITH AIRPLANES (대류권 상부, 상층운 및 순항 비행기)
 // ----------------------------------------------------------------------------
 function buildLevel3_Clouds(group) {
-  const cloudMat = new THREE.MeshStandardMaterial({
-    color: 0xffffff,
-    roughness: 0.9,
-    metalness: 0.05
+  // 대류권 상부의 얇고 퍼진 얼음 결정 구름(권운 형태) 매질
+  const highCloudMat = new THREE.MeshStandardMaterial({
+    color: 0xf8fafc,
+    roughness: 0.95,
+    transparent: true,
+    opacity: 0.75
   });
 
   const cloudClusters = [];
-  for (let i = 0; i < 42; i++) {
+  for (let i = 0; i < 35; i++) {
     const cluster = new THREE.Group();
-    const count = 4 + Math.floor(Math.random() * 5);
+    const count = 3 + Math.floor(Math.random() * 3);
     for (let j = 0; j < count; j++) {
-      const r = 1.6 + Math.random() * 2.2;
-      const sphere = new THREE.Mesh(new THREE.IcosahedronGeometry(r, 2), cloudMat);
-      sphere.position.set(
-        (Math.random() - 0.5) * 4.5,
-        (Math.random() - 0.3) * 2.2,
-        (Math.random() - 0.5) * 4.5
+      const rX = 2.2 + Math.random() * 1.8;
+      const rY = 0.4 + Math.random() * 0.4;
+      const rZ = 1.5 + Math.random() * 1.5;
+      const puff = new THREE.Mesh(new THREE.BoxGeometry(rX, rY, rZ), highCloudMat);
+      puff.position.set(
+        (Math.random() - 0.5) * 5,
+        (Math.random() - 0.5) * 1.2,
+        (Math.random() - 0.5) * 5
       );
-      cluster.add(sphere);
+      cluster.add(puff);
     }
     cluster.position.set(
-      (Math.random() - 0.5) * 65,
-      (Math.random() - 0.5) * 14,
-      (Math.random() - 0.5) * 55
+      (Math.random() - 0.5) * 70,
+      (Math.random() - 0.5) * 8,
+      (Math.random() - 0.5) * 60
     );
     group.add(cluster);
-    cloudClusters.push({ mesh: cluster, speed: 0.02 + Math.random() * 0.03 });
+    cloudClusters.push({ mesh: cluster, speed: 0.04 + Math.random() * 0.03 });
   }
 
-  // Curved blue Earth surface glimpsed far below
+  // 순항 중인 여객기 (Airplanes) 생성
+  const airplanes = [];
+  const planeMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.3, metalness: 0.8 });
+  const wingMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.4, metalness: 0.6 });
+  const engineMat = new THREE.MeshStandardMaterial({ color: 0x64748b, roughness: 0.2, metalness: 0.9 });
+  const contrailMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.5 });
+
+  for (let i = 0; i < 3; i++) {
+    const planeGroup = new THREE.Group();
+
+    // 동체 (Fuselage)
+    const fuselage = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.1, 2.2, 8), planeMat);
+    fuselage.rotation.x = Math.PI / 2;
+
+    // 주날개 (Main Wings)
+    const wings = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.04, 0.45), wingMat);
+    wings.position.set(0, 0, 0.1);
+
+    // 수평 꼬리날개 (Tail wings)
+    const tailWings = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.03, 0.25), wingMat);
+    tailWings.position.set(0, 0.05, -0.95);
+
+    // 수직 꼬리날개 (Vertical tail)
+    const tailVertical = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.35, 0.3), wingMat);
+    tailVertical.position.set(0, 0.2, -0.95);
+
+    // 엔진 포드 (Engine pods)
+    const engineL = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.5, 8), engineMat);
+    engineL.rotation.x = Math.PI / 2;
+    engineL.position.set(-0.5, -0.06, 0.1);
+
+    const engineR = engineL.clone();
+    engineR.position.set(0.5, -0.06, 0.1);
+
+    planeGroup.add(fuselage, wings, tailWings, tailVertical, engineL, engineR);
+
+    // 비행운 (Contrail - 양 날개 뒤와 동체 뒤로 길게 뻗는 하얀 꼬리 자국)
+    const contrailL = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.04, 5), contrailMat);
+    contrailL.position.set(-0.8, 0, -3.2);
+    const contrailR = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.04, 5), contrailMat);
+    contrailR.position.set(0.8, 0, -3.2);
+    planeGroup.add(contrailL, contrailR);
+
+    // 초기 위치 및 비행 방향 설정 (서로 다른 고도와 z축 위치)
+    const startX = -35 - i * 15;
+    const startY = 1.5 + i * 1.2;
+    const startZ = -8 - i * 12;
+    planeGroup.position.set(startX, startY, startZ);
+    
+    // 수평 비행 방향으로 회전
+    planeGroup.rotation.y = Math.PI / 2;
+
+    group.add(planeGroup);
+    airplanes.push({
+      mesh: planeGroup,
+      speed: 0.12 + i * 0.03,
+      baseY: startY
+    });
+  }
+
+  // 곡선 형태의 푸른 지구 표면
   const earthCurve = new THREE.Mesh(
     new THREE.SphereGeometry(85, 32, 24),
     new THREE.MeshBasicMaterial({ color: 0x0284c7 })
@@ -1260,11 +1324,24 @@ function buildLevel3_Clouds(group) {
   earthCurve.position.set(0, -96, -15);
   group.add(earthCurve);
 
-  animatables.push(() => {
+  animatables.push((t) => {
     if (!group.visible) return;
+    
+    // 구름 이동
     cloudClusters.forEach(c => {
       c.mesh.position.x += c.speed;
-      if (c.mesh.position.x > 36) c.mesh.position.x = -36;
+      if (c.mesh.position.x > 40) c.mesh.position.x = -40;
+    });
+
+    // 비행기 이동 및 미세한 상하 요동(기류 흔들림)
+    airplanes.forEach((p, idx) => {
+      p.mesh.position.x += p.speed;
+      p.mesh.position.y = p.baseY + Math.sin(t * 2 + idx) * 0.05;
+      
+      // 화면 오른쪽 끝을 벗어나면 왼쪽에서 다시 등장
+      if (p.mesh.position.x > 40) {
+        p.mesh.position.x = -40;
+      }
     });
   });
 }
@@ -2033,52 +2110,96 @@ function buildLevelM5_BedrockDrill(group) {
 }
 
 // ----------------------------------------------------------------------------
-// LEVEL -6: LOWER CRUST & MAGMA CHAMBER (지각과 마그마)
+// LEVEL -6: LOWER CRUST, MOHO DISCONTINUITY & EARTHQUAKE FAULT (지각 하부, 모호면, 지진대)
 // ----------------------------------------------------------------------------
 function buildLevelM6_CrustMagma(group) {
-  // Cracked Dark Volcanic Crust Ceiling
-  const crustMat = new THREE.MeshStandardMaterial({ color: 0x1c1917, roughness: 0.9, flatShading: true });
-  for (let i = 0; i < 14; i++) {
-    const rock = new THREE.Mesh(new THREE.DodecahedronGeometry(1.6 + Math.random() * 1.4, 0), crustMat);
-    rock.position.set((i - 6.5) * 2.1, 3.8 + (Math.random() - 0.5) * 1.2, (Math.random() - 0.5) * 3);
-    group.add(rock);
+  // 하부 지각 암석층 재질 (좌우 파란색 계열의 미세한 색상 차이)
+  const leftCrustMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.8, flatShading: true });
+  const rightCrustMat = new THREE.MeshStandardMaterial({ color: 0x0ea5e9, roughness: 0.8, flatShading: true });
+  
+  // 단면층(단층면) 재질 (빨간색, 75% 불투명도 적용)
+  const faultPlaneMat = new THREE.MeshStandardMaterial({ 
+    color: 0xf43f5e, 
+    roughness: 0.5, 
+    transparent: true, 
+    opacity: 0.75, 
+    emissive: 0x881337, 
+    emissiveIntensity: 0.3 
+  });
+  
+  // 모호면 및 맨틀 재질
+  const mohoMat = new THREE.MeshBasicMaterial({ color: 0x38f8bd });
+  const mantleMat = new THREE.MeshStandardMaterial({ color: 0x451a03, roughness: 0.75, flatShading: true });
+
+  // 아래로 불룩한 곡선 형태의 하부 지각 그룹
+  const curvedCrustGroup = new THREE.Group();
+
+  // 1. 좌측 하부 지각 블록
+  const leftCrustGeo = new THREE.BoxGeometry(15.4, 3.2, 6);
+  const leftCrust = new THREE.Mesh(leftCrustGeo, leftCrustMat);
+  leftCrust.position.set(-7.9, 1.8, 0);
+  leftCrust.rotation.z = 0.06; // 아래로 불룩한 곡선 느낌
+  curvedCrustGroup.add(leftCrust);
+
+  // 2. 우측 하부 지각 블록
+  const rightCrustGeo = new THREE.BoxGeometry(15.4, 3.2, 6);
+  const rightCrust = new THREE.Mesh(rightCrustGeo, rightCrustMat);
+  rightCrust.position.set(7.9, 1.8, 0);
+  rightCrust.rotation.z = -0.06;
+  curvedCrustGroup.add(rightCrust);
+
+  // 3. 가운데 단면층(단층면) - 빨간색 반투명 표시
+  const faultPlaneGeo = new THREE.BoxGeometry(0.5, 3.4, 6.1);
+  const faultPlane = new THREE.Mesh(faultPlaneGeo, faultPlaneMat);
+  faultPlane.position.set(0, 1.85, 0);
+  curvedCrustGroup.add(faultPlane);
+
+  group.add(curvedCrustGroup);
+
+  // 4. 모호면 (Moho Discontinuity - 지각과 맨틀의 경계 곡선 띠)
+  const mohoGeo = new THREE.BoxGeometry(32, 0.15, 6.1);
+  const mohoLine = new THREE.Mesh(mohoGeo, mohoMat);
+  mohoLine.position.set(0, 0.1, 0);
+  group.add(mohoLine);
+
+  // 5. 상부 맨틀 블록 (아래쪽 밤색 영역)
+  const mantleGeo = new THREE.BoxGeometry(32, 5.0, 6);
+  const mantleBlock = new THREE.Mesh(mantleGeo, mantleMat);
+  mantleBlock.position.set(0, -2.5, 0);
+  group.add(mantleBlock);
+
+  // 6. 지진파(Seismic waves) 퍼져나가는 고리 파동 연출 (빨간색 단층면 바로 아래 진원 위치에 배치)
+  const waveRings = [];
+  for (let i = 0; i < 3; i++) {
+    const ring = new THREE.Mesh(
+      new THREE.RingGeometry(0.3, 0.5, 32),
+      new THREE.MeshBasicMaterial({ color: 0xfbbf24, side: THREE.DoubleSide, transparent: true, opacity: 0.9 })
+    );
+    ring.rotation.x = Math.PI / 2;
+    ring.position.set(0, 0.3, 0); // 빨간색 단층면 하단(모호면 부근)에 명확히 보이도록 배치
+    group.add(ring);
+    waveRings.push(ring);
   }
 
-  // Bubbling Incandescent Magma Chamber
-  const magmaFloor = new THREE.Mesh(
-    new THREE.BoxGeometry(34, 8, 12),
-    new THREE.MeshBasicMaterial({ color: 0xea580c })
-  );
-  magmaFloor.position.set(0, -3.5, 0);
-  group.add(magmaFloor);
-
-  // Glowing Lava Blobs / Plumes
-  const blobs = [];
-  const blobMat = new THREE.MeshBasicMaterial({ color: 0xfef08a });
-  for (let i = 0; i < 22; i++) {
-    const blob = new THREE.Mesh(new THREE.SphereGeometry(0.4 + Math.random() * 0.7, 12, 12), blobMat);
-    blob.position.set((Math.random() - 0.5) * 18, -1.5 + Math.random() * 2.5, (Math.random() - 0.5) * 4);
-    group.add(blob);
-    blobs.push({ mesh: blob, speed: 0.015 + Math.random() * 0.025, phase: Math.random() * 6 });
-  }
-
-  // Magma Ambient Point Light
-  const magmaLight = new THREE.PointLight(0xff4500, 2.5, 25);
-  magmaLight.position.set(0, 0, 3);
-  group.add(magmaLight);
-
+  // 애니메이션 루프 (좌우 하부 지각의 미세한 엇갈림과 지진파 확산)
   animatables.push((t) => {
     if (!group.visible) return;
-    blobs.forEach(b => {
-      b.mesh.position.y += b.speed;
-      b.mesh.scale.setScalar(0.8 + Math.sin(t * 4 + b.phase) * 0.3);
-      if (b.mesh.position.y > 2.8) b.mesh.position.y = -2.2;
+
+    // 좌우 하부 지각 블록이 단층면을 중심으로 미세하게 상하로 엇갈리며 응력이 쌓이는 연출
+    leftCrust.position.y = 1.8 + Math.sin(t * 1.5) * 0.05;
+    rightCrust.position.y = 1.8 - Math.sin(t * 1.5) * 0.05;
+
+    // 지진파가 진원에서 주기적으로 퍼져나가는 효과
+    waveRings.forEach((r, idx) => {
+      const scale = ((t * 1.8 + idx * 0.7) % 2.8) + 0.4;
+      r.scale.setScalar(scale);
+      r.material.opacity = Math.max(0, 1.0 - (scale / 3.2));
     });
   });
 }
 
 // ----------------------------------------------------------------------------
-// LEVEL -7: THE MANTLE (맨틀 대류층)
+// LEVEL -7: THE MANTLE (맨틀 대류층 - 부드러운 순환 및 스냅 현상 방지. 와이어프레임 적용으로 파티클 색상 간섭 및 깜빡임 해결)
 // ----------------------------------------------------------------------------
 function buildLevelM7_Mantle(group) {
   // Thick Glowing Mantle Shell
@@ -2089,12 +2210,12 @@ function buildLevelM7_Mantle(group) {
   group.add(mantleSphere);
 
   // Swirling Convection Current Particles
-  const pCount = 2600;
+  const pCount = 2400;
   const pGeo = new THREE.BufferGeometry();
   const pPos = new Float32Array(pCount * 3);
   const pCol = new Float32Array(pCount * 3);
-  const c1 = new THREE.Color(0xdc2626);
-  const c2 = new THREE.Color(0xf59e0b);
+  const cHot = new THREE.Color(0xef4444); // 뜨거운 상승부 (빨간색)
+  const cCold = new THREE.Color(0x3b82f6); // 차가운 하강부 (파란색)
 
   for (let i = 0; i < pCount; i++) {
     const theta = Math.random() * Math.PI * 2;
@@ -2104,35 +2225,157 @@ function buildLevelM7_Mantle(group) {
     pPos[i * 3 + 1] = r * Math.cos(phi);
     pPos[i * 3 + 2] = r * Math.sin(phi) * Math.sin(theta);
 
-    const mix = c1.clone().lerp(c2, Math.random());
-    pCol[i * 3] = mix.r; pCol[i * 3 + 1] = mix.g; pCol[i * 3 + 2] = mix.b;
+    const normalizedY = (pPos[i * 3 + 1] + 6.5) / 13.0;
+    const mixColor = cCold.clone().lerp(cHot, 1.0 - Math.max(0, Math.min(1, normalizedY)));
+    pCol[i * 3] = mixColor.r; 
+    pCol[i * 3 + 1] = mixColor.g; 
+    pCol[i * 3 + 2] = mixColor.b;
   }
   pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
   pGeo.setAttribute('color', new THREE.BufferAttribute(pCol, 3));
   const mantleParticles = new THREE.Points(pGeo, new THREE.PointsMaterial({
-    size: 0.35,
+    size: 0.32,
     vertexColors: true,
-    blending: THREE.AdditiveBlending,
-    transparent: true
+    transparent: true,
+    opacity: 0.75
   }));
   group.add(mantleParticles);
 
-  // Convection Torus Plume Rings
-  const plume1 = new THREE.Mesh(
-    new THREE.TorusGeometry(4.2, 0.45, 12, 36),
-    new THREE.MeshBasicMaterial({ color: 0xf97316, transparent: true, opacity: 0.55 })
-  );
+  // 꺽쇠(>) 화살표 텍스처 생성 함수
+  function createChevronTexture() {
+    const canvas = document.createElement('canvas');
+    canvas.width = 64;
+    canvas.height = 64;
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, 64, 64);
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 12;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+    ctx.moveTo(18, 12);
+    ctx.lineTo(46, 32);
+    ctx.lineTo(18, 52);
+    ctx.stroke();
+    return new THREE.CanvasTexture(canvas);
+  }
+  const chevronTex = createChevronTexture();
+
+  // 헬퍼 함수: 와이어프레임 기반 순환 띠 생성 (내부 면 투명 필터링 문제 원천 차단)
+  function createConvectionLoop(isClockwise) {
+    const loopGroup = new THREE.Group();
+
+    const geo = new THREE.TorusGeometry(4.2, 0.42, 16, 64);
+    const pos = geo.attributes.position;
+    const colors = new Float32Array(pos.count * 3);
+    
+    const colorHot = new THREE.Color(0xef4444); // 하단 뜨거운 영역 (빨강)
+    const colorCold = new THREE.Color(0x3b82f6); // 상단 차가운 영역 (파랑)
+
+    for (let i = 0; i < pos.count; i++) {
+      const y = pos.getY(i);
+      const normalized = (y + 4.2) / 8.4;
+      const col = colorCold.clone().lerp(colorHot, 1.0 - Math.max(0, Math.min(1, normalized)));
+      
+      colors[i * 3] = col.r;
+      colors[i * 3 + 1] = col.g;
+      colors[i * 3 + 2] = col.b;
+    }
+    geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+    
+    // wireframe: true 적용으로 내부 면을 제거하여 배경 파티클 색상 간섭 현상 완전 해결
+    const ringMesh = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({
+      vertexColors: true,
+      wireframe: true,
+      transparent: true,
+      opacity: 0.9
+    }));
+    loopGroup.add(ringMesh);
+
+    // 원고리를 따라 움직이는 꺽쇠(>) 화살표 파티클 배치
+    const arrowCount = 6;
+    const arrowGeo = new THREE.PlaneGeometry(0.5, 0.5);
+    const arrowsData = [];
+    const radius = 4.2;
+
+    for (let i = 0; i < arrowCount; i++) {
+      const angle = (i / arrowCount) * Math.PI * 2;
+      const mat = new THREE.MeshBasicMaterial({
+        map: chevronTex,
+        transparent: true,
+        opacity: 0.9,
+        side: THREE.DoubleSide,
+        depthWrite: false
+      });
+      const arrowMesh = new THREE.Mesh(arrowGeo, mat);
+      loopGroup.add(arrowMesh);
+
+      arrowsData.push({
+        mesh: arrowMesh,
+        angle: angle,
+        speed: (isClockwise ? -1 : 1) * 0.9
+      });
+    }
+
+    loopGroup.userData.updateArrows = (delta) => {
+      arrowsData.forEach(item => {
+        item.angle += item.speed * delta;
+        if (item.angle > Math.PI * 2) item.angle -= Math.PI * 2;
+        if (item.angle < 0) item.angle += Math.PI * 2;
+
+        const x = Math.cos(item.angle) * radius;
+        const y = Math.sin(item.angle) * radius;
+        item.mesh.position.set(x, y, 0.2);
+
+        item.mesh.rotation.z = item.angle + (isClockwise ? -Math.PI / 2 : Math.PI / 2);
+
+        const normalized = (y + 4.2) / 8.4;
+        const col = colorCold.clone().lerp(colorHot, 1.0 - Math.max(0, Math.min(1, normalized)));
+        item.mesh.material.color.copy(col);
+      });
+    };
+
+    return loopGroup;
+  }
+
+  // 좌우 두 개의 대류 순환 원고리 배치
+  const plume1 = createConvectionLoop(false);
   plume1.position.x = -4.2;
-  const plume2 = plume1.clone();
+  plume1.rotation.y = 0;
+  plume1.rotation.z = 0;
+
+  const plume2 = createConvectionLoop(true);
   plume2.position.x = 4.2;
+  plume2.rotation.y = 0;
+  plume2.rotation.z = 0;
+
   group.add(plume1, plume2);
 
+  let lastTime = 0;
+  let isVisibleLast = false;
+
   animatables.push((t) => {
-    if (!group.visible) return;
+    if (!group.visible) {
+      isVisibleLast = false;
+      return;
+    }
+    if (!isVisibleLast) {
+      lastTime = t;
+      isVisibleLast = true;
+      return;
+    }
+
+    const delta = Math.min(t - lastTime, 0.1);
+    lastTime = t;
+
     mantleParticles.rotation.y = t * 0.14;
     mantleSphere.rotation.y = -t * 0.08;
-    plume1.rotation.z = t * 0.6;
-    plume2.rotation.z = -t * 0.6;
+    
+    plume1.rotation.z = t * 0.45;
+    plume2.rotation.z = -t * 0.45;
+
+    if (plume1.userData.updateArrows) plume1.userData.updateArrows(delta);
+    if (plume2.userData.updateArrows) plume2.userData.updateArrows(delta);
   });
 }
 
