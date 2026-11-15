@@ -1,0 +1,2201 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>우주에서 지구핵까지: 스케일의 여행 (Cosmic to Core 3D)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;600;700;900&family=Orbitron:wght@500;700;900&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: #02040a;
+      font-family: 'Noto Sans KR', sans-serif;
+      color: #ffffff;
+    }
+    #canvas-container {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 1;
+    }
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+    .font-orbitron {
+      font-family: 'Orbitron', sans-serif;
+    }
+    .glass-panel {
+      background: rgba(10, 16, 30, 0.58);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+    }
+    .nav-btn {
+      transition: all 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .nav-btn:hover:not(:disabled) {
+      transform: translateY(-2px) scale(1.03);
+      box-shadow: 0 0 24px rgba(56, 189, 248, 0.45);
+    }
+    .nav-btn:active:not(:disabled) {
+      transform: translateY(1px) scale(0.98);
+    }
+    .nav-btn:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+    }
+    /* Custom scrollbar for stage list on mobile if needed */
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+    .stage-dot {
+      transition: all 0.25s ease;
+    }
+    .stage-dot.active {
+      transform: scale(1.35);
+      background-color: #38bdf8;
+      box-shadow: 0 0 12px #38bdf8;
+    }
+    .stage-dot.origin-dot {
+      border: 2px solid #fbbf24;
+    }
+    @keyframes pulseGlow {
+      0%, 100% { opacity: 0.7; }
+      50% { opacity: 1; }
+    }
+    .horizon-indicator {
+      animation: pulseGlow 2.5s infinite ease-in-out;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 3D WebGL Canvas Container -->
+  <div id="canvas-container"></div>
+
+  <!-- Top UI Bar -->
+  <header class="fixed top-0 left-0 right-0 z-20 p-3 sm:p-5 flex flex-col sm:flex-row justify-between items-start gap-3 pointer-events-none">
+    
+    <!-- Stage Info Card -->
+    <div class="glass-panel rounded-2xl p-4 sm:p-5 max-w-md w-full sm:w-auto pointer-events-auto transition-all duration-500">
+      <div class="flex items-center gap-2 mb-1">
+        <span id="stage-badge" class="px-2.5 py-0.5 rounded-full text-xs font-bold tracking-wider uppercase bg-sky-500/25 text-sky-300 border border-sky-400/30">
+          LEVEL 0 · 지평선
+        </span>
+        <span id="altitude-text" class="font-orbitron text-xs sm:text-sm text-amber-300 font-bold">
+          0 m (해수면 기준)
+        </span>
+      </div>
+      <h1 id="stage-title" class="text-xl sm:text-2xl font-black tracking-tight text-white mb-1.5">
+        지평선 위의 나 (The Horizon)
+      </h1>
+      <p id="stage-desc" class="text-xs sm:text-sm text-slate-200 leading-relaxed font-light">
+        화면 절반 위로는 푸른 하늘이, 아래로는 대지가 펼쳐집니다. 광활한 우주와 깊은 지구 사이, 경계에 서 있는 당신의 시선에서 여행이 시작됩니다.
+      </p>
+    </div>
+
+    <!-- Top-Right Utility Controls -->
+    <div class="flex items-center gap-2 self-end sm:self-start pointer-events-auto">
+      <button id="btn-sound" onclick="toggleSound()" title="사운드 켜기/끄기"
+        class="glass-panel nav-btn px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-1.5 text-slate-200 hover:text-white">
+        <span id="sound-icon">🔇</span>
+        <span class="hidden md:inline" id="sound-label">사운드 OFF</span>
+      </button>
+
+      <button id="btn-reset" onclick="goToStage(0)" title="지평선(시작점)으로 돌아가기"
+        class="glass-panel nav-btn px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-1.5 text-amber-300 hover:text-amber-200">
+        <span>🧍</span>
+        <span>지평선으로</span>
+      </button>
+
+      <button id="btn-fullscreen" onclick="toggleFullscreen()" title="전체화면 전환"
+        class="glass-panel nav-btn px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-1.5 bg-sky-500/25 border-sky-400/40 text-sky-200 hover:bg-sky-500/40">
+        <svg id="fs-icon-expand" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path>
+        </svg>
+        <span id="fs-label">전체화면</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Right Side Vertical Scale Navigator -->
+  <aside id="scale-sidebar" class="fixed right-2 sm:right-5 top-1/2 -translate-y-1/2 z-20 glass-panel rounded-2xl py-3 px-2 sm:px-3 flex flex-col items-center gap-1.5 max-h-[72vh] overflow-y-auto no-scrollbar pointer-events-auto">
+    <div class="text-[10px] font-orbitron text-sky-300 font-bold tracking-widest mb-1">SPACE</div>
+    <div id="stage-dots-container" class="flex flex-col items-center gap-2">
+      <!-- Dots generated dynamically via JS -->
+    </div>
+    <div class="text-[10px] font-orbitron text-orange-400 font-bold tracking-widest mt-1">CORE</div>
+  </aside>
+
+  <!-- Bottom Navigation Controls -->
+  <footer class="fixed bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-2 w-full px-4 max-w-lg pointer-events-none">
+    <div class="flex items-center justify-center gap-3 sm:gap-4 w-full pointer-events-auto">
+      <button id="btn-up" onclick="stepUp()"
+        class="glass-panel nav-btn flex-1 py-3.5 sm:py-4 px-5 rounded-2xl font-bold text-sm sm:text-base flex items-center justify-center gap-2 bg-gradient-to-t from-sky-900/50 to-sky-500/30 border-sky-400/40 text-white shadow-lg">
+        <span class="text-lg">▲</span>
+        <div class="text-left">
+          <div class="leading-tight">위로 이동</div>
+          <div id="next-up-label" class="text-[11px] font-normal text-sky-200 opacity-90">도시 하늘로</div>
+        </div>
+      </button>
+
+      <button id="btn-down" onclick="stepDown()"
+        class="glass-panel nav-btn flex-1 py-3.5 sm:py-4 px-5 rounded-2xl font-bold text-sm sm:text-base flex items-center justify-center gap-2 bg-gradient-to-b from-amber-900/50 to-orange-600/30 border-amber-400/40 text-white shadow-lg">
+        <span class="text-lg">▼</span>
+        <div class="text-left">
+          <div class="leading-tight">아래로 이동</div>
+          <div id="next-down-label" class="text-[11px] font-normal text-amber-200 opacity-90">잔디와 곤충으로</div>
+        </div>
+      </button>
+    </div>
+    <div class="text-[11px] text-slate-300/75 bg-black/40 px-3 py-1 rounded-full backdrop-blur-sm">
+      키보드 <span class="text-white font-semibold">↑ / ↓</span> · 마우스 휠 · 화면 드래그 회전 지원
+    </div>
+  </footer>
+
+  <!-- Custom Notification Toast (No alert()) -->
+  <div id="toast-msg" class="fixed top-20 left-1/2 -translate-x-1/2 z-50 glass-panel px-4 py-2 rounded-full text-xs sm:text-sm text-sky-200 opacity-0 pointer-events-none transition-opacity duration-300">
+    메시지
+  </div>
+
+<script>
+/**
+ * ============================================================================
+ * COSMIC TO CORE: SCALE OF OUR WORLD (우주에서 지구핵까지: 스케일의 여행)
+ * Single-File Three.js Interactive 3D Visualization
+ * ============================================================================
+ */
+
+// 1. STAGE DEFINITIONS (16 Stages: +7 Universe down to -8 Inner Core, with 0 as Horizon)
+const STAGES = [
+  {
+    level: 7,
+    shortName: "우주 (은하군)",
+    title: "은하군과 거대 우주 (Local Group & Cosmic Web)",
+    altitude: "+1,000만 광년",
+    badge: "SPACE · LEVEL +7",
+    desc: "우리 은하와 안드로메다 은하를 비롯한 수십 개의 은하들이 중력으로 묶여 은하군을 이루고, 거대한 우주 거미줄(Cosmic Web) 속에서 빛나고 있습니다.",
+    bgColor: 0x010206,
+    fogColor: 0x010206,
+    fogDensity: 0.004,
+    camPos: [0, 18, 46],
+    camTarget: [0, 0, 0]
+  },
+  {
+    level: 6,
+    shortName: "우리 은하",
+    title: "우리 은하계 (Milky Way Galaxy)",
+    altitude: "+10만 광년",
+    badge: "SPACE · LEVEL +6",
+    desc: "약 2,000억~4,000억 개의 별들이 소용돌이치는 막대나선은하입니다. 은하 중심에서 약 2만 6천 광년 떨어진 오리온 팔에 우리의 태양이 자리하고 있습니다.",
+    bgColor: 0x030510,
+    fogColor: 0x030510,
+    fogDensity: 0.008,
+    camPos: [0, 22, 34],
+    camTarget: [0, 0, 0]
+  },
+  {
+    level: 5,
+    shortName: "태양계",
+    title: "태양계 행성 궤도 (Solar System)",
+    altitude: "+60억 km",
+    badge: "SPACE · LEVEL +5",
+    desc: "중심의 항성 태양을 둘러싸고 수성, 금성, 지구, 화성, 목성, 토성, 천왕성, 해왕성이 각자의 궤도를 따라 공전하고 있습니다.",
+    bgColor: 0x02040c,
+    fogColor: 0x02040c,
+    fogDensity: 0.006,
+    camPos: [0, 18, 32],
+    camTarget: [0, 0, 0]
+  },
+  {
+    level: 4,
+    shortName: "지구",
+    title: "푸른 행성 지구 (Planet Earth)",
+    altitude: "+12,000 km",
+    badge: "ORBIT · LEVEL +4",
+    desc: "우주에서 바라본 생명의 행성 지구입니다. 푸른 바다와 대륙, 얇고 소중한 대기층, 그리고 밤하늘을 수놓는 인류의 불빛이 보입니다.",
+    bgColor: 0x030816,
+    fogColor: 0x030816,
+    fogDensity: 0.005,
+    camPos: [0, 3, 18],
+    camTarget: [0, 0, 0]
+  },
+  {
+    level: 3,
+    shortName: "구름층",
+    title: "뭉게구름과 성층권 (Cumulus Clouds)",
+    altitude: "+8,000 m",
+    badge: "SKY · LEVEL +3",
+    desc: "하늘 높이 피어오른 뭉게구름(적운) 위를 비행합니다. 수증기가 응결해 만든 거대한 구름 바다 아래로 지구의 곡선이 아스라이 펼쳐집니다.",
+    bgColor: 0x1d4ed8,
+    fogColor: 0x60a5fa,
+    fogDensity: 0.015,
+    camPos: [0, 6, 22],
+    camTarget: [0, 0, 0]
+  },
+  {
+    level: 2,
+    shortName: "대한민국 지도",
+    title: "하늘에서 본 대한민국 반도 (Korean Peninsula)",
+    altitude: "+1,500 km",
+    badge: "HIGH SKY · LEVEL +2",
+    desc: "구름 사이로 삼면이 바다로 둘러싸인 대한민국의 지형이 한눈에 들어옵니다. 산맥과 강줄기, 그리고 우리가 살아가는 반도의 모습입니다.",
+    bgColor: 0x0c2d57,
+    fogColor: 0x1e40af,
+    fogDensity: 0.012,
+    camPos: [0, 20, 18],
+    camTarget: [0, 0, 0]
+  },
+  {
+    level: 1,
+    shortName: "도시 하늘",
+    title: "하늘에서 내려다본 도시 (City Skyline)",
+    altitude: "+350 m",
+    badge: "SKY · LEVEL +1",
+    desc: "지평선에서 하늘로 떠오르자 수많은 건물과 도로, 강을 가로지르는 다리들이 어우러진 활기찬 도시의 풍경이 펼쳐집니다.",
+    bgColor: 0x38bdf8,
+    fogColor: 0x7dd3fc,
+    fogDensity: 0.016,
+    camPos: [0, 14, 22],
+    camTarget: [0, 2, 0]
+  },
+  {
+    level: 0,
+    shortName: "나 (지평선)",
+    title: "지평선 위의 나 (The Horizon - You)",
+    altitude: "0 m (기준점)",
+    badge: "ORIGIN · LEVEL 0",
+    desc: "화면 절반 위로는 하늘이, 아래로는 땅이 보입니다. 광활한 우주와 깊은 지구 내부 사이, 지평선 위에 한 사람이 서 있습니다.",
+    bgColor: 0x4da6ff,
+    fogColor: 0x87ceeb,
+    fogDensity: 0.012,
+    camPos: [0, 1.35, 9.5],
+    camTarget: [0, 1.15, 0]
+  },
+  {
+    level: -1,
+    shortName: "잔디와 곤충",
+    title: "지표면 생태계: 잔디와 곤충들 (Surface Insects)",
+    altitude: "-0.1 m (지표면)",
+    badge: "SURFACE · LEVEL -1",
+    desc: "발밑의 작은 숲으로 내려왔습니다. 풀잎 사이로 나비와 잠자리가 날아다니고, 무당벌레, 말벌, 그리고 영롱하게 빛나는 반딧불이가 살아 숨 쉽니다.",
+    bgColor: 0x1a3a1a,
+    fogColor: 0x1e3f20,
+    fogDensity: 0.025,
+    camPos: [0, 1.8, 8.5],
+    camTarget: [0, 0.8, 0]
+  },
+  {
+    level: -2,
+    shortName: "땅속 뿌리·벌레",
+    title: "표토층: 나무뿌리와 땅속 생물 (Soil & Roots)",
+    altitude: "-2 m",
+    badge: "SOIL · LEVEL -2",
+    desc: "어둡고 비옥한 흙과 자갈, 돌멩이 사이로 거대한 나무뿌리가 뻗어 있습니다. 땅속 굴에서는 개미와 애벌레, 지렁이가 부지런히 움직입니다.",
+    bgColor: 0x1c110a,
+    fogColor: 0x1c110a,
+    fogDensity: 0.03,
+    camPos: [0, 0, 11],
+    camTarget: [0, 0, 0]
+  },
+  {
+    level: -3,
+    shortName: "지하철·하수도",
+    title: "지하 인공 구조물 (Underground City)",
+    altitude: "-25 m",
+    badge: "INFRASTRUCTURE · LEVEL -3",
+    desc: "인류가 땅속에 건설한 거대한 혈관입니다. 콘크리트 하수도와 상수도관, 맑은 지하수맥, 그리고 어둠을 가르며 달리는 지하철 터널이 보입니다.",
+    bgColor: 0x0f172a,
+    fogColor: 0x0f172a,
+    fogDensity: 0.025,
+    camPos: [0, 0.5, 13],
+    camTarget: [0, 0, 0]
+  },
+  {
+    level: -4,
+    shortName: "퇴적층·화석",
+    title: "퇴적층과 화석·지하자원 (Strata & Fossils)",
+    altitude: "-800 m",
+    badge: "STRATA · LEVEL -4",
+    desc: "수억 년의 시간이 켜켜이 쌓인 지층입니다. 고대 생물의 암모나이트·공룡 화석과 함께 인류 문명의 에너지원인 석탄층과 석유 저류층이 묻혀 있습니다.",
+    bgColor: 0x1e130c,
+    fogColor: 0x1e130c,
+    fogDensity: 0.022,
+    camPos: [0, 0, 12.5],
+    camTarget: [0, 0, 0]
+  },
+  {
+    level: -5,
+    shortName: "기반암·시추기",
+    title: "기반암과 인류 최고 깊이 시추기 (Bedrock & Drill)",
+    altitude: "-12,262 m",
+    badge: "BEDROCK · LEVEL -5",
+    desc: "단단한 화강암과 현무암으로 이루어진 지각의 기반암입니다. 인류가 땅속으로 뚫고 내려간 최고 깊이(콜라 시추공 약 12.2km)의 다이아몬드 드릴 끝부분이 도달한 한계점입니다.",
+    bgColor: 0x111318,
+    fogColor: 0x111318,
+    fogDensity: 0.024,
+    camPos: [0, 0, 11.5],
+    camTarget: [0, 0, 0]
+  },
+  {
+    level: -6,
+    shortName: "지각·마그마",
+    title: "지각 하부와 마그마 방 (Crust & Magma)",
+    altitude: "-35 km",
+    badge: "MAGMA · LEVEL -6",
+    desc: "지각의 바닥을 지나면 엄청난 열과 압력으로 암석이 녹아내린 붉은 마그마 방이 나타납니다. 뜨거운 용암 기둥이 끊임없이 일렁입니다.",
+    bgColor: 0x260802,
+    fogColor: 0x260802,
+    fogDensity: 0.024,
+    camPos: [0, 0, 12],
+    camTarget: [0, 0, 0]
+  },
+  {
+    level: -7,
+    shortName: "맨틀",
+    title: "거대한 맨틀 대류층 (The Mantle)",
+    altitude: "-1,500 km",
+    badge: "MANTLE · LEVEL -7",
+    desc: "지구 부피의 약 84%를 차지하는 거대한 규산염 암석층입니다. 수천 도의 고온 속에서 고체 암석이 아주 천천히 대류하며 대륙을 이동시킵니다.",
+    bgColor: 0x3b0a04,
+    fogColor: 0x3b0a04,
+    fogDensity: 0.018,
+    camPos: [0, 2, 15],
+    camTarget: [0, 0, 0]
+  },
+  {
+    level: -8,
+    shortName: "지구 핵 (내핵)",
+    title: "외핵과 지구 중심 내핵 (Outer & Inner Core)",
+    altitude: "-6,371 km (지구 중심)",
+    badge: "CORE · LEVEL -8",
+    desc: "여행의 종착점, 지구의 심장입니다. 액체 철·니켈의 외핵이 소용돌이치며 지구 자기장을 만들고, 중심에는 태양 표면 온도에 맞먹는 5,400°C의 단단한 고체 내핵이 빛나고 있습니다.",
+    bgColor: 0x1a0500,
+    fogColor: 0x1a0500,
+    fogDensity: 0.012,
+    camPos: [0, 2, 14],
+    camTarget: [0, 0, 0]
+  }
+];
+
+// Find initial index (Level 0: Horizon)
+let currentStageIdx = STAGES.findIndex(s => s.level === 0);
+let isTransitioning = false;
+let transitionProgress = 0;
+let fromStageIdx = currentStageIdx;
+
+// Camera orbit interaction state
+let userYaw = 0;
+let userPitch = 0;
+let targetYaw = 0;
+let targetPitch = 0;
+let isDragging = false;
+let prevPointer = { x: 0, y: 0 };
+
+// Three.js Globals
+let scene, camera, renderer, clock;
+let stageGroups = {};
+let animatables = []; // Functions called every frame with (elapsed, delta, stageWeights)
+
+// Web Audio API Synthesized Sound
+let audioCtx = null;
+let soundEnabled = false;
+let ambientOsc = null;
+let ambientGain = null;
+
+function showToast(msg) {
+  const el = document.getElementById('toast-msg');
+  el.textContent = msg;
+  el.style.opacity = '1';
+  clearTimeout(el._timer);
+  el._timer = setTimeout(() => {
+    el.style.opacity = '0';
+  }, 2200);
+}
+
+// ============================================================================
+// AUDIO ENGINE (Procedural Web Audio API - Zero External Files)
+// ============================================================================
+function initAudio() {
+  if (audioCtx) return;
+  const AudioContext = window.AudioContext || window.webkitAudioContext;
+  audioCtx = new AudioContext();
+
+  ambientOsc = audioCtx.createOscillator();
+  ambientGain = audioCtx.createGain();
+  const filter = audioCtx.createBiquadFilter();
+
+  ambientOsc.type = 'sine';
+  ambientOsc.frequency.value = 110;
+  filter.type = 'lowpass';
+  filter.frequency.value = 320;
+
+  ambientGain.gain.value = 0.0;
+  ambientOsc.connect(filter);
+  filter.connect(ambientGain);
+  ambientGain.connect(audioCtx.destination);
+  ambientOsc.start();
+}
+
+function toggleSound() {
+  initAudio();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  soundEnabled = !soundEnabled;
+  const icon = document.getElementById('sound-icon');
+  const label = document.getElementById('sound-label');
+  if (soundEnabled) {
+    icon.textContent = '🔊';
+    label.textContent = '사운드 ON';
+    updateAmbientPitch(STAGES[currentStageIdx].level);
+    ambientGain.gain.setTargetAtTime(0.06, audioCtx.currentTime, 0.3);
+    showToast('앰비언트 사운드가 켜졌습니다');
+  } else {
+    icon.textContent = '🔇';
+    label.textContent = '사운드 OFF';
+    ambientGain.gain.setTargetAtTime(0.0, audioCtx.currentTime, 0.2);
+    showToast('사운드가 음소거되었습니다');
+  }
+}
+
+function updateAmbientPitch(level) {
+  if (!audioCtx || !ambientOsc) return;
+  // Higher pitch in space, warm middle at horizon, deep sub-bass in core
+  const freq = level >= 0
+    ? 110 + level * 28
+    : Math.max(42, 110 + level * 8);
+  ambientOsc.frequency.setTargetAtTime(freq, audioCtx.currentTime, 0.5);
+}
+
+function playTransitionWhoosh(direction) {
+  if (!soundEnabled || !audioCtx) return;
+  const now = audioCtx.currentTime;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = 'triangle';
+  if (direction > 0) {
+    osc.frequency.setValueAtTime(140, now);
+    osc.frequency.exponentialRampToValueAtTime(420, now + 0.45);
+  } else {
+    osc.frequency.setValueAtTime(320, now);
+    osc.frequency.exponentialRampToValueAtTime(75, now + 0.45);
+  }
+  gain.gain.setValueAtTime(0.08, now);
+  gain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+  osc.start(now);
+  osc.stop(now + 0.52);
+}
+
+// ============================================================================
+// PROCEDURAL TEXTURE HELPERS
+// ============================================================================
+function createCircleGlowTexture(innerColor, outerColor, size = 128) {
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = size;
+  const ctx = canvas.getContext('2d');
+  const grad = ctx.createRadialGradient(size/2, size/2, 0, size/2, size/2, size/2);
+  grad.addColorStop(0, innerColor);
+  grad.addColorStop(0.4, outerColor);
+  grad.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, size, size);
+  const tex = new THREE.CanvasTexture(canvas);
+  return tex;
+}
+
+function createEarthTexture() {
+  const w = 512, h = 256;
+  const canvas = document.createElement('canvas');
+  canvas.width = w; canvas.height = h;
+  const ctx = canvas.getContext('2d');
+
+  // Deep Ocean
+  const oceanGrad = ctx.createLinearGradient(0, 0, 0, h);
+  oceanGrad.addColorStop(0, '#1e3a8a');
+  oceanGrad.addColorStop(0.5, '#0284c7');
+  oceanGrad.addColorStop(1, '#1e3a8a');
+  ctx.fillStyle = oceanGrad;
+  ctx.fillRect(0, 0, w, h);
+
+  // Stylized Continents
+  ctx.fillStyle = '#15803d';
+  const continents = [
+    // Eurasia
+    { x: 310, y: 75, rx: 85, ry: 38 },
+    // Africa
+    { x: 275, y: 140, rx: 32, ry: 45 },
+    // North America
+    { x: 115, y: 80, rx: 50, ry: 35 },
+    // South America
+    { x: 155, y: 165, rx: 26, ry: 44 },
+    // Australia
+    { x: 410, y: 175, rx: 24, ry: 18 }
+  ];
+  continents.forEach(c => {
+    ctx.beginPath();
+    ctx.ellipse(c.x, c.y, c.rx, c.ry, 0.15, 0, Math.PI * 2);
+    ctx.fill();
+  });
+
+  // Desert / Mountain highlights
+  ctx.fillStyle = '#ca8a04';
+  ctx.beginPath();
+  ctx.ellipse(275, 118, 24, 12, 0, 0, Math.PI * 2);
+  ctx.ellipse(330, 82, 40, 14, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Polar ice caps
+  ctx.fillStyle = '#f8fafc';
+  ctx.fillRect(0, 0, w, 16);
+  ctx.fillRect(0, h - 16, w, 16);
+
+  return new THREE.CanvasTexture(canvas);
+}
+
+// ============================================================================
+// SCENE INITIALIZATION & 16-LAYER WORLD BUILDERS
+// ============================================================================
+function initThree() {
+  const container = document.getElementById('canvas-container');
+  clock = new THREE.Clock();
+
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color(STAGES[currentStageIdx].bgColor);
+  scene.fog = new THREE.FogExp2(STAGES[currentStageIdx].fogColor, STAGES[currentStageIdx].fogDensity);
+
+  camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 1000);
+  camera.position.set(...STAGES[currentStageIdx].camPos);
+
+  renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.shadowMap.enabled = true;
+  container.appendChild(renderer.domElement);
+
+  // Global Lighting
+  const ambientLight = new THREE.AmbientLight(0xffffff, 0.65);
+  scene.add(ambientLight);
+
+  const dirLight = new THREE.DirectionalLight(0xfffbeb, 1.1);
+  dirLight.position.set(15, 25, 18);
+  scene.add(dirLight);
+
+  // Create groups for each level
+  STAGES.forEach(s => {
+    const g = new THREE.Group();
+    g.visible = (s.level === 0);
+    scene.add(g);
+    stageGroups[s.level] = g;
+  });
+
+  // Build every single level's 3D environment
+  buildLevel0_Horizon(stageGroups[0]);
+  buildLevel1_City(stageGroups[1]);
+  buildLevel2_KoreaMap(stageGroups[2]);
+  buildLevel3_Clouds(stageGroups[3]);
+  buildLevel4_Earth(stageGroups[4]);
+  buildLevel5_SolarSystem(stageGroups[5]);
+  buildLevel6_MilkyWay(stageGroups[6]);
+  buildLevel7_Universe(stageGroups[7]);
+
+  buildLevelM1_GrassInsects(stageGroups[-1]);
+  buildLevelM2_RootsSoil(stageGroups[-2]);
+  buildLevelM3_SubwaySewage(stageGroups[-3]);
+  buildLevelM4_StrataFossils(stageGroups[-4]);
+  buildLevelM5_BedrockDrill(stageGroups[-5]);
+  buildLevelM6_CrustMagma(stageGroups[-6]);
+  buildLevelM7_Mantle(stageGroups[-7]);
+  buildLevelM8_Core(stageGroups[-8]);
+
+  setupSidebar();
+  updateUI();
+  setupInputs();
+
+  window.addEventListener('resize', onWindowResize);
+  document.addEventListener('fullscreenchange', updateFullscreenButton);
+}
+
+// ----------------------------------------------------------------------------
+// LEVEL 0: THE HORIZON (지평선 위의 나 - 절반 하늘, 절반 땅)
+// ----------------------------------------------------------------------------
+function buildLevel0_Horizon(group) {
+  // Sky dome gradient
+  const skyGeo = new THREE.SphereGeometry(120, 32, 16);
+  const skyMat = new THREE.MeshBasicMaterial({ color: 0x60a5fa, side: THREE.BackSide });
+  const skyDome = new THREE.Mesh(skyGeo, skyMat);
+  group.add(skyDome);
+
+  // Warm Sun on Horizon
+  const sunSprite = new THREE.Sprite(new THREE.SpriteMaterial({
+    map: createCircleGlowTexture('rgba(255,253,220,1)', 'rgba(253,224,71,0.35)'),
+    transparent: true
+  }));
+  sunSprite.position.set(-18, 12, -55);
+  sunSprite.scale.set(28, 28, 1);
+  group.add(sunSprite);
+
+  // Upper half soft clouds
+  const cloudMat = new THREE.MeshLambertMaterial({ color: 0xffffff, transparent: true, opacity: 0.9 });
+  const clouds = [];
+  for (let i = 0; i < 14; i++) {
+    const cGroup = new THREE.Group();
+    const puffs = 3 + Math.floor(Math.random() * 3);
+    for (let p = 0; p < puffs; p++) {
+      const puff = new THREE.Mesh(new THREE.SphereGeometry(1.4 + Math.random(), 12, 12), cloudMat);
+      puff.position.set((p - 1.5) * 1.5, Math.random() * 0.5, Math.random() * 0.8);
+      puff.scale.set(1.3, 0.75, 0.9);
+      cGroup.add(puff);
+    }
+    cGroup.position.set((Math.random() - 0.5) * 75, 5 + Math.random() * 12, -20 - Math.random() * 35);
+    group.add(cGroup);
+    clouds.push({ mesh: cGroup, speed: 0.3 + Math.random() * 0.4 });
+  }
+
+  // Lower Half: Vast Green Meadow / Horizon Ground Plane
+  // Positioned so at camera y=1.35 looking at y=1.15, the horizon splits the screen cleanly!
+  const groundGeo = new THREE.PlaneGeometry(240, 240, 32, 32);
+  const groundMat = new THREE.MeshLambertMaterial({ color: 0x2e7d32 });
+  const ground = new THREE.Mesh(groundGeo, groundMat);
+  ground.rotation.x = -Math.PI / 2;
+  ground.position.y = 0;
+  group.add(ground);
+
+  // Subtle rolling hills on the horizon
+  const hillMat = new THREE.MeshLambertMaterial({ color: 0x1b5e20 });
+  for (let i = 0; i < 9; i++) {
+    const hill = new THREE.Mesh(new THREE.SphereGeometry(12 + Math.random() * 8, 20, 12), hillMat);
+    hill.scale.set(2.5, 0.35, 1.2);
+    hill.position.set((i - 4) * 22, -1.5, -55 - Math.random() * 15);
+    group.add(hill);
+  }
+
+  // Cross-section earth edge in foreground (subtle reminder of underground below)
+  const soilCutGeo = new THREE.BoxGeometry(40, 6, 20);
+  const soilCutMat = new THREE.MeshLambertMaterial({ color: 0x4e342e });
+  const soilCut = new THREE.Mesh(soilCutGeo, soilCutMat);
+  soilCut.position.set(0, -3.02, 0);
+  group.add(soilCut);
+
+  // The Human Figure ("나" standing right on the Horizon Line)
+  const human = new THREE.Group();
+  const bodyMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.4 });
+  const scarfMat = new THREE.MeshStandardMaterial({ color: 0xf43f5e, emissive: 0x881337, emissiveIntensity: 0.3 });
+
+  // Legs
+  const legGeo = new THREE.CylinderGeometry(0.11, 0.09, 0.85, 10);
+  const leftLeg = new THREE.Mesh(legGeo, bodyMat);
+  leftLeg.position.set(-0.14, 0.425, 0);
+  const rightLeg = new THREE.Mesh(legGeo, bodyMat);
+  rightLeg.position.set(0.14, 0.425, 0);
+
+  // Torso
+  const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.17, 0.78, 12), bodyMat);
+  torso.position.set(0, 1.22, 0);
+
+  // Scarf fluttering slightly
+  const scarf = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.12, 0.12), scarfMat);
+  scarf.position.set(0.22, 1.56, -0.05);
+
+  // Head
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.21, 16, 16), bodyMat);
+  head.position.set(0, 1.85, 0);
+
+  // Arms
+  const armGeo = new THREE.CylinderGeometry(0.07, 0.06, 0.68, 8);
+  const leftArm = new THREE.Mesh(armGeo, bodyMat);
+  leftArm.position.set(-0.3, 1.2, 0);
+  leftArm.rotation.z = 0.15;
+  const rightArm = new THREE.Mesh(armGeo, bodyMat);
+  rightArm.position.set(0.3, 1.2, 0);
+  rightArm.rotation.z = -0.15;
+
+  // Glowing Aura Ring under feet
+  const ringGeo = new THREE.RingGeometry(0.45, 0.55, 32);
+  const ringMat = new THREE.MeshBasicMaterial({ color: 0xfbbf24, side: THREE.DoubleSide, transparent: true, opacity: 0.8 });
+  const ring = new THREE.Mesh(ringGeo, ringMat);
+  ring.rotation.x = -Math.PI / 2;
+  ring.position.y = 0.02;
+
+  human.add(leftLeg, rightLeg, torso, scarf, head, leftArm, rightArm, ring);
+  human.position.set(0, 0, 0);
+  group.add(human);
+
+  // Foreground grass tufts & wildflowers
+  const tuftMat = new THREE.MeshLambertMaterial({ color: 0x4caf50 });
+  for (let i = 0; i < 90; i++) {
+    const blade = new THREE.Mesh(new THREE.ConeGeometry(0.08, 0.4 + Math.random() * 0.35, 5), tuftMat);
+    blade.position.set((Math.random() - 0.5) * 26, 0.15, (Math.random() - 0.3) * 14);
+    blade.rotation.z = (Math.random() - 0.5) * 0.3;
+    group.add(blade);
+  }
+
+  animatables.push((t) => {
+    if (!group.visible) return;
+    clouds.forEach(c => {
+      c.mesh.position.x += c.speed * 0.02;
+      if (c.mesh.position.x > 45) c.mesh.position.x = -45;
+    });
+    scarf.rotation.y = Math.sin(t * 3) * 0.25;
+    scarf.rotation.z = Math.cos(t * 2.5) * 0.1;
+    ring.scale.setScalar(1 + Math.sin(t * 2.5) * 0.08);
+    human.position.y = Math.abs(Math.sin(t * 1.5)) * 0.02;
+  });
+}
+
+// ----------------------------------------------------------------------------
+// LEVEL +1: CITY SKYLINE (도시 상공)
+// ----------------------------------------------------------------------------
+function buildLevel1_City(group) {
+  // Base terrain + River (Han River style)
+  const land = new THREE.Mesh(new THREE.PlaneGeometry(90, 90), new THREE.MeshLambertMaterial({ color: 0x1e293b }));
+  land.rotation.x = -Math.PI / 2;
+  group.add(land);
+
+  const river = new THREE.Mesh(new THREE.PlaneGeometry(90, 10), new THREE.MeshPhongMaterial({ color: 0x0284c7, shininess: 80 }));
+  river.rotation.x = -Math.PI / 2;
+  river.rotation.z = 0.25;
+  river.position.set(0, 0.05, 2);
+  group.add(river);
+
+  // Bridges over river
+  const bridgeMat = new THREE.MeshBasicMaterial({ color: 0xfbbf24 });
+  [-12, 4, 18].forEach(bx => {
+    const bridge = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.3, 11.5), bridgeMat);
+    bridge.position.set(bx, 0.3, 2 - bx * 0.25);
+    group.add(bridge);
+  });
+
+  // Procedural 3D City Buildings
+  const bldgColors = [0x334155, 0x475569, 0x1e3a8a, 0x0f172a, 0x64748b];
+  for (let i = 0; i < 160; i++) {
+    const x = (Math.random() - 0.5) * 56;
+    const z = (Math.random() - 0.5) * 56;
+    // Skip river zone
+    if (Math.abs(z - (2 - x * 0.25)) < 6.2) continue;
+
+    const distFromCenter = Math.hypot(x, z);
+    const maxH = Math.max(1.5, 11 - distFromCenter * 0.28);
+    const h = 1.2 + Math.random() * maxH;
+    const w = 1.1 + Math.random() * 1.6;
+    const d = 1.1 + Math.random() * 1.6;
+
+    const mat = new THREE.MeshPhongMaterial({
+      color: bldgColors[i % bldgColors.length],
+      emissive: i % 4 === 0 ? 0x38bdf8 : 0xfef08a,
+      emissiveIntensity: 0.15 + Math.random() * 0.25
+    });
+    const bldg = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+    bldg.position.set(x, h / 2, z);
+    group.add(bldg);
+  }
+
+  // Moving traffic lights along roads
+  const cars = [];
+  for (let i = 0; i < 30; i++) {
+    const car = new THREE.Mesh(
+      new THREE.SphereGeometry(0.18, 6, 6),
+      new THREE.MeshBasicMaterial({ color: i % 2 === 0 ? 0xffffff : 0xf43f5e })
+    );
+    const axis = i % 2 === 0 ? 'x' : 'z';
+    const lane = (Math.floor(Math.random() * 7) - 3) * 7;
+    car.position.set(axis === 'x' ? (Math.random() - 0.5) * 50 : lane, 0.25, axis === 'z' ? (Math.random() - 0.5) * 50 : lane);
+    group.add(car);
+    cars.push({ mesh: car, axis, dir: i % 2 === 0 ? 1 : -1, speed: 0.12 + Math.random() * 0.1 });
+  }
+
+  animatables.push(() => {
+    if (!group.visible) return;
+    cars.forEach(c => {
+      c.mesh.position[c.axis] += c.dir * c.speed;
+      if (c.mesh.position[c.axis] > 26) c.mesh.position[c.axis] = -26;
+      if (c.mesh.position[c.axis] < -26) c.mesh.position[c.axis] = 26;
+    });
+  });
+}
+
+// ----------------------------------------------------------------------------
+// LEVEL +2: KOREAN PENINSULA MAP (대한민국 지도)
+// ----------------------------------------------------------------------------
+function buildLevel2_KoreaMap(group) {
+  // Deep Blue Sea
+  const sea = new THREE.Mesh(new THREE.PlaneGeometry(140, 140), new THREE.MeshPhongMaterial({
+    color: 0x0369a1,
+    shininess: 60
+  }));
+  sea.rotation.x = -Math.PI / 2;
+  group.add(sea);
+
+  // Extruded Korean Peninsula Silhouette Shape
+  const shape = new THREE.Shape();
+  const pts = [
+    [-2.5, 11], [1.5, 12], [5.5, 13.5], [7.2, 11.5], [4.5, 8.5],
+    [3.8, 5.5], [5.2, 2.0], [5.5, -2.5], [4.6, -6.5], [2.2, -8.2],
+    [-1.2, -8.8], [-3.2, -7.2], [-2.8, -3.5], [-3.8, -0.5], [-2.2, 2.5],
+    [-4.5, 4.5], [-5.2, 6.8], [-3.0, 8.8]
+  ];
+  shape.moveTo(pts[0][0], pts[0][1]);
+  for (let i = 1; i < pts.length; i++) shape.lineTo(pts[i][0], pts[i][1]);
+  shape.closePath();
+
+  const extrudeGeo = new THREE.ExtrudeGeometry(shape, {
+    depth: 0.8,
+    bevelEnabled: true,
+    bevelThickness: 0.25,
+    bevelSize: 0.3,
+    bevelSegments: 3
+  });
+  const landMat = new THREE.MeshLambertMaterial({ color: 0x22c55e });
+  const koreaMesh = new THREE.Mesh(extrudeGeo, landMat);
+  koreaMesh.rotation.x = -Math.PI / 2;
+  koreaMesh.position.set(0, 0.1, 1.5);
+  group.add(koreaMesh);
+
+  // Jeju Island & Ulleungdo / Dokdo
+  const jeju = new THREE.Mesh(new THREE.CylinderGeometry(1.1, 1.3, 0.6, 16), landMat);
+  jeju.scale.set(1.4, 1, 0.8);
+  jeju.position.set(-1.5, 0.3, 12.2);
+  group.add(jeju);
+
+  const ulleung = new THREE.Mesh(new THREE.ConeGeometry(0.45, 0.7, 10), landMat);
+  ulleung.position.set(8.2, 0.35, 1.5);
+  group.add(ulleung);
+
+  const dokdo = new THREE.Mesh(new THREE.ConeGeometry(0.3, 0.5, 8), landMat);
+  dokdo.position.set(9.8, 0.25, 2.1);
+  group.add(dokdo);
+
+  // Taebaek Mountain Range ridges
+  const mtnMat = new THREE.MeshLambertMaterial({ color: 0x15803d });
+  for (let i = 0; i < 24; i++) {
+    const mtn = new THREE.Mesh(new THREE.ConeGeometry(0.6 + Math.random() * 0.5, 1.1 + Math.random() * 0.8, 7), mtnMat);
+    mtn.position.set(1.5 + (Math.random() - 0.3) * 2.5, 1.1, -6 + i * 0.65);
+    group.add(mtn);
+  }
+
+  // City Glow Pins (Seoul, Busan, Daejeon, Gwangju, Pyongyang)
+  const cities = [
+    { name: 'Seoul', x: -0.6, z: -1.8, color: 0xfbbf24 },
+    { name: 'Busan', x: 3.6, z: 6.8, color: 0x38bdf8 },
+    { name: 'Daejeon', x: 0.2, z: 1.8, color: 0xfbbf24 },
+    { name: 'Gwangju', x: -1.5, z: 5.8, color: 0xfbbf24 }
+  ];
+  cities.forEach(c => {
+    const pin = new THREE.Mesh(new THREE.SphereGeometry(0.32, 12, 12), new THREE.MeshBasicMaterial({ color: c.color }));
+    pin.position.set(c.x, 1.15, c.z);
+    group.add(pin);
+  });
+
+  // High altitude wispy clouds drifting over Korea
+  const cloudMat = new THREE.MeshLambertMaterial({ color: 0xffffff, transparent: true, opacity: 0.65 });
+  const mapClouds = [];
+  for (let i = 0; i < 12; i++) {
+    const c = new THREE.Mesh(new THREE.SphereGeometry(1.5, 10, 10), cloudMat);
+    c.scale.set(2.2, 0.3, 1.2);
+    c.position.set((Math.random() - 0.5) * 28, 3.5 + Math.random() * 2, (Math.random() - 0.5) * 28);
+    group.add(c);
+    mapClouds.push(c);
+  }
+
+  animatables.push(() => {
+    if (!group.visible) return;
+    mapClouds.forEach(c => {
+      c.position.x += 0.025;
+      if (c.position.x > 18) c.position.x = -18;
+    });
+  });
+}
+
+// ----------------------------------------------------------------------------
+// LEVEL +3: CUMULUS CLOUDS (뭉게구름)
+// ----------------------------------------------------------------------------
+function buildLevel3_Clouds(group) {
+  const cloudMat = new THREE.MeshStandardMaterial({
+    color: 0xffffff,
+    roughness: 0.9,
+    metalness: 0.05
+  });
+
+  const cloudClusters = [];
+  for (let i = 0; i < 42; i++) {
+    const cluster = new THREE.Group();
+    const count = 4 + Math.floor(Math.random() * 5);
+    for (let j = 0; j < count; j++) {
+      const r = 1.6 + Math.random() * 2.2;
+      const sphere = new THREE.Mesh(new THREE.IcosahedronGeometry(r, 2), cloudMat);
+      sphere.position.set(
+        (Math.random() - 0.5) * 4.5,
+        (Math.random() - 0.3) * 2.2,
+        (Math.random() - 0.5) * 4.5
+      );
+      cluster.add(sphere);
+    }
+    cluster.position.set(
+      (Math.random() - 0.5) * 65,
+      (Math.random() - 0.5) * 14,
+      (Math.random() - 0.5) * 55
+    );
+    group.add(cluster);
+    cloudClusters.push({ mesh: cluster, speed: 0.02 + Math.random() * 0.03 });
+  }
+
+  // Curved blue Earth surface glimpsed far below
+  const earthCurve = new THREE.Mesh(
+    new THREE.SphereGeometry(85, 32, 24),
+    new THREE.MeshBasicMaterial({ color: 0x0284c7 })
+  );
+  earthCurve.position.set(0, -96, -15);
+  group.add(earthCurve);
+
+  animatables.push(() => {
+    if (!group.visible) return;
+    cloudClusters.forEach(c => {
+      c.mesh.position.x += c.speed;
+      if (c.mesh.position.x > 36) c.mesh.position.x = -36;
+    });
+  });
+}
+
+// ----------------------------------------------------------------------------
+// LEVEL +4: PLANET EARTH (지구)
+// ----------------------------------------------------------------------------
+function buildLevel4_Earth(group) {
+  // Background Stars
+  const starGeo = new THREE.BufferGeometry();
+  const starPos = new Float32Array(1500 * 3);
+  for (let i = 0; i < 4500; i++) starPos[i] = (Math.random() - 0.5) * 220;
+  starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
+  group.add(new THREE.Points(starGeo, new THREE.PointsMaterial({ color: 0xffffff, size: 0.35 })));
+
+  // Earth Sphere
+  const earthTex = createEarthTexture();
+  const earthMesh = new THREE.Mesh(
+    new THREE.SphereGeometry(5.5, 48, 48),
+    new THREE.MeshPhongMaterial({ map: earthTex, shininess: 25 })
+  );
+  group.add(earthMesh);
+
+  // Swirling Cloud Layer
+  const cloudSphere = new THREE.Mesh(
+    new THREE.SphereGeometry(5.65, 36, 36),
+    new THREE.MeshLambertMaterial({ color: 0xffffff, transparent: true, opacity: 0.25, wireframe: false })
+  );
+  // Add cloud patches
+  const patchMat = new THREE.MeshLambertMaterial({ color: 0xffffff, transparent: true, opacity: 0.75 });
+  for (let i = 0; i < 45; i++) {
+    const phi = Math.acos(-1 + (2 * i) / 45);
+    const theta = Math.sqrt(45 * Math.PI) * phi;
+    const p = new THREE.Mesh(new THREE.SphereGeometry(0.65 + Math.random() * 0.5, 8, 8), patchMat);
+    p.scale.set(1.8, 0.2, 1.1);
+    p.position.setFromSphericalCoords(5.62, phi, theta);
+    p.lookAt(0, 0, 0);
+    cloudSphere.add(p);
+  }
+  group.add(cloudSphere);
+
+  // Atmospheric Halo Glow
+  const atmoSprite = new THREE.Sprite(new THREE.SpriteMaterial({
+    map: createCircleGlowTexture('rgba(56,189,248,0.45)', 'rgba(2,132,199,0.12)', 256),
+    transparent: true,
+    blending: THREE.AdditiveBlending
+  }));
+  atmoSprite.scale.set(15.2, 15.2, 1);
+  group.add(atmoSprite);
+
+  // Orbiting Moon
+  const moonPivot = new THREE.Group();
+  const moon = new THREE.Mesh(
+    new THREE.SphereGeometry(0.95, 24, 24),
+    new THREE.MeshLambertMaterial({ color: 0xcbd5e1 })
+  );
+  moon.position.set(11.5, 1.5, 0);
+  moonPivot.add(moon);
+  group.add(moonPivot);
+
+  animatables.push((t) => {
+    if (!group.visible) return;
+    earthMesh.rotation.y = t * 0.12;
+    cloudSphere.rotation.y = t * 0.16;
+    moonPivot.rotation.y = t * 0.25;
+  });
+}
+
+// ----------------------------------------------------------------------------
+// LEVEL +5: SOLAR SYSTEM (태양계)
+// ----------------------------------------------------------------------------
+function buildLevel5_SolarSystem(group) {
+  // Stars
+  const starGeo = new THREE.BufferGeometry();
+  const starPos = new Float32Array(2000 * 3);
+  for (let i = 0; i < 6000; i++) starPos[i] = (Math.random() - 0.5) * 260;
+  starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
+  group.add(new THREE.Points(starGeo, new THREE.PointsMaterial({ color: 0xffffff, size: 0.35 })));
+
+  // Glowing Sun
+  const sun = new THREE.Mesh(
+    new THREE.SphereGeometry(2.6, 32, 32),
+    new THREE.MeshBasicMaterial({ color: 0xfde047 })
+  );
+  group.add(sun);
+
+  const sunGlow = new THREE.Sprite(new THREE.SpriteMaterial({
+    map: createCircleGlowTexture('rgba(254,240,138,1)', 'rgba(249,115,22,0.35)', 256),
+    transparent: true,
+    blending: THREE.AdditiveBlending
+  }));
+  sunGlow.scale.set(13, 13, 1);
+  group.add(sunGlow);
+
+  // Planets Data
+  const planetsData = [
+    { name: 'Mercury', r: 0.32, dist: 4.2, speed: 1.6, color: 0x94a3b8 },
+    { name: 'Venus', r: 0.52, dist: 5.8, speed: 1.2, color: 0xfcd34d },
+    { name: 'Earth', r: 0.58, dist: 7.8, speed: 1.0, color: 0x38bdf8, isEarth: true },
+    { name: 'Mars', r: 0.42, dist: 9.8, speed: 0.8, color: 0xef4444 },
+    { name: 'Jupiter', r: 1.25, dist: 13.0, speed: 0.45, color: 0xfdba74 },
+    { name: 'Saturn', r: 1.05, dist: 16.5, speed: 0.32, color: 0xfde68a, hasRing: true },
+    { name: 'Uranus', r: 0.72, dist: 19.8, speed: 0.22, color: 0x67e8f9 },
+    { name: 'Neptune', r: 0.70, dist: 22.8, speed: 0.16, color: 0x3b82f6 }
+  ];
+
+  const planetPivots = [];
+  planetsData.forEach((p, idx) => {
+    // Orbit Ring
+    const orbitGeo = new THREE.RingGeometry(p.dist - 0.04, p.dist + 0.04, 64);
+    const orbitMat = new THREE.MeshBasicMaterial({
+      color: p.isEarth ? 0x38bdf8 : 0xffffff,
+      transparent: true,
+      opacity: p.isEarth ? 0.55 : 0.18,
+      side: THREE.DoubleSide
+    });
+    const orbitRing = new THREE.Mesh(orbitGeo, orbitMat);
+    orbitRing.rotation.x = Math.PI / 2;
+    group.add(orbitRing);
+
+    const pivot = new THREE.Group();
+    pivot.rotation.y = idx * 1.1;
+    const mesh = new THREE.Mesh(
+      new THREE.SphereGeometry(p.r, 20, 20),
+      new THREE.MeshBasicMaterial({ color: p.color })
+    );
+    mesh.position.x = p.dist;
+    pivot.add(mesh);
+
+    if (p.hasRing) {
+      const satRing = new THREE.Mesh(
+        new THREE.RingGeometry(1.35, 2.15, 32),
+        new THREE.MeshBasicMaterial({ color: 0xfef3c7, side: THREE.DoubleSide, transparent: true, opacity: 0.7 })
+      );
+      satRing.rotation.x = Math.PI / 2.4;
+      mesh.add(satRing);
+    }
+
+    group.add(pivot);
+    planetPivots.push({ pivot, speed: p.speed });
+  });
+
+  animatables.push((t) => {
+    if (!group.visible) return;
+    planetPivots.forEach(p => {
+      p.pivot.rotation.y += p.speed * 0.008;
+    });
+  });
+}
+
+// ----------------------------------------------------------------------------
+// LEVEL +6: MILKY WAY GALAXY (우리 은하계)
+// ----------------------------------------------------------------------------
+function buildLevel6_MilkyWay(group) {
+  const count = 24000;
+  const positions = new Float32Array(count * 3);
+  const colors = new Float32Array(count * 3);
+
+  const colorInside = new THREE.Color(0xfffbeb);
+  const colorMid = new THREE.Color(0x60a5fa);
+  const colorOutside = new THREE.Color(0xc084fc);
+
+  const branches = 4;
+  const radius = 24;
+
+  for (let i = 0; i < count; i++) {
+    const i3 = i * 3;
+    const r = Math.pow(Math.random(), 1.6) * radius;
+    const spinAngle = r * 0.35;
+    const branchAngle = ((i % branches) / branches) * Math.PI * 2;
+
+    const randomX = Math.pow(Math.random(), 3) * (Math.random() < 0.5 ? 1 : -1) * 1.6;
+    const randomY = Math.pow(Math.random(), 3) * (Math.random() < 0.5 ? 1 : -1) * (1.8 * (1 - r / radius) + 0.25);
+    const randomZ = Math.pow(Math.random(), 3) * (Math.random() < 0.5 ? 1 : -1) * 1.6;
+
+    positions[i3] = Math.cos(branchAngle + spinAngle) * r + randomX;
+    positions[i3 + 1] = randomY;
+    positions[i3 + 2] = Math.sin(branchAngle + spinAngle) * r + randomZ;
+
+    const mixedColor = colorInside.clone();
+    if (r < radius * 0.45) {
+      mixedColor.lerp(colorMid, r / (radius * 0.45));
+    } else {
+      mixedColor.copy(colorMid).lerp(colorOutside, (r - radius * 0.45) / (radius * 0.55));
+    }
+    colors[i3] = mixedColor.r;
+    colors[i3 + 1] = mixedColor.g;
+    colors[i3 + 2] = mixedColor.b;
+  }
+
+  const galaxyGeo = new THREE.BufferGeometry();
+  galaxyGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  galaxyGeo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+  const galaxyMat = new THREE.PointsMaterial({
+    size: 0.22,
+    sizeAttenuation: true,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending,
+    vertexColors: true
+  });
+
+  const galaxyPoints = new THREE.Points(galaxyGeo, galaxyMat);
+  group.add(galaxyPoints);
+
+  // Galactic Core Bright Glow
+  const coreGlow = new THREE.Sprite(new THREE.SpriteMaterial({
+    map: createCircleGlowTexture('rgba(255,255,255,1)', 'rgba(251,191,36,0.35)', 256),
+    transparent: true,
+    blending: THREE.AdditiveBlending
+  }));
+  coreGlow.scale.set(14, 14, 1);
+  group.add(coreGlow);
+
+  // "You Are Here" Solar System Marker on Orion Arm
+  const sunMarker = new THREE.Mesh(
+    new THREE.SphereGeometry(0.35, 12, 12),
+    new THREE.MeshBasicMaterial({ color: 0xfde047 })
+  );
+  sunMarker.position.set(11.5, 0.4, 4.5);
+  galaxyPoints.add(sunMarker);
+
+  animatables.push((t) => {
+    if (!group.visible) return;
+    galaxyPoints.rotation.y = t * 0.08;
+  });
+}
+
+// ----------------------------------------------------------------------------
+// LEVEL +7: UNIVERSE / LOCAL GROUP OF GALAXIES (은하군과 우주)
+// ----------------------------------------------------------------------------
+function buildLevel7_Universe(group) {
+  // Deep Cosmic Web Starfield
+  const bgGeo = new THREE.BufferGeometry();
+  const bgPos = new Float32Array(5000 * 3);
+  const bgCol = new Float32Array(5000 * 3);
+  const palette = [new THREE.Color(0x93c5fd), new THREE.Color(0xf9a8d4), new THREE.Color(0xfde68a), new THREE.Color(0xffffff)];
+
+  for (let i = 0; i < 5000; i++) {
+    bgPos[i * 3] = (Math.random() - 0.5) * 160;
+    bgPos[i * 3 + 1] = (Math.random() - 0.5) * 120;
+    bgPos[i * 3 + 2] = (Math.random() - 0.5) * 160;
+    const c = palette[i % palette.length];
+    bgCol[i * 3] = c.r; bgCol[i * 3 + 1] = c.g; bgCol[i * 3 + 2] = c.b;
+  }
+  bgGeo.setAttribute('position', new THREE.BufferAttribute(bgPos, 3));
+  bgGeo.setAttribute('color', new THREE.BufferAttribute(bgCol, 3));
+  group.add(new THREE.Points(bgGeo, new THREE.PointsMaterial({ size: 0.35, vertexColors: true, transparent: true, opacity: 0.85 })));
+
+  // Multiple Miniature Spiral & Elliptical Galaxies
+  const miniGalaxies = [];
+  const galConfigs = [
+    { pos: [0, 0, 0], scale: 1.35, color: 0x60a5fa, rot: [0.4, 0, 0.2] },        // Milky Way
+    { pos: [-16, 7, -12], scale: 1.5, color: 0xc084fc, rot: [-0.5, 0.3, 0.4] },  // Andromeda
+    { pos: [15, -6, -8], scale: 0.95, color: 0xf472b6, rot: [0.8, -0.2, 0.1] },   // Triangulum
+    { pos: [-12, -10, 10], scale: 0.8, color: 0x38bdf8, rot: [0.2, 0.5, -0.3] },
+    { pos: [18, 11, -18], scale: 1.1, color: 0xfbbf24, rot: [-0.3, -0.4, 0.2] },
+    { pos: [4, 14, -24], scale: 0.9, color: 0xa78bfa, rot: [0.6, 0.1, 0.5] },
+    { pos: [-22, 1, -22], scale: 1.0, color: 0x34d399, rot: [-0.2, 0.6, -0.4] },
+    { pos: [12, -13, 12], scale: 0.75, color: 0xf87171, rot: [0.5, -0.5, 0.2] }
+  ];
+
+  galConfigs.forEach(cfg => {
+    const gContainer = new THREE.Group();
+    const pCount = 1800;
+    const pGeo = new THREE.BufferGeometry();
+    const pArr = new Float32Array(pCount * 3);
+    for (let i = 0; i < pCount; i++) {
+      const r = Math.pow(Math.random(), 1.5) * 4.5 * cfg.scale;
+      const angle = r * 0.9 + (i % 3) * ((Math.PI * 2) / 3);
+      pArr[i * 3] = Math.cos(angle) * r + (Math.random() - 0.5) * 0.5;
+      pArr[i * 3 + 1] = (Math.random() - 0.5) * 0.35;
+      pArr[i * 3 + 2] = Math.sin(angle) * r + (Math.random() - 0.5) * 0.5;
+    }
+    pGeo.setAttribute('position', new THREE.BufferAttribute(pArr, 3));
+    const pts = new THREE.Points(pGeo, new THREE.PointsMaterial({
+      color: cfg.color,
+      size: 0.22,
+      blending: THREE.AdditiveBlending,
+      transparent: true
+    }));
+
+    const core = new THREE.Sprite(new THREE.SpriteMaterial({
+      map: createCircleGlowTexture('rgba(255,255,255,0.95)', 'rgba(147,197,253,0.2)'),
+      transparent: true,
+      blending: THREE.AdditiveBlending
+    }));
+    core.scale.set(4 * cfg.scale, 4 * cfg.scale, 1);
+
+    gContainer.add(pts, core);
+    gContainer.position.set(...cfg.pos);
+    gContainer.rotation.set(...cfg.rot);
+    group.add(gContainer);
+    miniGalaxies.push(pts);
+  });
+
+  // Cosmic Filament Lines connecting galaxies
+  const lineMat = new THREE.LineBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.16 });
+  for (let i = 0; i < galConfigs.length - 1; i++) {
+    const points = [
+      new THREE.Vector3(...galConfigs[i].pos),
+      new THREE.Vector3(...galConfigs[i + 1].pos)
+    ];
+    const lineGeo = new THREE.BufferGeometry().setFromPoints(points);
+    group.add(new THREE.Line(lineGeo, lineMat));
+  }
+
+  animatables.push((t) => {
+    if (!group.visible) return;
+    miniGalaxies.forEach((g, i) => {
+      g.rotation.y = t * (0.15 + (i % 3) * 0.05);
+    });
+  });
+}
+
+// ----------------------------------------------------------------------------
+// LEVEL -1: GRASS & INSECTS (잔디와 곤충들: 나비, 잠자리, 무당벌레, 말벌, 반딧불이)
+// ----------------------------------------------------------------------------
+function buildLevelM1_GrassInsects(group) {
+  // Rich Soil Floor
+  const soilFloor = new THREE.Mesh(
+    new THREE.PlaneGeometry(40, 40),
+    new THREE.MeshLambertMaterial({ color: 0x3e2723 })
+  );
+  soilFloor.rotation.x = -Math.PI / 2;
+  group.add(soilFloor);
+
+  // Giant Macro Grass Blades
+  const grassGreens = [0x22c55e, 0x16a34a, 0x4ade80, 0x15803d];
+  for (let i = 0; i < 240; i++) {
+    const h = 1.8 + Math.random() * 2.8;
+    const blade = new THREE.Mesh(
+      new THREE.ConeGeometry(0.14, h, 5),
+      new THREE.MeshLambertMaterial({ color: grassGreens[i % grassGreens.length] })
+    );
+    blade.position.set((Math.random() - 0.5) * 18, h / 2, (Math.random() - 0.5) * 14);
+    blade.rotation.z = (Math.random() - 0.5) * 0.35;
+    blade.rotation.x = (Math.random() - 0.5) * 0.25;
+    group.add(blade);
+  }
+
+  // Wildflowers
+  const flowerColors = [0xfde047, 0xf472b6, 0xffffff, 0xc084fc];
+  for (let i = 0; i < 14; i++) {
+    const fGroup = new THREE.Group();
+    const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.05, 2.2, 6), new THREE.MeshLambertMaterial({ color: 0x15803d }));
+    stem.position.y = 1.1;
+    const head = new THREE.Mesh(new THREE.DodecahedronGeometry(0.32), new THREE.MeshLambertMaterial({ color: flowerColors[i % flowerColors.length] }));
+    head.position.y = 2.2;
+    fGroup.add(stem, head);
+    fGroup.position.set((Math.random() - 0.5) * 12, 0, (Math.random() - 0.5) * 8);
+    group.add(fGroup);
+  }
+
+  // 1) BUTTERFLY (나비 - flapping wings)
+  const butterfly = new THREE.Group();
+  const bfBody = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.04, 0.55, 8), new THREE.MeshBasicMaterial({ color: 0x1e1b4b }));
+  bfBody.rotation.x = Math.PI / 2;
+  const wingMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8, side: THREE.DoubleSide });
+  const leftWing = new THREE.Mesh(new THREE.CircleGeometry(0.45, 12), wingMat);
+  leftWing.position.set(-0.42, 0.05, 0);
+  leftWing.rotation.x = Math.PI / 2;
+  const rightWing = new THREE.Mesh(new THREE.CircleGeometry(0.45, 12), wingMat);
+  rightWing.position.set(0.42, 0.05, 0);
+  rightWing.rotation.x = Math.PI / 2;
+  butterfly.add(bfBody, leftWing, rightWing);
+  butterfly.position.set(-2.2, 2.2, 2.2);
+  group.add(butterfly);
+
+  // 2) DRAGONFLY (잠자리 - 4 translucent wings + long tail)
+  const dragonfly = new THREE.Group();
+  const dfBody = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.025, 1.1, 8), new THREE.MeshPhongMaterial({ color: 0x10b981 }));
+  dfBody.rotation.x = Math.PI / 2;
+  const dfWingMat = new THREE.MeshBasicMaterial({ color: 0xe0f2fe, transparent: true, opacity: 0.75, side: THREE.DoubleSide });
+  const dfWing1 = new THREE.Mesh(new THREE.PlaneGeometry(1.3, 0.18), dfWingMat);
+  dfWing1.rotation.x = Math.PI / 2;
+  dfWing1.position.set(0, 0.05, -0.15);
+  const dfWing2 = new THREE.Mesh(new THREE.PlaneGeometry(1.1, 0.16), dfWingMat);
+  dfWing2.rotation.x = Math.PI / 2;
+  dfWing2.position.set(0, 0.05, 0.08);
+  dragonfly.add(dfBody, dfWing1, dfWing2);
+  dragonfly.position.set(2.0, 2.5, 1.8);
+  group.add(dragonfly);
+
+  // 3) LADYBUG (무당벌레 - red shell with black dots)
+  const ladybug = new THREE.Group();
+  const lbShell = new THREE.Mesh(
+    new THREE.SphereGeometry(0.35, 16, 12, 0, Math.PI * 2, 0, Math.PI / 2),
+    new THREE.MeshPhongMaterial({ color: 0xef4444 })
+  );
+  const lbHead = new THREE.Mesh(new THREE.SphereGeometry(0.16, 12, 12), new THREE.MeshBasicMaterial({ color: 0x09090b }));
+  lbHead.position.set(0, 0.1, 0.32);
+  const dotMat = new THREE.MeshBasicMaterial({ color: 0x09090b });
+  [[-0.14, 0.28, 0.1], [0.14, 0.28, 0.1], [-0.16, 0.26, -0.12], [0.16, 0.26, -0.12]].forEach(dp => {
+    const dot = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 8), dotMat);
+    dot.position.set(...dp);
+    ladybug.add(dot);
+  });
+  ladybug.add(lbShell, lbHead);
+  ladybug.position.set(-0.6, 0.4, 3.6);
+  group.add(ladybug);
+
+  // 4) HORNET / WASP (말벌 - yellow & black striped abdomen)
+  const hornet = new THREE.Group();
+  const hThorax = new THREE.Mesh(new THREE.SphereGeometry(0.18, 12, 12), new THREE.MeshBasicMaterial({ color: 0x18181b }));
+  const hAbdomen = new THREE.Mesh(new THREE.SphereGeometry(0.24, 14, 14), new THREE.MeshPhongMaterial({ color: 0xfacc15 }));
+  hAbdomen.scale.set(0.85, 0.85, 1.6);
+  hAbdomen.position.z = -0.35;
+  const stripe = new THREE.Mesh(new THREE.CylinderGeometry(0.21, 0.21, 0.15, 12), new THREE.MeshBasicMaterial({ color: 0x09090b }));
+  stripe.rotation.x = Math.PI / 2;
+  stripe.position.z = -0.35;
+  const hWings = new THREE.Mesh(new THREE.PlaneGeometry(0.95, 0.22), dfWingMat);
+  hWings.rotation.x = Math.PI / 2;
+  hWings.position.y = 0.16;
+  hornet.add(hThorax, hAbdomen, stripe, hWings);
+  hornet.position.set(0.8, 1.9, 2.8);
+  group.add(hornet);
+
+  // 5) FIREFLIES (반딧불이 - glowing bioluminescent abdomen)
+  const fireflies = [];
+  for (let i = 0; i < 16; i++) {
+    const ff = new THREE.Group();
+    const bulb = new THREE.Mesh(
+      new THREE.SphereGeometry(0.09, 10, 10),
+      new THREE.MeshBasicMaterial({ color: 0xd9f99d })
+    );
+    const glow = new THREE.Sprite(new THREE.SpriteMaterial({
+      map: createCircleGlowTexture('rgba(217,249,157,1)', 'rgba(163,230,53,0.25)'),
+      transparent: true,
+      blending: THREE.AdditiveBlending
+    }));
+    glow.scale.set(0.9, 0.9, 1);
+    ff.add(bulb, glow);
+    ff.position.set((Math.random() - 0.5) * 11, 0.8 + Math.random() * 2.6, (Math.random() - 0.3) * 8);
+    group.add(ff);
+    fireflies.push({ mesh: ff, phase: Math.random() * Math.PI * 2, basePos: ff.position.clone() });
+  }
+
+  animatables.push((t) => {
+    if (!group.visible) return;
+    // Butterfly flap & flutter
+    leftWing.rotation.z = Math.sin(t * 14) * 0.75;
+    rightWing.rotation.z = -Math.sin(t * 14) * 0.75;
+    butterfly.position.x = -2.0 + Math.sin(t * 1.4) * 1.5;
+    butterfly.position.y = 2.1 + Math.cos(t * 2.2) * 0.4;
+    butterfly.rotation.y = Math.cos(t * 1.4) * 0.6;
+
+    // Dragonfly dart & hover
+    dfWing1.rotation.z = Math.sin(t * 35) * 0.25;
+    dfWing2.rotation.z = -Math.sin(t * 35) * 0.25;
+    dragonfly.position.x = 1.8 + Math.cos(t * 1.8) * 1.4;
+    dragonfly.position.y = 2.5 + Math.sin(t * 3.1) * 0.25;
+
+    // Ladybug crawl
+    ladybug.position.x = -0.6 + Math.sin(t * 0.6) * 1.2;
+    ladybug.rotation.y = Math.cos(t * 0.6) > 0 ? Math.PI / 2 : -Math.PI / 2;
+
+    // Hornet buzz
+    hWings.rotation.z = Math.sin(t * 42) * 0.35;
+    hornet.position.x = 0.6 + Math.sin(t * 2.7) * 1.1;
+    hornet.position.y = 1.85 + Math.cos(t * 3.4) * 0.35;
+
+    // Fireflies pulse
+    fireflies.forEach(f => {
+      f.mesh.position.y = f.basePos.y + Math.sin(t * 1.8 + f.phase) * 0.35;
+      f.mesh.position.x = f.basePos.x + Math.cos(t * 1.2 + f.phase) * 0.45;
+      const pulse = 0.65 + Math.sin(t * 4 + f.phase) * 0.35;
+      f.mesh.children[1].scale.setScalar(0.95 * pulse);
+    });
+  });
+}
+
+// ----------------------------------------------------------------------------
+// LEVEL -2: TOPSOIL, TREE ROOTS & SUBTERRANEAN BUGS (나무뿌리, 흙, 자갈, 개미, 애벌레, 지렁이)
+// ----------------------------------------------------------------------------
+function buildLevelM2_RootsSoil(group) {
+  // Underground Soil Backdrop
+  const backWall = new THREE.Mesh(
+    new THREE.PlaneGeometry(40, 26),
+    new THREE.MeshLambertMaterial({ color: 0x2b1910 })
+  );
+  backWall.position.z = -3;
+  group.add(backWall);
+
+  // Branching 3D Tree Roots descending from top
+  const rootMat = new THREE.MeshLambertMaterial({ color: 0x6d4c41 });
+  for (let i = 0; i < 18; i++) {
+    const curvePts = [
+      new THREE.Vector3((Math.random() - 0.5) * 12, 6.5, (Math.random() - 0.5) * 2),
+      new THREE.Vector3((Math.random() - 0.5) * 11, 2.5, (Math.random() - 0.5) * 2),
+      new THREE.Vector3((Math.random() - 0.5) * 13, -1.5, (Math.random() - 0.5) * 2),
+      new THREE.Vector3((Math.random() - 0.5) * 14, -5.2, (Math.random() - 0.5) * 2)
+    ];
+    const curve = new THREE.CatmullRomCurve3(curvePts);
+    const tube = new THREE.Mesh(new THREE.TubeGeometry(curve, 20, 0.12 + Math.random() * 0.18, 7, false), rootMat);
+    group.add(tube);
+  }
+
+  // Pebbles & Stones embedded in soil
+  const stoneMat = new THREE.MeshLambertMaterial({ color: 0x78716c });
+  for (let i = 0; i < 45; i++) {
+    const stone = new THREE.Mesh(new THREE.DodecahedronGeometry(0.25 + Math.random() * 0.45, 0), stoneMat);
+    stone.position.set((Math.random() - 0.5) * 16, (Math.random() - 0.5) * 9, (Math.random() - 0.5) * 2.5);
+    stone.rotation.set(Math.random() * 3, Math.random() * 3, 0);
+    group.add(stone);
+  }
+
+  // Ants (개미들) crawling along soil tunnels
+  const ants = [];
+  const antMat = new THREE.MeshBasicMaterial({ color: 0x09090b });
+  for (let i = 0; i < 14; i++) {
+    const ant = new THREE.Group();
+    const s1 = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 8), antMat);
+    const s2 = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 8), antMat);
+    s2.position.x = 0.12;
+    const s3 = new THREE.Mesh(new THREE.SphereGeometry(0.11, 8, 8), antMat);
+    s3.position.x = -0.15;
+    ant.add(s1, s2, s3);
+    const yLevel = -2.5 + (i % 4) * 1.6;
+    ant.position.set((Math.random() - 0.5) * 12, yLevel, 1.2);
+    group.add(ant);
+    ants.push({ mesh: ant, dir: i % 2 === 0 ? 1 : -1, speed: 0.025 + Math.random() * 0.02 });
+  }
+
+  // Grubs / Larvae (애벌레)
+  const grubMat = new THREE.MeshPhongMaterial({ color: 0xfef9c3 });
+  const grubs = [];
+  for (let i = 0; i < 4; i++) {
+    const grub = new THREE.Group();
+    for (let seg = 0; seg < 5; seg++) {
+      const ball = new THREE.Mesh(new THREE.SphereGeometry(0.16 - seg * 0.012, 10, 10), grubMat);
+      ball.position.set(seg * 0.16, Math.sin(seg * 0.8) * 0.08, 0);
+      grub.add(ball);
+    }
+    grub.position.set(-4 + i * 2.8, -1.5 + (i % 2) * 2.4, 1.4);
+    group.add(grub);
+    grubs.push(grub);
+  }
+
+  // Earthworms (지렁이)
+  const wormMat = new THREE.MeshPhongMaterial({ color: 0xf472b6 });
+  const worms = [];
+  for (let i = 0; i < 3; i++) {
+    const wPts = [];
+    for (let k = 0; k < 6; k++) wPts.push(new THREE.Vector3(k * 0.35, Math.sin(k) * 0.25, 0));
+    const worm = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(wPts), 16, 0.07, 8, false), wormMat);
+    worm.position.set(-3 + i * 3.2, -3.2 + i * 1.8, 1.3);
+    group.add(worm);
+    worms.push(worm);
+  }
+
+  animatables.push((t) => {
+    if (!group.visible) return;
+    ants.forEach(a => {
+      a.mesh.position.x += a.dir * a.speed;
+      a.mesh.rotation.y = a.dir > 0 ? 0 : Math.PI;
+      if (a.mesh.position.x > 7.5) a.dir = -1;
+      if (a.mesh.position.x < -7.5) a.dir = 1;
+    });
+    grubs.forEach((g, idx) => {
+      g.scale.x = 1 + Math.sin(t * 3 + idx) * 0.12;
+    });
+    worms.forEach((w, idx) => {
+      w.position.x += Math.sin(t * 1.5 + idx) * 0.005;
+    });
+  });
+}
+
+// ----------------------------------------------------------------------------
+// LEVEL -3: UNDERGROUND INFRASTRUCTURE (하수도, 지하철, 지하수)
+// ----------------------------------------------------------------------------
+function buildLevelM3_SubwaySewage(group) {
+  // Earth / Concrete Cross-Section Backdrop
+  const wall = new THREE.Mesh(new THREE.PlaneGeometry(42, 26), new THREE.MeshLambertMaterial({ color: 0x1e293b }));
+  wall.position.z = -3.5;
+  group.add(wall);
+
+  // Upper: Concrete Sewage & Water Pipes (하수도 및 상수도)
+  const pipeMat = new THREE.MeshStandardMaterial({ color: 0x64748b, roughness: 0.6 });
+  const mainPipe = new THREE.Mesh(new THREE.CylinderGeometry(1.1, 1.1, 24, 24, 1, true), pipeMat);
+  mainPipe.rotation.z = Math.PI / 2;
+  mainPipe.position.set(0, 2.7, 0);
+  group.add(mainPipe);
+
+  // Flowing blue water inside pipe
+  const waterStream = new THREE.Mesh(
+    new THREE.BoxGeometry(24, 0.65, 1.6),
+    new THREE.MeshPhongMaterial({ color: 0x0ea5e9, transparent: true, opacity: 0.85 })
+  );
+  waterStream.position.set(0, 2.2, 0.1);
+  group.add(waterStream);
+
+  // Middle: Subway Tunnel & Moving Train (지하철 터널과 전동차)
+  const tunnelArch = new THREE.Mesh(
+    new THREE.CylinderGeometry(2.3, 2.3, 26, 24, 1, true, 0, Math.PI),
+    new THREE.MeshStandardMaterial({ color: 0x334155, side: THREE.DoubleSide })
+  );
+  tunnelArch.rotation.z = Math.PI / 2;
+  tunnelArch.rotation.x = Math.PI / 2;
+  tunnelArch.position.set(0, -1.6, -0.5);
+  group.add(tunnelArch);
+
+  const trackBed = new THREE.Mesh(new THREE.BoxGeometry(26, 0.3, 4.4), new THREE.MeshLambertMaterial({ color: 0x0f172a }));
+  trackBed.position.set(0, -1.75, 0);
+  group.add(trackBed);
+
+  // Subway Train
+  const train = new THREE.Group();
+  const trainBody = new THREE.Mesh(
+    new THREE.BoxGeometry(7.2, 1.45, 1.5),
+    new THREE.MeshPhongMaterial({ color: 0xe2e8f0 })
+  );
+  const stripe = new THREE.Mesh(new THREE.BoxGeometry(7.25, 0.25, 1.54), new THREE.MeshBasicMaterial({ color: 0x2563eb }));
+  train.add(trainBody, stripe);
+
+  // Lit Windows
+  const winMat = new THREE.MeshBasicMaterial({ color: 0xfef08a });
+  for (let w = -2.6; w <= 2.6; w += 1.05) {
+    const win = new THREE.Mesh(new THREE.BoxGeometry(0.65, 0.45, 1.55), winMat);
+    win.position.set(w, 0.2, 0);
+    train.add(win);
+  }
+  // Headlight
+  const headlight = new THREE.Mesh(new THREE.SphereGeometry(0.16, 8, 8), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+  headlight.position.set(3.62, -0.25, 0.4);
+  train.add(headlight);
+
+  train.position.set(-4, -0.85, 0.3);
+  group.add(train);
+
+  // Lower: Natural Groundwater Aquifer (지하수맥)
+  const aquifer = new THREE.Mesh(
+    new THREE.BoxGeometry(26, 1.3, 3.5),
+    new THREE.MeshPhongMaterial({ color: 0x0284c7, transparent: true, opacity: 0.75 })
+  );
+  aquifer.position.set(0, -3.6, 0);
+  group.add(aquifer);
+
+  animatables.push((t) => {
+    if (!group.visible) return;
+    train.position.x += 0.08;
+    if (train.position.x > 13) train.position.x = -13;
+    aquifer.material.opacity = 0.65 + Math.sin(t * 2.5) * 0.12;
+  });
+}
+
+// ----------------------------------------------------------------------------
+// LEVEL -4: SEDIMENTARY STRATA, FOSSILS, COAL & OIL (퇴적층, 화석, 석탄, 석유)
+// ----------------------------------------------------------------------------
+function buildLevelM4_StrataFossils(group) {
+  const layerColors = [0x92400e, 0xb45309, 0x78350f, 0x1c1917, 0xa16207, 0x451a03];
+  for (let i = 0; i < 6; i++) {
+    const isCoal = (i === 3); // Dark shimmering coal seam
+    const layer = new THREE.Mesh(
+      new THREE.BoxGeometry(32, 1.75, 4),
+      new THREE.MeshStandardMaterial({
+        color: layerColors[i],
+        roughness: isCoal ? 0.25 : 0.85,
+        metalness: isCoal ? 0.55 : 0.05
+      })
+    );
+    layer.position.set(0, 4.3 - i * 1.75, -1);
+    group.add(layer);
+  }
+
+  // Ammonite Spiral Fossils (암모나이트 화석)
+  const fossilMat = new THREE.MeshStandardMaterial({ color: 0xfef3c7, roughness: 0.4 });
+  [[-3.6, 2.5], [3.8, 0.8]].forEach(([fx, fy]) => {
+    const ammonite = new THREE.Mesh(new THREE.TorusKnotGeometry(0.55, 0.16, 48, 8, 2, 3), fossilMat);
+    ammonite.position.set(fx, fy, 1.15);
+    group.add(ammonite);
+  });
+
+  // Dinosaur Bone / Rib Fossil (공룡 뼈 화석)
+  const dinoGroup = new THREE.Group();
+  const spine = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 2.8, 8), fossilMat);
+  spine.rotation.z = Math.PI / 2;
+  dinoGroup.add(spine);
+  for (let r = -1.1; r <= 1.1; r += 0.44) {
+    const rib = new THREE.Mesh(new THREE.TorusGeometry(0.45, 0.06, 6, 12, Math.PI), fossilMat);
+    rib.position.set(r, -0.35, 0);
+    dinoGroup.add(rib);
+  }
+  dinoGroup.position.set(0.2, 2.5, 1.15);
+  group.add(dinoGroup);
+
+  // Underground Crude Oil & Gas Reservoir Pocket (석유 저류층)
+  const oilPocket = new THREE.Mesh(
+    new THREE.SphereGeometry(1.6, 24, 16),
+    new THREE.MeshPhongMaterial({ color: 0x09090b, shininess: 100, specular: 0x38bdf8 })
+  );
+  oilPocket.scale.set(2.4, 0.75, 0.8);
+  oilPocket.position.set(-1.5, -2.7, 1.1);
+  group.add(oilPocket);
+
+  // Natural Gas bubbles above oil
+  const gasPocket = new THREE.Mesh(
+    new THREE.SphereGeometry(1.1, 16, 12),
+    new THREE.MeshBasicMaterial({ color: 0xfbbf24, transparent: true, opacity: 0.45 })
+  );
+  gasPocket.scale.set(2.2, 0.5, 0.7);
+  gasPocket.position.set(-1.5, -2.0, 1.12);
+  group.add(gasPocket);
+
+  animatables.push((t) => {
+    if (!group.visible) return;
+    gasPocket.material.opacity = 0.35 + Math.sin(t * 3) * 0.15;
+  });
+}
+
+// ----------------------------------------------------------------------------
+// LEVEL -5: BEDROCK & DEEPEST HUMAN BOREHOLE DRILL (기반암과 인류 시추기 끝부분)
+// ----------------------------------------------------------------------------
+function buildLevelM5_BedrockDrill(group) {
+  // Dense Crystalline Granite & Basalt Bedrock Walls
+  const graniteMat = new THREE.MeshStandardMaterial({ color: 0x374151, roughness: 0.85, flatShading: true });
+  const basaltMat = new THREE.MeshStandardMaterial({ color: 0x1f2937, roughness: 0.9, flatShading: true });
+
+  const leftRock = new THREE.Mesh(new THREE.BoxGeometry(14, 16, 6), graniteMat);
+  leftRock.position.set(-7.65, 0, 0);
+  const rightRock = new THREE.Mesh(new THREE.BoxGeometry(14, 16, 6), basaltMat);
+  rightRock.position.set(7.65, 0, 0);
+  const bottomRock = new THREE.Mesh(new THREE.BoxGeometry(30, 8, 6), basaltMat);
+  bottomRock.position.set(0, -6.2, 0);
+  const backRock = new THREE.Mesh(new THREE.PlaneGeometry(32, 24), new THREE.MeshLambertMaterial({ color: 0x111827 }));
+  backRock.position.z = -3;
+  group.add(leftRock, rightRock, bottomRock, backRock);
+
+  // Kola Superdeep Borehole Drill Shaft & Diamond Drill Bit Tip (~12.2km)
+  const drillGroup = new THREE.Group();
+  const shaft = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.32, 0.32, 8.5, 16),
+    new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.8, roughness: 0.25 })
+  );
+  shaft.position.y = 3.2;
+
+  const drillHead = new THREE.Mesh(
+    new THREE.ConeGeometry(0.55, 1.5, 12),
+    new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.85, roughness: 0.2 })
+  );
+  drillHead.rotation.x = Math.PI;
+  drillHead.position.y = -1.6;
+
+  // Helical drill blades
+  const blade = new THREE.Mesh(
+    new THREE.TorusKnotGeometry(0.42, 0.08, 32, 6, 1, 3),
+    new THREE.MeshBasicMaterial({ color: 0xfef08a })
+  );
+  blade.position.y = -1.35;
+
+  drillGroup.add(shaft, drillHead, blade);
+  drillGroup.position.set(0, 0.5, 0.6);
+  group.add(drillGroup);
+
+  // Friction Sparks at the drill tip
+  const sparkCount = 40;
+  const sparkGeo = new THREE.BufferGeometry();
+  const sparkPos = new Float32Array(sparkCount * 3);
+  for (let i = 0; i < sparkCount; i++) {
+    sparkPos[i * 3] = (Math.random() - 0.5) * 1.8;
+    sparkPos[i * 3 + 1] = -1.8 + Math.random() * 1.2;
+    sparkPos[i * 3 + 2] = 0.8 + Math.random() * 0.8;
+  }
+  sparkGeo.setAttribute('position', new THREE.BufferAttribute(sparkPos, 3));
+  const sparks = new THREE.Points(sparkGeo, new THREE.PointsMaterial({ color: 0xfbbf24, size: 0.16 }));
+  group.add(sparks);
+
+  animatables.push((t) => {
+    if (!group.visible) return;
+    drillGroup.rotation.y = t * 8;
+    drillGroup.position.y = 0.5 + Math.sin(t * 24) * 0.04;
+    sparks.rotation.y = -t * 5;
+  });
+}
+
+// ----------------------------------------------------------------------------
+// LEVEL -6: LOWER CRUST & MAGMA CHAMBER (지각과 마그마)
+// ----------------------------------------------------------------------------
+function buildLevelM6_CrustMagma(group) {
+  // Cracked Dark Volcanic Crust Ceiling
+  const crustMat = new THREE.MeshStandardMaterial({ color: 0x1c1917, roughness: 0.9, flatShading: true });
+  for (let i = 0; i < 14; i++) {
+    const rock = new THREE.Mesh(new THREE.DodecahedronGeometry(1.6 + Math.random() * 1.4, 0), crustMat);
+    rock.position.set((i - 6.5) * 2.1, 3.8 + (Math.random() - 0.5) * 1.2, (Math.random() - 0.5) * 3);
+    group.add(rock);
+  }
+
+  // Bubbling Incandescent Magma Chamber
+  const magmaFloor = new THREE.Mesh(
+    new THREE.BoxGeometry(34, 8, 12),
+    new THREE.MeshBasicMaterial({ color: 0xea580c })
+  );
+  magmaFloor.position.set(0, -3.5, 0);
+  group.add(magmaFloor);
+
+  // Glowing Lava Blobs / Plumes
+  const blobs = [];
+  const blobMat = new THREE.MeshBasicMaterial({ color: 0xfef08a });
+  for (let i = 0; i < 22; i++) {
+    const blob = new THREE.Mesh(new THREE.SphereGeometry(0.4 + Math.random() * 0.7, 12, 12), blobMat);
+    blob.position.set((Math.random() - 0.5) * 18, -1.5 + Math.random() * 2.5, (Math.random() - 0.5) * 4);
+    group.add(blob);
+    blobs.push({ mesh: blob, speed: 0.015 + Math.random() * 0.025, phase: Math.random() * 6 });
+  }
+
+  // Magma Ambient Point Light
+  const magmaLight = new THREE.PointLight(0xff4500, 2.5, 25);
+  magmaLight.position.set(0, 0, 3);
+  group.add(magmaLight);
+
+  animatables.push((t) => {
+    if (!group.visible) return;
+    blobs.forEach(b => {
+      b.mesh.position.y += b.speed;
+      b.mesh.scale.setScalar(0.8 + Math.sin(t * 4 + b.phase) * 0.3);
+      if (b.mesh.position.y > 2.8) b.mesh.position.y = -2.2;
+    });
+  });
+}
+
+// ----------------------------------------------------------------------------
+// LEVEL -7: THE MANTLE (맨틀 대류층)
+// ----------------------------------------------------------------------------
+function buildLevelM7_Mantle(group) {
+  // Thick Glowing Mantle Shell
+  const mantleSphere = new THREE.Mesh(
+    new THREE.SphereGeometry(9.5, 36, 36),
+    new THREE.MeshBasicMaterial({ color: 0x9a3412, wireframe: true, transparent: true, opacity: 0.25 })
+  );
+  group.add(mantleSphere);
+
+  // Swirling Convection Current Particles
+  const pCount = 2600;
+  const pGeo = new THREE.BufferGeometry();
+  const pPos = new Float32Array(pCount * 3);
+  const pCol = new Float32Array(pCount * 3);
+  const c1 = new THREE.Color(0xdc2626);
+  const c2 = new THREE.Color(0xf59e0b);
+
+  for (let i = 0; i < pCount; i++) {
+    const theta = Math.random() * Math.PI * 2;
+    const phi = Math.acos(2 * Math.random() - 1);
+    const r = 3.5 + Math.random() * 6.5;
+    pPos[i * 3] = r * Math.sin(phi) * Math.cos(theta);
+    pPos[i * 3 + 1] = r * Math.cos(phi);
+    pPos[i * 3 + 2] = r * Math.sin(phi) * Math.sin(theta);
+
+    const mix = c1.clone().lerp(c2, Math.random());
+    pCol[i * 3] = mix.r; pCol[i * 3 + 1] = mix.g; pCol[i * 3 + 2] = mix.b;
+  }
+  pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
+  pGeo.setAttribute('color', new THREE.BufferAttribute(pCol, 3));
+  const mantleParticles = new THREE.Points(pGeo, new THREE.PointsMaterial({
+    size: 0.35,
+    vertexColors: true,
+    blending: THREE.AdditiveBlending,
+    transparent: true
+  }));
+  group.add(mantleParticles);
+
+  // Convection Torus Plume Rings
+  const plume1 = new THREE.Mesh(
+    new THREE.TorusGeometry(4.2, 0.45, 12, 36),
+    new THREE.MeshBasicMaterial({ color: 0xf97316, transparent: true, opacity: 0.55 })
+  );
+  plume1.position.x = -4.2;
+  const plume2 = plume1.clone();
+  plume2.position.x = 4.2;
+  group.add(plume1, plume2);
+
+  animatables.push((t) => {
+    if (!group.visible) return;
+    mantleParticles.rotation.y = t * 0.14;
+    mantleSphere.rotation.y = -t * 0.08;
+    plume1.rotation.z = t * 0.6;
+    plume2.rotation.z = -t * 0.6;
+  });
+}
+
+// ----------------------------------------------------------------------------
+// LEVEL -8: OUTER & INNER CORE (외핵과 지구 중심 내핵)
+// ----------------------------------------------------------------------------
+function buildLevelM8_Core(group) {
+  // Blindingly Bright Solid Iron Inner Core (~5,400°C)
+  const innerCore = new THREE.Mesh(
+    new THREE.SphereGeometry(2.6, 36, 36),
+    new THREE.MeshBasicMaterial({ color: 0xffffff })
+  );
+  group.add(innerCore);
+
+  // Intense Solar-White & Golden Radiance Halo
+  const coreHalo = new THREE.Sprite(new THREE.SpriteMaterial({
+    map: createCircleGlowTexture('rgba(255,255,255,1)', 'rgba(251,191,36,0.55)', 256),
+    transparent: true,
+    blending: THREE.AdditiveBlending
+  }));
+  coreHalo.scale.set(14, 14, 1);
+  group.add(coreHalo);
+
+  // Swirling Liquid Iron-Nickel Outer Core Shell
+  const outerCore = new THREE.Mesh(
+    new THREE.SphereGeometry(5.2, 32, 32),
+    new THREE.MeshBasicMaterial({ color: 0xf97316, wireframe: true, transparent: true, opacity: 0.38 })
+  );
+  group.add(outerCore);
+
+  // Magnetic Field Energy Rings generated by the Core
+  const magRings = [];
+  for (let i = 0; i < 4; i++) {
+    const ring = new THREE.Mesh(
+      new THREE.TorusGeometry(6.5 + i * 0.6, 0.06, 8, 64),
+      new THREE.MeshBasicMaterial({ color: 0xfde047, transparent: true, opacity: 0.45 })
+    );
+    ring.rotation.set(i * 0.7, i * 0.9, 0);
+    group.add(ring);
+    magRings.push(ring);
+  }
+
+  animatables.push((t) => {
+    if (!group.visible) return;
+    outerCore.rotation.y = t * 0.35;
+    outerCore.rotation.x = t * 0.15;
+    coreHalo.scale.setScalar(13.5 + Math.sin(t * 4) * 0.8);
+    magRings.forEach((r, idx) => {
+      r.rotation.y += 0.01 * (idx + 1);
+      r.rotation.x += 0.006 * (idx + 1);
+    });
+  });
+}
+
+// ============================================================================
+// NAVIGATION, CAMERA TRANSITIONS & UI UPDATES
+// ============================================================================
+function setupSidebar() {
+  const container = document.getElementById('stage-dots-container');
+  container.innerHTML = '';
+
+  STAGES.forEach((stage, idx) => {
+    const btn = document.createElement('button');
+    btn.className = 'group flex items-center gap-2 focus:outline-none py-0.5';
+    btn.onclick = () => goToStage(stage.level);
+    btn.title = `${stage.shortName} (${stage.altitude})`;
+
+    const label = document.createElement('span');
+    label.id = `side-label-${idx}`;
+    label.className = 'hidden lg:inline-block text-[11px] text-slate-400 group-hover:text-white transition-colors text-right min-w-[78px]';
+    label.textContent = stage.shortName;
+
+    const dot = document.createElement('span');
+    dot.id = `side-dot-${idx}`;
+    dot.className = `stage-dot w-2.5 h-2.5 rounded-full bg-slate-500/70 group-hover:bg-sky-300 ${stage.level === 0 ? 'origin-dot' : ''}`;
+
+    btn.appendChild(label);
+    btn.appendChild(dot);
+    container.appendChild(btn);
+  });
+}
+
+function goToStage(targetLevel) {
+  const targetIdx = STAGES.findIndex(s => s.level === targetLevel);
+  if (targetIdx === -1 || targetIdx === currentStageIdx) return;
+
+  const direction = targetLevel - STAGES[currentStageIdx].level;
+  playTransitionWhoosh(direction);
+  updateAmbientPitch(targetLevel);
+
+  fromStageIdx = currentStageIdx;
+  currentStageIdx = targetIdx;
+  isTransitioning = true;
+  transitionProgress = 0;
+
+  // Reset user drag rotation smoothly
+  targetYaw = 0;
+  targetPitch = 0;
+
+  // Make both old and new stage groups visible during cinematic zoom crossfade
+  STAGES.forEach((s, idx) => {
+    stageGroups[s.level].visible = (idx === fromStageIdx || idx === currentStageIdx);
+  });
+
+  updateUI();
+}
+
+function stepUp() {
+  if (currentStageIdx > 0) {
+    goToStage(STAGES[currentStageIdx - 1].level);
+  } else {
+    showToast('가장 높은 우주(은하군) 단계에 도달했습니다!');
+  }
+}
+
+function stepDown() {
+  if (currentStageIdx < STAGES.length - 1) {
+    goToStage(STAGES[currentStageIdx + 1].level);
+  } else {
+    showToast('지구 가장 깊은 중심(내핵)에 도달했습니다!');
+  }
+}
+
+function updateUI() {
+  const stage = STAGES[currentStageIdx];
+  document.getElementById('stage-badge').textContent = stage.badge;
+  document.getElementById('altitude-text').textContent = stage.altitude;
+  document.getElementById('stage-title').textContent = stage.title;
+  document.getElementById('stage-desc').textContent = stage.desc;
+
+  // Update Up / Down Button labels & disabled states
+  const btnUp = document.getElementById('btn-up');
+  const btnDown = document.getElementById('btn-down');
+  const nextUpLabel = document.getElementById('next-up-label');
+  const nextDownLabel = document.getElementById('next-down-label');
+
+  if (currentStageIdx > 0) {
+    btnUp.disabled = false;
+    nextUpLabel.textContent = STAGES[currentStageIdx - 1].shortName;
+  } else {
+    btnUp.disabled = true;
+    nextUpLabel.textContent = '최상단 우주 도달';
+  }
+
+  if (currentStageIdx < STAGES.length - 1) {
+    btnDown.disabled = false;
+    nextDownLabel.textContent = STAGES[currentStageIdx + 1].shortName;
+  } else {
+    btnDown.disabled = true;
+    nextDownLabel.textContent = '지구 중심 도달';
+  }
+
+  // Update Sidebar Dots
+  STAGES.forEach((s, idx) => {
+    const dot = document.getElementById(`side-dot-${idx}`);
+    const label = document.getElementById(`side-label-${idx}`);
+    if (dot) {
+      if (idx === currentStageIdx) {
+        dot.classList.add('active');
+        if (label) label.className = 'hidden lg:inline-block text-[11px] font-bold text-sky-300 transition-colors text-right min-w-[78px]';
+      } else {
+        dot.classList.remove('active');
+        if (label) label.className = `hidden lg:inline-block text-[11px] ${s.level === 0 ? 'text-amber-300 font-semibold' : 'text-slate-400'} group-hover:text-white transition-colors text-right min-w-[78px]`;
+      }
+    }
+  });
+}
+
+// ============================================================================
+// FULLSCREEN & INPUT CONTROLS
+// ============================================================================
+function toggleFullscreen() {
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen().catch(() => {
+      showToast('브라우저 보안 설정으로 전체화면이 제한되었습니다.');
+    });
+  } else {
+    if (document.exitFullscreen) {
+      document.exitFullscreen();
+    }
+  }
+}
+
+function updateFullscreenButton() {
+  const label = document.getElementById('fs-label');
+  if (document.fullscreenElement) {
+    label.textContent = '전체화면 종료';
+  } else {
+    label.textContent = '전체화면';
+  }
+  onWindowResize();
+}
+
+function onWindowResize() {
+  if (!camera || !renderer) return;
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+}
+
+function setupInputs() {
+  // Keyboard Up/Down Arrows & F key for Fullscreen
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') {
+      e.preventDefault();
+      stepUp();
+    } else if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') {
+      e.preventDefault();
+      stepDown();
+    } else if (e.key === 'Home' || e.key === '0') {
+      goToStage(0);
+    } else if (e.key === 'f' || e.key === 'F') {
+      toggleFullscreen();
+    }
+  });
+
+  // Mouse Wheel Throttle
+  let wheelCooldown = 0;
+  window.addEventListener('wheel', (e) => {
+    const now = Date.now();
+    if (now - wheelCooldown < 420) return;
+    if (Math.abs(e.deltaY) > 15) {
+      wheelCooldown = now;
+      if (e.deltaY < 0) stepUp();
+      else stepDown();
+    }
+  }, { passive: true });
+
+  // Pointer Drag for 3D Camera Angle Exploration
+  const canvas = renderer.domElement;
+  canvas.addEventListener('pointerdown', (e) => {
+    isDragging = true;
+    prevPointer = { x: e.clientX, y: e.clientY };
+  });
+
+  window.addEventListener('pointermove', (e) => {
+    if (!isDragging) return;
+    const dx = e.clientX - prevPointer.x;
+    const dy = e.clientY - prevPointer.y;
+    prevPointer = { x: e.clientX, y: e.clientY };
+
+    targetYaw -= dx * 0.005;
+    targetPitch = Math.max(-0.55, Math.min(0.55, targetPitch + dy * 0.004));
+  });
+
+  window.addEventListener('pointerup', () => {
+    isDragging = false;
+  });
+}
+
+// ============================================================================
+// MAIN ANIMATION LOOP (Cinematic Scale Zoom & Render)
+// ============================================================================
+function easeInOutCubic(x) {
+  return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
+}
+
+function animate() {
+  requestAnimationFrame(animate);
+
+  const delta = clock.getDelta();
+  const elapsed = clock.getElapsedTime();
+
+  const targetStage = STAGES[currentStageIdx];
+  const fromStage = STAGES[fromStageIdx];
+
+  // Smooth Camera Zoom & Scale Morphing Transition
+  if (isTransitioning) {
+    transitionProgress += delta * 1.35; // ~0.74s cinematic transition
+    if (transitionProgress >= 1) {
+      transitionProgress = 1;
+      isTransitioning = false;
+      // Hide previous group cleanly
+      STAGES.forEach((s, idx) => {
+        stageGroups[s.level].visible = (idx === currentStageIdx);
+        stageGroups[s.level].scale.setScalar(1);
+        stageGroups[s.level].position.set(0, 0, 0);
+      });
+    } else {
+      const ease = easeInOutCubic(transitionProgress);
+      const movingUp = targetStage.level > fromStage.level;
+
+      const fromGroup = stageGroups[fromStage.level];
+      const toGroup = stageGroups[targetStage.level];
+
+      if (movingUp) {
+        // Zooming out / ascending: old layer shrinks downward, new layer descends into place
+        fromGroup.scale.setScalar(THREE.MathUtils.lerp(1, 0.12, ease));
+        fromGroup.position.y = THREE.MathUtils.lerp(0, -14, ease);
+        toGroup.scale.setScalar(THREE.MathUtils.lerp(4.5, 1, ease));
+        toGroup.position.y = THREE.MathUtils.lerp(14, 0, ease);
+      } else {
+        // Zooming in / descending: old layer expands past camera upward, new layer rises into view
+        fromGroup.scale.setScalar(THREE.MathUtils.lerp(1, 5.5, ease));
+        fromGroup.position.y = THREE.MathUtils.lerp(0, 14, ease);
+        toGroup.scale.setScalar(THREE.MathUtils.lerp(0.15, 1, ease));
+        toGroup.position.y = THREE.MathUtils.lerp(-14, 0, ease);
+      }
+
+      // Interpolate Background & Fog colors
+      const cFromBg = new THREE.Color(fromStage.bgColor);
+      const cToBg = new THREE.Color(targetStage.bgColor);
+      scene.background.copy(cFromBg).lerp(cToBg, ease);
+
+      const cFromFog = new THREE.Color(fromStage.fogColor);
+      const cToFog = new THREE.Color(targetStage.fogColor);
+      scene.fog.color.copy(cFromFog).lerp(cToFog, ease);
+      scene.fog.density = THREE.MathUtils.lerp(fromStage.fogDensity, targetStage.fogDensity, ease);
+    }
+  } else {
+    scene.background.setHex(targetStage.bgColor);
+    scene.fog.color.setHex(targetStage.fogColor);
+    scene.fog.density = targetStage.fogDensity;
+  }
+
+  // Smoothly interpolate camera position + user drag orbit
+  userYaw += (targetYaw - userYaw) * 0.08;
+  userPitch += (targetPitch - userPitch) * 0.08;
+
+  const basePos = new THREE.Vector3(...targetStage.camPos);
+  const lookAtTarget = new THREE.Vector3(...targetStage.camTarget);
+
+  // Subtle idle breathing camera motion
+  const breatheX = Math.sin(elapsed * 0.5) * 0.18;
+  const breatheY = Math.cos(elapsed * 0.4) * 0.12;
+
+  const offset = basePos.clone().sub(lookAtTarget);
+  offset.applyAxisAngle(new THREE.Vector3(0, 1, 0), userYaw);
+  offset.y += userPitch * offset.length() * 0.5;
+
+  const finalCamPos = lookAtTarget.clone().add(offset);
+  finalCamPos.x += breatheX;
+  finalCamPos.y += breatheY;
+
+  camera.position.lerp(finalCamPos, 0.1);
+  camera.lookAt(lookAtTarget);
+
+  // Run per-layer 3D animations
+  for (let i = 0; i < animatables.length; i++) {
+    animatables[i](elapsed, delta);
+  }
+
+  renderer.render(scene, camera);
+}
+
+window.onload = function () {
+  initThree();
+  animate();
+};
+</script>
+</body>
+</html>
