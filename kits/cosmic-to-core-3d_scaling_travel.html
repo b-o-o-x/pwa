@@ -287,7 +287,7 @@ const STAGES = [
     title: "지평선 위의 나 (The Horizon - You)",
     altitude: "0 m (기준점)",
     badge: "ORIGIN · LEVEL 0",
-    desc: "화면 절반 위로는 하늘과 새·잠자리·벌이, 아래로는 잔디와 강아지·고양이가 보입니다. 광활한 우주와 깊은 지구 내부 사이, 지평선 위에 한 사람이 서 있습니다.",
+    desc: "지평선(기준점 0m) 위에 서 있는 사람의 시점(높이 약 1.5m)에서 세상을 바라봅니다. 화면 절반 위로는 하늘과 새·잠자리·벌이, 아래로는 잔디와 강아지·고양이가 보입니다. 광활한 우주와 깊은 지구 내부 사이, 지평선 위에 한 사람이 서 있습니다.",
     bgColor: 0x4da6ff,
     fogColor: 0x87ceeb,
     fogDensity: 0.012,
@@ -298,7 +298,7 @@ const STAGES = [
     level: -1,
     shortName: "잔디와 곤충",
     title: "지표면 생태계: 잔디와 곤충들 (Surface Insects)",
-    altitude: "-0.1 m (지표면)",
+    altitude: "0.0 m (지표면)",
     badge: "SURFACE · LEVEL -1",
     desc: "발밑의 작은 숲으로 내려왔습니다. 풀잎 사이로 나비가 날아다니고, 무당벌레, 그리고 영롱하게 빛나는 반딧불이가 살아 숨 쉽니다.",
     bgColor: 0x1a3a1a,
@@ -1128,9 +1128,12 @@ function buildLevel1_City(group) {
 }
 
 // ----------------------------------------------------------------------------
-// LEVEL +2: KOREAN PENINSULA MAP (대한민국 지도)
+// LEVEL +2: KOREAN PENINSULA MAP (첫 번째 원본 실루엣 및 수작업 도시 위치 완벽 복원)
 // ----------------------------------------------------------------------------
 function buildLevel2_KoreaMap(group) {
+  // 이전 메쉬가 겹치지 않도록 그룹 초기화
+  group.clear();
+
   // Deep Blue Sea
   const sea = new THREE.Mesh(new THREE.PlaneGeometry(140, 140), new THREE.MeshPhongMaterial({
     color: 0x0369a1,
@@ -1139,10 +1142,10 @@ function buildLevel2_KoreaMap(group) {
   sea.rotation.x = -Math.PI / 2;
   group.add(sea);
 
-  // Extruded Korean Peninsula Silhouette Shape
+  // Extruded Korean Peninsula Silhouette Shape (가장 마음에 들어 하셨던 첫 번째 원본 pts 좌표 그대로 사용)
   const shape = new THREE.Shape();
   const pts = [
-    [-2.5, 11], [1.5, 12], [5.5, 13.5], [7.2, 11.5], [4.5, 8.5],
+    [-2.5, 11], [1.5, 12], [9.5, 13.5], [11.2, 11.5], [4.5, 8.5],
     [3.8, 5.5], [5.2, 2.0], [5.5, -2.5], [4.6, -6.5], [2.2, -8.2],
     [-1.2, -8.8], [-3.2, -7.2], [-2.8, -3.5], [-3.8, -0.5], [-2.2, 2.5],
     [-4.5, 4.5], [-5.2, 6.8], [-3.0, 8.8]
@@ -1164,12 +1167,20 @@ function buildLevel2_KoreaMap(group) {
   koreaMesh.position.set(0, 0.1, 1.5);
   group.add(koreaMesh);
 
-  // Jeju Island & Ulleungdo / Dokdo
+  // Jeju Island & Hallasan (제주도 원래 위치 복원 및 한라산 추가 - 겹침 현상 해결)
   const jeju = new THREE.Mesh(new THREE.CylinderGeometry(1.1, 1.3, 0.6, 16), landMat);
   jeju.scale.set(1.4, 1, 0.8);
   jeju.position.set(-1.5, 0.3, 12.2);
   group.add(jeju);
 
+  const hallasan = new THREE.Mesh(
+    new THREE.ConeGeometry(0.4, 0.6, 10),
+    new THREE.MeshLambertMaterial({ color: 0x15803d })
+  );
+  hallasan.position.set(-1.5, 0.8, 12.2);
+  group.add(hallasan);
+
+  // Ulleungdo & Dokdo (울릉도, 독도)
   const ulleung = new THREE.Mesh(new THREE.ConeGeometry(0.45, 0.7, 10), landMat);
   ulleung.position.set(8.2, 0.35, 1.5);
   group.add(ulleung);
@@ -1178,7 +1189,22 @@ function buildLevel2_KoreaMap(group) {
   dokdo.position.set(9.8, 0.25, 2.1);
   group.add(dokdo);
 
-  // Taebaek Mountain Range ridges
+  // Mt. Baekdu (백두산 북녘 최북단 배치)
+  const baekduGroup = new THREE.Group();
+  const baekduMtn = new THREE.Mesh(
+    new THREE.ConeGeometry(0.6, 1.1, 10),
+    new THREE.MeshLambertMaterial({ color: 0x15803d })
+  );
+  const baekduPeak = new THREE.Mesh(
+    new THREE.SphereGeometry(0.18, 8, 8),
+    new THREE.MeshBasicMaterial({ color: 0xffffff })
+  );
+  baekduPeak.position.y = 0.5;
+  baekduGroup.add(baekduMtn, baekduPeak);
+  baekduGroup.position.set(4.5, 1.0, -11.0);
+  group.add(baekduGroup);
+
+  // Taebaek Mountain Range ridges (태백산맥)
   const mtnMat = new THREE.MeshLambertMaterial({ color: 0x15803d });
   for (let i = 0; i < 24; i++) {
     const mtn = new THREE.Mesh(new THREE.ConeGeometry(0.6 + Math.random() * 0.5, 1.1 + Math.random() * 0.8, 7), mtnMat);
@@ -1186,12 +1212,13 @@ function buildLevel2_KoreaMap(group) {
     group.add(mtn);
   }
 
-  // City Glow Pins (Seoul, Busan, Daejeon, Gwangju, Pyongyang)
-  const cities = [
-    { name: 'Seoul', x: -0.6, z: -1.8, color: 0xfbbf24 },
-    { name: 'Busan', x: 3.6, z: 6.8, color: 0x38bdf8 },
-    { name: 'Daejeon', x: 0.2, z: 1.8, color: 0xfbbf24 },
-    { name: 'Gwangju', x: -1.5, z: 5.8, color: 0xfbbf24 }
+  // Major Cities / Capitals (사용자님이 수작업으로 맞추셨던 원래 좌표 완벽 유지 + 부산 색상 주황빛 통일)
+    const cities = [
+    { name: 'Pyongyang', x: -3.5, z: -2.5, color: 0xfbbf24 }, // 북쪽 평양
+    { name: 'Seoul',     x: -1.8, z:  1.5, color: 0xfbbf24 }, // 중서부 서울
+    { name: 'Daejeon',   x: -1.1, z:  4.8, color: 0xfbbf24 }, // 한반도 중심 대전
+    { name: 'Gwangju',   x: -2.2, z:  7.8, color: 0xfbbf24 }, // 남서부 광주 (아래로 이동)
+    { name: 'Busan',     x:  4.2, z:  8.5, color: 0xfbbf24 }  // 남동부 부산 (아래로 이동 및 주황빛 통일)
   ];
   cities.forEach(c => {
     const pin = new THREE.Mesh(new THREE.SphereGeometry(0.32, 12, 12), new THREE.MeshBasicMaterial({ color: c.color }));
@@ -1821,21 +1848,68 @@ function buildLevelM2_RootsSoil(group) {
     group.add(stone);
   }
 
-  // Ants (개미들) crawling along soil tunnels
+  // Ants (개미들) - 다리 추가 및 랜덤 2차원 탐색(가다서다) 구현
   const ants = [];
   const antMat = new THREE.MeshBasicMaterial({ color: 0x09090b });
   for (let i = 0; i < 14; i++) {
     const ant = new THREE.Group();
-    const s1 = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 8), antMat);
-    const s2 = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 8), antMat);
-    s2.position.x = 0.12;
-    const s3 = new THREE.Mesh(new THREE.SphereGeometry(0.11, 8, 8), antMat);
-    s3.position.x = -0.15;
-    ant.add(s1, s2, s3);
+    
+    // 머리, 가슴, 배
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 8), antMat);
+    head.position.x = 0.12;
+    const thorax = new THREE.Mesh(new THREE.SphereGeometry(0.05, 8, 8), antMat);
+    thorax.position.x = 0.0;
+    const abdomen = new THREE.Mesh(new THREE.SphereGeometry(0.09, 8, 8), antMat);
+    abdomen.position.x = -0.15;
+    ant.add(head, thorax, abdomen);
+    
+    // 좌우 꺾인 더듬이 (Antennae - 무릎 꺾인 형태 구현)
+    const createAntenna = (isLeft) => {
+      const antGroup = new THREE.Group();
+      antGroup.position.set(0.18, 0.03, isLeft ? 0.04 : -0.04);
+
+      // 1단 마디 (머리에서 앞쪽으로 살짝 뻗음)
+      const baseSeg = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.015, 0.015), antMat);
+      baseSeg.position.set(0.03, 0, 0);
+      antGroup.add(baseSeg);
+
+      // 2단 마디 (아래쪽 앞 방향으로 꺾여 내려감)
+      const tipSeg = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.015, 0.015), antMat);
+      tipSeg.position.set(0.08, -0.04, 0);
+      tipSeg.rotation.z = -0.75; // 아래로 꺾이는 각도
+      antGroup.add(tipSeg);
+
+      antGroup.rotation.y = isLeft ? 0.3 : -0.3; // 좌우 대칭 바깥쪽 벌어짐
+      return antGroup;
+    };
+
+    ant.add(createAntenna(true));  // 왼쪽 더듬이
+    ant.add(createAntenna(false)); // 오른쪽 더듬이
+
+    // 3쌍의 다리 추가
+    for (let l = 0; l < 3; l++) {
+      const xOff = -0.06 + l * 0.06;
+      const legL = new THREE.Mesh(new THREE.BoxGeometry(0.015, 0.15, 0.015), antMat);
+      legL.position.set(xOff, -0.06, 0.06);
+      legL.rotation.x = 0.5;
+      
+      const legR = new THREE.Mesh(new THREE.BoxGeometry(0.015, 0.15, 0.015), antMat);
+      legR.position.set(xOff, -0.06, -0.06);
+      legR.rotation.x = -0.5;
+      
+      ant.add(legL, legR);
+    }
+
     const yLevel = -2.5 + (i % 4) * 1.6;
     ant.position.set((Math.random() - 0.5) * 12, yLevel, 1.2);
     group.add(ant);
-    ants.push({ mesh: ant, dir: i % 2 === 0 ? 1 : -1, speed: 0.025 + Math.random() * 0.02 });
+
+    ants.push({
+      mesh: ant,
+      speed: 0.015 + Math.random() * 0.02,
+      angle: Math.random() * Math.PI * 2,
+      isPaused: false
+    });
   }
 
   // Grubs / Larvae (애벌레)
@@ -1867,12 +1941,29 @@ function buildLevelM2_RootsSoil(group) {
 
   animatables.push((t) => {
     if (!group.visible) return;
+    
+    // 개미 움직임: 랜덤 방향 탐색 및 가다 서다(Pause & Move) 연출
     ants.forEach(a => {
-      a.mesh.position.x += a.dir * a.speed;
-      a.mesh.rotation.y = a.dir > 0 ? 0 : Math.PI;
-      if (a.mesh.position.x > 7.5) a.dir = -1;
-      if (a.mesh.position.x < -7.5) a.dir = 1;
+      if (Math.random() < 0.025) {
+        a.isPaused = Math.random() < 0.55; // 일정 확률로 멈춤/출발 결정
+        if (!a.isPaused) {
+          a.angle += (Math.random() - 0.5) * 2.0; // 진행 방향 살짝 틀기
+        }
+      }
+
+      if (!a.isPaused) {
+        a.mesh.position.x += Math.cos(a.angle) * a.speed;
+        a.mesh.position.y += Math.sin(a.angle) * a.speed;
+        a.mesh.rotation.z = a.angle; // 이동 방향으로 몸체 회전
+      }
+
+      // 화면 경계 이탈 방지 (벽에 부딪히면 각도 반사)
+      if (a.mesh.position.x > 7.5) { a.angle = Math.PI - a.angle; a.mesh.position.x = 7.5; }
+      if (a.mesh.position.x < -7.5) { a.angle = Math.PI - a.angle; a.mesh.position.x = -7.5; }
+      if (a.mesh.position.y > 5.5) { a.angle = -a.angle; a.mesh.position.y = 5.5; }
+      if (a.mesh.position.y < -5.5) { a.angle = -a.angle; a.mesh.position.y = -5.5; }
     });
+
     grubs.forEach((g, idx) => {
       g.scale.x = 1 + Math.sin(t * 3 + idx) * 0.12;
     });
@@ -1891,19 +1982,32 @@ function buildLevelM3_SubwaySewage(group) {
   wall.position.z = -3.5;
   group.add(wall);
 
-  // Upper: Concrete Sewage & Water Pipes (하수도 및 상수도)
-  const pipeMat = new THREE.MeshStandardMaterial({ color: 0x64748b, roughness: 0.6 });
+  // Upper: Concrete Sewage & Water Pipes (하수도 및 상수도) - 투명도 및 depthWrite 설정
+  const pipeMat = new THREE.MeshStandardMaterial({ 
+    color: 0x64748b, 
+    roughness: 0.6,
+    transparent: true,
+    opacity: 0.35,
+    depthWrite: false // 각도에 따른 투명도 깨짐 현상 방지
+  });
   const mainPipe = new THREE.Mesh(new THREE.CylinderGeometry(1.1, 1.1, 24, 24, 1, true), pipeMat);
   mainPipe.rotation.z = Math.PI / 2;
   mainPipe.position.set(0, 2.7, 0);
   group.add(mainPipe);
 
-  // Flowing blue water inside pipe
+  // Flowing blue water inside pipe - 아래로 불룩한 반원기둥 형태 (하단 180도 부채꼴)
+  const waterGeo = new THREE.CylinderGeometry(0.95, 0.95, 23.8, 16, 1, false, Math.PI, Math.PI);
+  waterGeo.rotateZ(Math.PI / 2);
   const waterStream = new THREE.Mesh(
-    new THREE.BoxGeometry(24, 0.65, 1.6),
-    new THREE.MeshPhongMaterial({ color: 0x0ea5e9, transparent: true, opacity: 0.85 })
+    waterGeo,
+    new THREE.MeshPhongMaterial({ 
+      color: 0x0ea5e9, 
+      transparent: true, 
+      opacity: 0.85,
+      side: THREE.DoubleSide 
+    })
   );
-  waterStream.position.set(0, 2.2, 0.1);
+  waterStream.position.set(0, 2.7, 0);
   group.add(waterStream);
 
   // Middle: Subway Tunnel & Dual-Direction Moving Trains (좌->우, 우->좌 양방향 지하철)
@@ -1911,7 +2015,7 @@ function buildLevelM3_SubwaySewage(group) {
     new THREE.CylinderGeometry(2.4, 2.4, 26, 24, 1, true, 0, Math.PI),
     new THREE.MeshStandardMaterial({ color: 0x334155, side: THREE.DoubleSide })
   );
-  tunnelArch.rotation.z = Math.PI / 2;
+  tunnelArch.rotation.z = -Math.PI / 2;
   tunnelArch.rotation.x = Math.PI / 2;
   tunnelArch.position.set(0, -1.6, -0.5);
   group.add(tunnelArch);
@@ -1939,6 +2043,7 @@ function buildLevelM3_SubwaySewage(group) {
       tGroup.add(win);
     }
 
+    // 전조등 추가 (헤드라이트)
     const headlight = new THREE.Mesh(
       new THREE.SphereGeometry(0.15, 8, 8),
       new THREE.MeshBasicMaterial({ color: 0xffffff })
@@ -1983,6 +2088,21 @@ function buildLevelM3_SubwaySewage(group) {
 // ----------------------------------------------------------------------------
 // LEVEL -4: SEDIMENTARY STRATA, FOSSILS, COAL & OIL (퇴적층, 화석, 석탄, 석유)
 // ----------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
+// LEVEL -4: STRATA & FOSSILS (퇴적층과 화석·지하자원 - 나선형 암모나이트 적용 버전)
+// ----------------------------------------------------------------------------
+
+// 암모나이트 나선 껍데기 경로 커브 정의
+class AmmoniteSpiralCurve extends THREE.Curve {
+  getPoint(t, optionalTarget = new THREE.Vector3()) {
+    const angle = t * Math.PI * 5.5; // 약 2.7바퀴 회전
+    const r = 0.04 + Math.pow(t, 1.2) * 0.48; // 바깥으로 갈수록 커지는 나선 반경
+    const x = Math.cos(angle) * r;
+    const y = Math.sin(angle) * r;
+    return optionalTarget.set(x, y, 0);
+  }
+}
+
 function buildLevelM4_StrataFossils(group) {
   const layerColors = [0x92400e, 0xb45309, 0x78350f, 0x1c1917, 0xa16207, 0x451a03];
   for (let i = 0; i < 6; i++) {
@@ -1999,11 +2119,14 @@ function buildLevelM4_StrataFossils(group) {
     group.add(layer);
   }
 
-  // Ammonite Spiral Fossils (암모나이트 화석)
+  // Ammonite Spiral Fossils (나선형 암모나이트 화석)
   const fossilMat = new THREE.MeshStandardMaterial({ color: 0xfef3c7, roughness: 0.4 });
-  [[-3.6, 2.5], [3.8, 0.8]].forEach(([fx, fy]) => {
-    const ammonite = new THREE.Mesh(new THREE.TorusKnotGeometry(0.55, 0.16, 48, 8, 2, 3), fossilMat);
+  [[-3.6, 2.5], [3.8, 0.8]].forEach(([fx, fy], idx) => {
+    const spiralPath = new AmmoniteSpiralCurve();
+    const ammoniteGeo = new THREE.TubeGeometry(spiralPath, 80, 0.08, 10, false);
+    const ammonite = new THREE.Mesh(ammoniteGeo, fossilMat);
     ammonite.position.set(fx, fy, 1.15);
+    ammonite.rotation.z = idx === 0 ? 0.4 : -0.5; // 화석마다 살짝 회전 각도를 주어 자연스럽게 연출
     group.add(ammonite);
   });
 
@@ -2037,7 +2160,7 @@ function buildLevelM4_StrataFossils(group) {
   gasPocket.scale.set(2.2, 0.5, 0.7);
   gasPocket.position.set(-1.5, -2.0, 1.12);
   group.add(gasPocket);
-
+  
   animatables.push((t) => {
     if (!group.visible) return;
     gasPocket.material.opacity = 0.35 + Math.sin(t * 3) * 0.15;
