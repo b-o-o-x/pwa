@@ -105,7 +105,7 @@
           0 m (해수면 기준)
         </span>
         <span class="font-orbitron text-[10px] text-slate-300/80 bg-white/10 px-2 py-0.5 rounded-md border border-white/10">
-          Cosmic-to-earth-3d V.261116-1252
+          Cosmic-to-earth-3d V.261116-1549
         </span>
       </div>
       <h1 id="stage-title" class="text-xl sm:text-2xl font-black tracking-tight text-white mb-1.5">
@@ -1247,9 +1247,12 @@ function buildLevel2_KoreaMap(group) {
 }
 
 // ----------------------------------------------------------------------------
-// LEVEL +3: UPPER TROPOSPHERE & HIGH CLOUDS WITH AIRPLANES (대류권 상부, 상층운 및 순항 비행기)
+// LEVEL +3: UPPER TROPOSPHERE & HIGH CLOUDS WITH AIRPLANES (대류권 상부, 상층운 및 순항 비행기 - 지구 텍스처 적용 버전)
 // ----------------------------------------------------------------------------
 function buildLevel3_Clouds(group) {
+  // 이전 메쉬가 겹치지 않도록 그룹 초기화
+  group.clear();
+
   // 대류권 상부의 얇고 퍼진 얼음 결정 구름(권운 형태) 매질
   const highCloudMat = new THREE.MeshStandardMaterial({
     color: 0xf8fafc,
@@ -1343,10 +1346,13 @@ function buildLevel3_Clouds(group) {
     });
   }
 
-  // 곡선 형태의 푸른 지구 표면
+  // 곡선 형태의 지구 표면 (실제 지구 지도 텍스처 적용)
+  const textureLoader = new THREE.TextureLoader();
+  const earthTex = textureLoader.load('https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/earth_atmos_2048.jpg');
+  
   const earthCurve = new THREE.Mesh(
     new THREE.SphereGeometry(85, 32, 24),
-    new THREE.MeshBasicMaterial({ color: 0x0284c7 })
+    new THREE.MeshStandardMaterial({ map: earthTex, roughness: 0.8 })
   );
   earthCurve.position.set(0, -96, -15);
   group.add(earthCurve);
@@ -1374,9 +1380,12 @@ function buildLevel3_Clouds(group) {
 }
 
 // ----------------------------------------------------------------------------
-// LEVEL +4: PLANET EARTH (지구 - 구름 제거 및 세계 지도형 대륙 표현)
+// LEVEL +4: PLANET EARTH & MOON (지구와 달 - 실제 천체 지도 텍스처 적용 버전)
 // ----------------------------------------------------------------------------
 function buildLevel4_Earth(group) {
+  // 이전 메쉬가 겹치지 않도록 그룹 초기화
+  group.clear();
+
   // Background Stars
   const starGeo = new THREE.BufferGeometry();
   const starPos = new Float32Array(1500 * 3);
@@ -1384,8 +1393,10 @@ function buildLevel4_Earth(group) {
   starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
   group.add(new THREE.Points(starGeo, new THREE.PointsMaterial({ color: 0xffffff, size: 0.35 })));
 
-  // Earth Sphere
-  const earthTex = createEarthTexture();
+  const textureLoader = new THREE.TextureLoader();
+
+  // 1. 지구 구체 (실제 지구 텍스처 적용)
+  const earthTex = textureLoader.load('https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/earth_atmos_2048.jpg');
   const earthMesh = new THREE.Mesh(
     new THREE.SphereGeometry(5.5, 48, 48),
     new THREE.MeshPhongMaterial({ map: earthTex, shininess: 25 })
@@ -1402,11 +1413,12 @@ function buildLevel4_Earth(group) {
   atmoSprite.scale.set(15.2, 15.2, 1);
   group.add(atmoSprite);
 
-  // Orbiting Moon
+  // 2. 공전하는 달 (실제 달 크레이터 텍스처 적용)
   const moonPivot = new THREE.Group();
+  const moonTex = textureLoader.load('https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/moon_1024.jpg');
   const moon = new THREE.Mesh(
     new THREE.SphereGeometry(0.95, 24, 24),
-    new THREE.MeshLambertMaterial({ color: 0xcbd5e1 })
+    new THREE.MeshStandardMaterial({ map: moonTex, roughness: 0.9 })
   );
   moon.position.set(11.5, 1.5, 0);
   moonPivot.add(moon);
@@ -1420,9 +1432,12 @@ function buildLevel4_Earth(group) {
 }
 
 // ----------------------------------------------------------------------------
-// LEVEL +5: SOLAR SYSTEM (태양계)
+// LEVEL +5: SOLAR SYSTEM (태양계 - 검은 박스 제거 및 지구 텍스처 적용 버전)
 // ----------------------------------------------------------------------------
 function buildLevel5_SolarSystem(group) {
+  // 이전 메쉬가 겹치지 않도록 초기화
+  group.clear();
+
   // Stars
   const starGeo = new THREE.BufferGeometry();
   const starPos = new Float32Array(2000 * 3);
@@ -1440,10 +1455,15 @@ function buildLevel5_SolarSystem(group) {
   const sunGlow = new THREE.Sprite(new THREE.SpriteMaterial({
     map: createCircleGlowTexture('rgba(254,240,138,1)', 'rgba(249,115,22,0.35)', 256),
     transparent: true,
-    blending: THREE.AdditiveBlending
+    blending: THREE.AdditiveBlending,
+    depthWrite: false // 검은 박스 방지
   }));
   sunGlow.scale.set(13, 13, 1);
   group.add(sunGlow);
+
+  // Texture Loader for Earth
+  const textureLoader = new THREE.TextureLoader();
+  const earthTex = textureLoader.load('https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/earth_atmos_2048.jpg');
 
   // Planets Data
   const planetsData = [
@@ -1459,13 +1479,14 @@ function buildLevel5_SolarSystem(group) {
 
   const planetPivots = [];
   planetsData.forEach((p, idx) => {
-    // Orbit Ring
+    // Orbit Ring (depthWrite: false를 주어 겹침 현상으로 인한 검은 사각형 박스 제거)
     const orbitGeo = new THREE.RingGeometry(p.dist - 0.04, p.dist + 0.04, 64);
     const orbitMat = new THREE.MeshBasicMaterial({
       color: p.isEarth ? 0x38bdf8 : 0xffffff,
       transparent: true,
       opacity: p.isEarth ? 0.55 : 0.18,
-      side: THREE.DoubleSide
+      side: THREE.DoubleSide,
+      depthWrite: false 
     });
     const orbitRing = new THREE.Mesh(orbitGeo, orbitMat);
     orbitRing.rotation.x = Math.PI / 2;
@@ -1473,9 +1494,15 @@ function buildLevel5_SolarSystem(group) {
 
     const pivot = new THREE.Group();
     pivot.rotation.y = idx * 1.1;
+
+    // 지구인 경우 실제 텍스처 적용, 그 외 행성은 기존 단색 유지
+    const meshMat = p.isEarth 
+      ? new THREE.MeshBasicMaterial({ map: earthTex })
+      : new THREE.MeshBasicMaterial({ color: p.color });
+
     const mesh = new THREE.Mesh(
       new THREE.SphereGeometry(p.r, 20, 20),
-      new THREE.MeshBasicMaterial({ color: p.color })
+      meshMat
     );
     mesh.position.x = p.dist;
     pivot.add(mesh);
@@ -1483,7 +1510,7 @@ function buildLevel5_SolarSystem(group) {
     if (p.hasRing) {
       const satRing = new THREE.Mesh(
         new THREE.RingGeometry(1.35, 2.15, 32),
-        new THREE.MeshBasicMaterial({ color: 0xfef3c7, side: THREE.DoubleSide, transparent: true, opacity: 0.7 })
+        new THREE.MeshBasicMaterial({ color: 0xfef3c7, side: THREE.DoubleSide, transparent: true, opacity: 0.7, depthWrite: false })
       );
       satRing.rotation.x = Math.PI / 2.4;
       mesh.add(satRing);
